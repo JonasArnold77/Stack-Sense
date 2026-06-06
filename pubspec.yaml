@@ -1,0 +1,44 @@
+name: stacksense
+description: Personalisierte, evidenzbasierte Supplement-Beratung.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^14.0.2
+
+  # Local Storage
+  shared_preferences: ^2.3.1
+
+  # Umgebungsvariablen (.env)
+  flutter_dotenv: ^5.2.1
+
+  cupertino_icons: ^1.0.6
+
+  # HTTP
+  http: ^1.2.2
+
+  # UI Extras
+  gap: ^3.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - .env
