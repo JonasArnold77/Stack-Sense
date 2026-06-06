@@ -40,6 +40,7 @@ WICHTIGE REGELN:
 6. Sortiere: Grün → Gelb → Rot
 7. evidence_reason: max 120 Zeichen, prägnant und faktisch
 8. Empfehle 3-6 Supplements — nicht mehr
+9. simple_explanation: Erkläre den Wirkstoff in 2-3 Sätzen für absolute Laien — keine Fachbegriffe, gerne mit einer einfachen Analogie (wie ein Auto, ein Baustein, etc.). Max 300 Zeichen.
 
 JSON-FORMAT (exakt einhalten):
 {
@@ -53,7 +54,8 @@ JSON-FORMAT (exakt einhalten):
       "dosage": "2.000–4.000 IE täglich",
       "intake_time": "Morgens",
       "intake_hint": "Mit fetthaltiger Mahlzeit — fettlöslich",
-      "drug_interaction": null
+      "drug_interaction": null,
+      "simple_explanation": "Stell dir vor, dein Körper ist wie ein Auto. Vitamin D ist wie das Öl — ohne es laufen viele Dinge nicht richtig. Im Winter scheint die Sonne kaum, also tankt dein Körper kaum nach. Deshalb geben wir ihm extra Vitamin D als Tropfen oder Kapsel."
     }
   ]
 }"""
@@ -143,6 +145,7 @@ class ClaudeService:
                 intake_time=item["intake_time"],
                 intake_hint=item.get("intake_hint"),
                 drug_interaction=item.get("drug_interaction"),
+                simple_explanation=item.get("simple_explanation"),
             )
             recommendations.append(rec)
 

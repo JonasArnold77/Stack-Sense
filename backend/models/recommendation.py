@@ -19,6 +19,7 @@ class SupplementRecommendation(BaseModel):
     intake_time: str                 # z.B. "Morgens"
     intake_hint: Optional[str]       # z.B. "Mit fetthaltiger Mahlzeit"
     drug_interaction: Optional[str]  # Wechselwirkungshinweis falls relevant
+    simple_explanation: Optional[str] = None  # "Erkläre wie ich 5 bin" — einfache Erklärung
     product_url: Optional[str] = None
 
 
