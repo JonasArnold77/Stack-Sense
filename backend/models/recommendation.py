@@ -9,6 +9,14 @@ class EvidenceLevel(str, Enum):
     red = "red"
 
 
+class ProductLink(BaseModel):
+    """Eine einzelne Kaufoption für ein Supplement."""
+    label: str       # z.B. "Melatonin 0,5mg (isoliert)"
+    shop: str        # z.B. "Sunday Natural"
+    url: str
+    note: Optional[str] = None  # z.B. "Mit Vitamin B6"
+
+
 class SupplementRecommendation(BaseModel):
     id: str                          # Eindeutiger Slug z.B. "vitamin-d3"
     name: str                        # Anzeigename z.B. "Vitamin D3"
@@ -19,8 +27,8 @@ class SupplementRecommendation(BaseModel):
     intake_time: str                 # z.B. "Morgens"
     intake_hint: Optional[str]       # z.B. "Mit fetthaltiger Mahlzeit"
     drug_interaction: Optional[str]  # Wechselwirkungshinweis falls relevant
-    simple_explanation: Optional[str] = None  # "Erkläre wie ich 5 bin" — einfache Erklärung
-    product_url: Optional[str] = None
+    simple_explanation: Optional[str] = None
+    product_links: list[ProductLink] = []  # Mehrere Kaufoptionen
 
 
 class RecommendationResponse(BaseModel):

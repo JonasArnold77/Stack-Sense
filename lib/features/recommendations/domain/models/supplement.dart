@@ -1,18 +1,40 @@
 /// Evidenzlevel — entspricht der Grün/Gelb/Rot-Ampel
 enum EvidenceLevel { green, yellow, red }
 
+/// Eine einzelne Kaufoption für ein Supplement.
+class ProductLink {
+  final String label;
+  final String shop;
+  final String url;
+  final String? note;
+
+  const ProductLink({
+    required this.label,
+    required this.shop,
+    required this.url,
+    this.note,
+  });
+
+  factory ProductLink.fromJson(Map<String, dynamic> json) => ProductLink(
+        label: json['label'] as String,
+        shop: json['shop'] as String,
+        url: json['url'] as String,
+        note: json['note'] as String?,
+      );
+}
+
 /// Ein Supplement mit allen relevanten Informationen für die Card-Anzeige.
 class Supplement {
   final String id;
   final String name;
-  final String? substanceName; // z.B. "Magnesium Bisglycinat" bei "Magnesium"
+  final String? substanceName;
   final EvidenceLevel evidenceLevel;
-  final String evidenceReason; // Kurzbegründung, max ~120 Zeichen
-  final String dosage; // z.B. "400mg täglich"
-  final String intakeTime; // z.B. "Abends vor dem Schlafen"
-  final String? intakeHint; // z.B. "Mit einer fetthaltigen Mahlzeit"
-  final String? drugInteraction; // Wechselwirkungshinweis
-  final String? productUrl; // Affiliate-Link
+  final String evidenceReason;
+  final String dosage;
+  final String intakeTime;
+  final String? intakeHint;
+  final String? drugInteraction;
+  final List<ProductLink> productLinks; // Mehrere Kaufoptionen
 
   const Supplement({
     required this.id,
@@ -24,7 +46,7 @@ class Supplement {
     required this.intakeTime,
     this.intakeHint,
     this.drugInteraction,
-    this.productUrl,
+    this.productLinks = const [],
   });
 
   factory Supplement.fromJson(Map<String, dynamic> json) => Supplement(
@@ -37,6 +59,6 @@ class Supplement {
         intakeTime: json['intakeTime'] as String,
         intakeHint: json['intakeHint'] as String?,
         drugInteraction: json['drugInteraction'] as String?,
-        productUrl: json['productUrl'] as String?,
+        productLinks: const [],
       );
 }

@@ -7,11 +7,12 @@ import anthropic
 
 from config.settings import settings
 from models.profile import UserProfile
-from models.recommendation import RecommendationResponse, SupplementRecommendation, EvidenceLevel
+from models.recommendation import RecommendationResponse, SupplementRecommendation, EvidenceLevel, ProductLink
+from data.products import get_products
 
 logger = logging.getLogger(__name__)
 
-# Aktueller Monat → Jahreszeit ableiten
+
 def _get_season() -> str:
     month = datetime.now().month
     if month in (12, 1, 2):
@@ -23,6 +24,7 @@ def _get_season() -> str:
     return "Herbst"
 
 
+# Haupt-Prompt: kein simple_explanation → Haiku bleibt schnell
 SYSTEM_PROMPT = """Du bist StackSense, ein evidenzbasierter Supplement-Berater.
 
 DEINE AUFGABE:
@@ -38,9 +40,13 @@ WICHTIGE REGELN:
 4. Weise explizit auf Wechselwirkungen mit genannten Medikamenten hin
 5. Formuliere HWG-konform: keine Heilsversprechen, nur sachliche Informationen
 6. Sortiere: Grün → Gelb → Rot
-7. evidence_reason: max 120 Zeichen, prägnant und faktisch
-8. Empfehle 3-6 Supplements — nicht mehr
-9. simple_explanation: Erkläre den Wirkstoff in 2-3 Sätzen für absolute Laien — keine Fachbegriffe, gerne mit einer einfachen Analogie (wie ein Auto, ein Baustein, etc.). Max 300 Zeichen.
+7. ZEICHENLIMITS — unbedingt einhalten:
+   - evidence_reason: max 100 Zeichen
+   - dosage: max 40 Zeichen
+   - intake_time: max 40 Zeichen
+   - intake_hint: max 80 Zeichen (oder null)
+   - drug_interaction: max 80 Zeichen (oder null)
+8. Empfehle exakt 3-4 Supplements — nicht mehr
 
 JSON-FORMAT (exakt einhalten):
 {
@@ -54,16 +60,34 @@ JSON-FORMAT (exakt einhalten):
       "dosage": "2.000–4.000 IE täglich",
       "intake_time": "Morgens",
       "intake_hint": "Mit fetthaltiger Mahlzeit — fettlöslich",
-      "drug_interaction": null,
-      "simple_explanation": "Stell dir vor, dein Körper ist wie ein Auto. Vitamin D ist wie das Öl — ohne es laufen viele Dinge nicht richtig. Im Winter scheint die Sonne kaum, also tankt dein Körper kaum nach. Deshalb geben wir ihm extra Vitamin D als Tropfen oder Kapsel."
+      "drug_interaction": null
     }
   ]
 }"""
 
+# Erklärungs-Prompt: on-demand, Sonnet für bessere Qualität
+EXPLAIN_SYSTEM_PROMPT = """Du erklärst Nahrungsergänzungsmittel für absolute Laien.
+
+REGELN:
+- 2-3 kurze Sätze, max 300 Zeichen
+- Keine Fachbegriffe
+- Gerne eine einfache Analogie (Auto, Baukasten, Akku, etc.)
+- Antworte NUR mit dem Erklärungstext — kein JSON, keine Formatierung"""
+
+
+def _extract_json(raw: str) -> str:
+    """Entfernt Markdown-Codeblöcke und extrahiert den JSON-String."""
+    code_block_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", raw, re.DOTALL)
+    if code_block_match:
+        return code_block_match.group(1).strip()
+    json_match = re.search(r"\{.*\}", raw, re.DOTALL)
+    if json_match:
+        return json_match.group(0).strip()
+    return raw
+
 
 def _build_user_message(profile: UserProfile, goal: str) -> str:
     season = _get_season()
-
     gender_map = {"male": "männlich", "female": "weiblich", "diverse": "divers"}
     sport_map = {
         "none": "kaum aktiv",
@@ -73,13 +97,12 @@ def _build_user_message(profile: UserProfile, goal: str) -> str:
     }
 
     lines = [
-        f"NUTZERPROFIL:",
+        "NUTZERPROFIL:",
         f"- Alter: {profile.age} Jahre",
         f"- Geschlecht: {gender_map.get(profile.gender, profile.gender)}",
         f"- Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}",
         f"- Jahreszeit: {season}",
     ]
-
     if profile.conditions:
         lines.append(f"- Erkrankungen: {', '.join(profile.conditions)}")
     if profile.medications:
@@ -89,7 +112,6 @@ def _build_user_message(profile: UserProfile, goal: str) -> str:
 
     lines.append(f"\nGEWÜNSCHTES ZIEL: {goal}")
     lines.append("\nErstelle passende Supplement-Empfehlungen als JSON.")
-
     return "\n".join(lines)
 
 
@@ -101,42 +123,40 @@ class ClaudeService:
         self, profile: UserProfile, goal: str
     ) -> RecommendationResponse:
         user_message = _build_user_message(profile, goal)
-
-        logger.info(f"Claude-Anfrage für Ziel: {goal}, Alter: {profile.age}")
+        logger.info(f"Claude Haiku-Anfrage für Ziel: {goal}, Alter: {profile.age}")
 
         message = self.client.messages.create(
-            model=settings.claude_model,
+            model=settings.claude_model,  # Haiku — schnell
             max_tokens=settings.claude_max_tokens,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
         )
 
-        raw = message.content[0].text.strip()
-        logger.debug(f"Claude raw response (first 200 chars): {raw[:200]}")
+        raw = _extract_json(message.content[0].text.strip())
 
-        # Claude sometimes wraps JSON in markdown code blocks — extract JSON robustly
-        # Handles: ```json\n{...}\n```, ```\n{...}\n```, or plain {…}
-        code_block_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", raw, re.DOTALL)
-        if code_block_match:
-            raw = code_block_match.group(1).strip()
-        else:
-            # Try to extract the outermost JSON object directly
-            json_match = re.search(r"\{.*\}", raw, re.DOTALL)
-            if json_match:
-                raw = json_match.group(0).strip()
-
-        # JSON parsen — Fehler klar loggen
         try:
             data = json.loads(raw)
         except json.JSONDecodeError as e:
             logger.error(f"Claude hat kein valides JSON geliefert: {e}\nRaw: {raw}")
             raise ValueError(f"Claude-Antwort ist kein valides JSON: {e}")
 
-        # Pydantic-Modelle bauen
         recommendations = []
         for item in data.get("recommendations", []):
+            supplement_id = item["id"]
+            products = get_products(supplement_id)
+
+            product_links = [
+                ProductLink(
+                    label=p["label"],
+                    shop=p["shop"],
+                    url=p["url"],
+                    note=p.get("note"),
+                )
+                for p in products
+            ]
+
             rec = SupplementRecommendation(
-                id=item["id"],
+                id=supplement_id,
                 name=item["name"],
                 substance_name=item.get("substance_name"),
                 evidence_level=EvidenceLevel(item["evidence_level"]),
@@ -145,10 +165,27 @@ class ClaudeService:
                 intake_time=item["intake_time"],
                 intake_hint=item.get("intake_hint"),
                 drug_interaction=item.get("drug_interaction"),
-                simple_explanation=item.get("simple_explanation"),
+                simple_explanation=None,
+                product_links=product_links,
             )
             recommendations.append(rec)
+            if product_links:
+                logger.info(f"{len(product_links)} Produkte verknüpft: {supplement_id}")
 
         logger.info(f"Claude lieferte {len(recommendations)} Empfehlungen")
-
         return RecommendationResponse(goal=goal, recommendations=recommendations)
+
+    async def get_simple_explanation(
+        self, supplement_name: str, substance_name: str | None
+    ) -> str:
+        name = f"{supplement_name} ({substance_name})" if substance_name else supplement_name
+        logger.info(f"Sonnet-Erklärung für: {name}")
+
+        message = self.client.messages.create(
+            model=settings.claude_explain_model,  # Sonnet — bessere Qualität
+            max_tokens=256,
+            system=EXPLAIN_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": f"Erkläre mir {name} wie ich 5 Jahre alt bin."}],
+        )
+
+        return message.content[0].text.strip()

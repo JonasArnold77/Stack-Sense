@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 import logging
 
 from models.profile import RecommendationRequest
@@ -30,6 +31,28 @@ async def get_recommendations(request: RecommendationRequest) -> RecommendationR
     except Exception as e:
         logger.error(f"Unerwarteter Fehler: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Interner Serverfehler")
+
+
+class ExplainRequest(BaseModel):
+    supplement_name: str
+    substance_name: str | None = None
+
+
+@router.post("/explain")
+async def explain_supplement(request: ExplainRequest) -> dict:
+    """
+    Gibt eine einfache Laienerklärung für ein Supplement zurück.
+    Wird on-demand geladen wenn der Nutzer auf 'Einfach erklärt' tippt.
+    """
+    try:
+        explanation = await claude_service.get_simple_explanation(
+            supplement_name=request.supplement_name,
+            substance_name=request.substance_name,
+        )
+        return {"explanation": explanation}
+    except Exception as e:
+        logger.error(f"Explain-Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erklärung konnte nicht generiert werden")
 
 
 @router.get("/health")

@@ -36,7 +36,7 @@ class AppConstants {
     'API_BASE_URL',
     defaultValue: 'http://192.168.178.186:8000/api/v1',
   );
-  static const Duration apiTimeout = Duration(seconds: 40);
+  static const Duration apiTimeout = Duration(seconds: 30);
 
   // --- Onboarding ---
   static const int onboardingTotalSteps = 3;
@@ -60,4 +60,5 @@ class AppConstants {
   static const String keyUserXp = 'user_xp';
   static const String keyUserLevel = 'user_level';
   static const String keyLastCheckin = 'last_checkin_date';
+  static const String keyCheckinHistory = 'checkin_history';
 }

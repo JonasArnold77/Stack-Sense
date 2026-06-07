@@ -112,8 +112,7 @@ class _RecommendationsScreenState
           supplement: supplement,
           isInStack: isInStack,
           onAddToStack: () => stackNotifier.add(supplement),
-          onRemoveFromStack: () =>
-              stackNotifier.remove(supplement.id),
+          onRemoveFromStack: () => stackNotifier.remove(supplement.id),
         );
       },
     );

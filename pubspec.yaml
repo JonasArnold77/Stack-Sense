@@ -30,6 +30,9 @@ dependencies:
   # UI Extras
   gap: ^3.0.1
 
+  # URLs im Browser öffnen (Produktlinks)
+  url_launcher: ^6.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
