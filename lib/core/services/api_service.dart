@@ -104,11 +104,55 @@ class ApiService {
     }
   }
 
+  /// Lädt on-demand Kaufoptionen für ein Supplement via Claude.
+  Future<List<ProductLink>> getProductSuggestions({
+    required String supplementName,
+    String? substanceName,
+    List<String> categories = const [],
+  }) async {
+    final body = jsonEncode({
+      'supplement_name': supplementName,
+      'substance_name': substanceName,
+      'categories': categories,
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/products'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final list = data['products'] as List<dynamic>? ?? [];
+        return list
+            .map((e) => ProductLink.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw ApiException('Produkte nicht verfügbar (${response.statusCode})');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Produkt-Suche Fehler: $e');
+      throw ApiException('Produkte konnten nicht geladen werden.');
+    }
+  }
+
   Supplement _supplementFromJson(Map<String, dynamic> json) {
     final rawLinks = json['product_links'] as List<dynamic>? ?? [];
     final productLinks = rawLinks
         .map((e) => ProductLink.fromJson(e as Map<String, dynamic>))
         .toList();
+
+    final rawCategories = json['categories'] as List<dynamic>? ?? [];
+    final categories = rawCategories.map((e) => e as String).toList();
 
     return Supplement(
       id: json['id'] as String,
@@ -121,6 +165,7 @@ class ApiService {
       intakeHint: json['intake_hint'] as String?,
       drugInteraction: json['drug_interaction'] as String?,
       productLinks: productLinks,
+      categories: categories,
     );
   }
 

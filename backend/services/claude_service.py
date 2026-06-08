@@ -46,7 +46,10 @@ WICHTIGE REGELN:
    - intake_time: max 40 Zeichen
    - intake_hint: max 80 Zeichen (oder null)
    - drug_interaction: max 80 Zeichen (oder null)
-8. Empfehle exakt 3-4 Supplements — nicht mehr
+8. Liste ALLE relevanten Supplements auf — typisch 6–12 pro Ziel
+   - Mindestens alle wichtigen grünen und gelben Supplements nennen
+   - Rote nur wenn sie im Markt verbreitet aber unbegründet sind (zur Aufklärung)
+   - Nicht künstlich kürzen: vollständigkeit ist wichtiger als Kürze
 
 JSON-FORMAT (exakt einhalten):
 {
@@ -60,7 +63,49 @@ JSON-FORMAT (exakt einhalten):
       "dosage": "2.000–4.000 IE täglich",
       "intake_time": "Morgens",
       "intake_hint": "Mit fetthaltiger Mahlzeit — fettlöslich",
-      "drug_interaction": null
+      "drug_interaction": null,
+      "categories": ["Immunsystem", "Energie", "Stimmung"]
+    }
+  ]
+}
+
+KATEGORIEN-REGELN:
+- Wähle 1–3 passende Kategorien aus dieser Liste:
+  Schlaf, Energie, Fokus, Stimmung, Stress, Immunsystem, Sport & Erholung,
+  Herzgesundheit, Schilddrüse, Verdauung, Hormonbalance, Entzündung, Knochen & Gelenke
+- Nur Kategorien die wirklich zutreffen — nicht alle auflisten"""
+
+# Produkt-Such-Prompt: findet passende Kaufoptionen on-demand
+PRODUCTS_SYSTEM_PROMPT = """Du bist ein Supplement-Einkaufsberater für den deutschen Markt.
+
+AUFGABE:
+Finde 2–4 konkrete Produktoptionen für das angegebene Supplement bei Sunday Natural.
+
+SUNDAY NATURAL URL-FORMAT:
+- Basis-URL: https://www.sunday.de/en/[produkt-slug].html
+- Slug ist kebab-case des Produktnamens auf Englisch
+- Beispiele:
+  * Magnesium Bisglycinat → magnesium-glycinate-pure-capsules.html
+  * Vitamin D3 2000 IE → vitamin-d3-2000-ie-capsules.html
+  * Ashwagandha KSM-66 → ashwagandha-ksm-66-root-extract.html
+  * Omega-3 → omega-3-fish-oil-capsules.html
+  * Zink → zinc-bisglycinate-capsules.html
+  * Kreatin → creatine-monohydrate-powder.html
+
+REGELN:
+- Antworte AUSSCHLIESSLICH mit validem JSON
+- Biete verschiedene Formen/Dosierungen an wenn sinnvoll (z.B. isoliert vs. Komplex)
+- label: kurzer Produktname max 50 Zeichen
+- note: kurzer Hinweis warum diese Option max 60 Zeichen (oder null)
+
+JSON-FORMAT:
+{
+  "products": [
+    {
+      "label": "Magnesium Bisglycinat 120 Kapseln",
+      "shop": "Sunday Natural",
+      "url": "https://www.sunday.de/en/magnesium-glycinate-pure-capsules.html",
+      "note": "Hochbioverfügbar, magenfreundlich"
     }
   ]
 }"""
@@ -167,6 +212,7 @@ class ClaudeService:
                 drug_interaction=item.get("drug_interaction"),
                 simple_explanation=None,
                 product_links=product_links,
+                categories=item.get("categories", []),
             )
             recommendations.append(rec)
             if product_links:
@@ -182,10 +228,47 @@ class ClaudeService:
         logger.info(f"Sonnet-Erklärung für: {name}")
 
         message = self.client.messages.create(
-            model=settings.claude_explain_model,  # Sonnet — bessere Qualität
+            model=settings.claude_explain_model,
             max_tokens=256,
             system=EXPLAIN_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": f"Erkläre mir {name} wie ich 5 Jahre alt bin."}],
         )
 
         return message.content[0].text.strip()
+
+    async def get_product_suggestions(
+        self, supplement_name: str, substance_name: str | None, categories: list[str]
+    ) -> list[ProductLink]:
+        """Findet on-demand passende Kaufoptionen via Claude."""
+        name = f"{supplement_name} ({substance_name})" if substance_name else supplement_name
+        cats = ", ".join(categories) if categories else "allgemein"
+        logger.info(f"Produkt-Suche für: {name}")
+
+        user_msg = (
+            f"Supplement: {name}\n"
+            f"Anwendungsbereiche: {cats}\n"
+            f"Finde passende Kaufoptionen bei Sunday Natural."
+        )
+
+        message = self.client.messages.create(
+            model=settings.claude_model,  # Haiku — schnell genug
+            max_tokens=512,
+            system=PRODUCTS_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_msg}],
+        )
+
+        raw = _extract_json(message.content[0].text.strip())
+        try:
+            data = json.loads(raw)
+            return [
+                ProductLink(
+                    label=p["label"],
+                    shop=p.get("shop", "Sunday Natural"),
+                    url=p["url"],
+                    note=p.get("note"),
+                )
+                for p in data.get("products", [])
+            ]
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.error(f"Produkt-JSON Fehler: {e}\nRaw: {raw}")
+            return []

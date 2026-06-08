@@ -35,6 +35,7 @@ class Supplement {
   final String? intakeHint;
   final String? drugInteraction;
   final List<ProductLink> productLinks; // Mehrere Kaufoptionen
+  final List<String> categories; // Problemfelder z.B. ['Schlaf', 'Stressabbau']
 
   const Supplement({
     required this.id,
@@ -47,6 +48,7 @@ class Supplement {
     this.intakeHint,
     this.drugInteraction,
     this.productLinks = const [],
+    this.categories = const [],
   });
 
   factory Supplement.fromJson(Map<String, dynamic> json) => Supplement(

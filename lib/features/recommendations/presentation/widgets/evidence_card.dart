@@ -33,6 +33,9 @@ class _EvidenceCardState extends State<EvidenceCard> {
   String? _explanation;
   bool _loadingExplanation = false;
 
+  // Produkt-Cache: null = noch nicht geladen, [] = geladen aber leer
+  List<ProductLink>? _cachedLinks;
+
   Future<void> _toggleExplanation() async {
     if (_expanded) {
       setState(() => _expanded = false);
@@ -60,14 +63,22 @@ class _EvidenceCardState extends State<EvidenceCard> {
   }
 
   void _openProductSheet() {
-    final links = widget.supplement.productLinks;
-    if (links.isEmpty) return;
+    // Vorgeladene Links aus dem Modell als Startwert nutzen
+    final preloaded = widget.supplement.productLinks;
+    final initialLinks = _cachedLinks ?? (preloaded.isNotEmpty ? preloaded : null);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _ProductSheet(links: links),
+      builder: (_) => _ProductSheet(
+        supplement: widget.supplement,
+        initialLinks: initialLinks,
+        onLinksLoaded: (links) {
+          // Im State cachen damit Sheet beim nächsten Öffnen sofort zeigt
+          if (mounted) setState(() => _cachedLinks = links);
+        },
+      ),
     );
   }
 
@@ -115,6 +126,21 @@ class _EvidenceCardState extends State<EvidenceCard> {
               ],
             ),
           ),
+
+          // --- Kategorie-Tags ---
+          if (supplement.categories.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.spaceS,
+              ),
+              child: Wrap(
+                spacing: AppConstants.spaceXS,
+                runSpacing: AppConstants.spaceXS,
+                children: supplement.categories
+                    .map((cat) => _CategoryTag(label: cat))
+                    .toList(),
+              ),
+            ),
 
           // --- Begründung ---
           Padding(
@@ -254,15 +280,13 @@ class _EvidenceCardState extends State<EvidenceCard> {
                           style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
                         ),
                 ),
-                if (supplement.productLinks.isNotEmpty) ...[
-                  const SizedBox(width: AppConstants.spaceS),
-                  IconButton.outlined(
-                    onPressed: _openProductSheet,
-                    icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-                    tooltip: 'Kaufoptionen anzeigen',
-                    style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
-                  ),
-                ],
+                const SizedBox(width: AppConstants.spaceS),
+                IconButton.outlined(
+                  onPressed: _openProductSheet,
+                  icon: const Icon(Icons.shopping_bag_outlined, size: 20),
+                  tooltip: 'Kaufoptionen laden',
+                  style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+                ),
               ],
             ),
           ),
@@ -272,12 +296,59 @@ class _EvidenceCardState extends State<EvidenceCard> {
   }
 }
 
-// --- Bottomsheet mit Kaufoptionen ---
+// --- Bottomsheet mit lazy-geladenen Kaufoptionen ---
 
-class _ProductSheet extends StatelessWidget {
-  final List<ProductLink> links;
+class _ProductSheet extends StatefulWidget {
+  final Supplement supplement;
+  final List<ProductLink>? initialLinks; // null = noch nicht geladen
+  final ValueChanged<List<ProductLink>> onLinksLoaded;
 
-  const _ProductSheet({required this.links});
+  const _ProductSheet({
+    required this.supplement,
+    required this.initialLinks,
+    required this.onLinksLoaded,
+  });
+
+  @override
+  State<_ProductSheet> createState() => _ProductSheetState();
+}
+
+class _ProductSheetState extends State<_ProductSheet> {
+  List<ProductLink>? _links;
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialLinks != null) {
+      _links = widget.initialLinks;
+    } else {
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final links = await ApiService.instance.getProductSuggestions(
+        supplementName: widget.supplement.name,
+        substanceName: widget.supplement.substanceName,
+        categories: widget.supplement.categories,
+      );
+      if (mounted) {
+        setState(() { _links = links; _loading = false; });
+        widget.onLinksLoaded(links);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Produkte konnten nicht geladen werden.';
+          _loading = false;
+        });
+      }
+    }
+  }
 
   Future<void> _launch(String url) async {
     final uri = Uri.parse(url);
@@ -293,7 +364,9 @@ class _ProductSheet extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppConstants.radiusXL)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppConstants.radiusXL),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -308,6 +381,7 @@ class _ProductSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppConstants.radiusRound),
             ),
           ),
+          // Header
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppConstants.cardPadding,
@@ -317,45 +391,126 @@ class _ProductSheet extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.shopping_bag_outlined, size: 20, color: AppColors.primary),
+                const Icon(Icons.shopping_bag_outlined,
+                    size: 20, color: AppColors.primary),
                 const SizedBox(width: AppConstants.spaceS),
-                Text('Kaufoptionen', style: AppTextStyles.headlineSmall),
+                Expanded(
+                  child: Text(
+                    widget.supplement.name,
+                    style: AppTextStyles.headlineSmall,
+                  ),
+                ),
+                if (_loading)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
               ],
             ),
           ),
           const Divider(height: 1),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(vertical: AppConstants.spaceS),
-            itemCount: links.length,
-            separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
-            itemBuilder: (context, index) {
-              final link = links[index];
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.cardPadding,
-                  vertical: AppConstants.spaceXS,
-                ),
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusM),
+
+          // Inhalt
+          if (_loading)
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.spaceXL),
+              child: Column(
+                children: [
+                  const SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  child: const Icon(Icons.storefront_outlined, size: 20, color: AppColors.primary),
+                  const SizedBox(height: AppConstants.spaceM),
+                  Text(
+                    'KI sucht passende Produkte…',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else if (_error != null)
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.spaceXL),
+              child: Column(
+                children: [
+                  const Icon(Icons.error_outline,
+                      color: AppColors.error, size: 32),
+                  const SizedBox(height: AppConstants.spaceS),
+                  Text(_error!, style: AppTextStyles.bodySmall),
+                  const SizedBox(height: AppConstants.spaceM),
+                  TextButton(
+                    onPressed: _load,
+                    child: const Text('Erneut versuchen'),
+                  ),
+                ],
+              ),
+            )
+          else if (_links == null || _links!.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.spaceXL),
+              child: Text(
+                'Keine Produkte gefunden.',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
                 ),
-                title: Text(link.label, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-                subtitle: link.note != null
-                    ? Text(link.note!, style: AppTextStyles.caption)
-                    : Text(link.shop, style: AppTextStyles.caption),
-                trailing: const Icon(Icons.open_in_new, size: 16, color: AppColors.textTertiary),
-                onTap: () => _launch(link.url),
-              );
-            },
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(
+                  vertical: AppConstants.spaceS),
+              itemCount: _links!.length,
+              separatorBuilder: (_, __) =>
+                  const Divider(height: 1, indent: 56),
+              itemBuilder: (context, index) {
+                final link = _links![index];
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.cardPadding,
+                    vertical: AppConstants.spaceXS,
+                  ),
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withAlpha(25),
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.radiusM),
+                    ),
+                    child: const Icon(Icons.storefront_outlined,
+                        size: 20, color: AppColors.primary),
+                  ),
+                  title: Text(
+                    link.label,
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: link.note != null
+                      ? Text(link.note!, style: AppTextStyles.caption)
+                      : Text(link.shop, style: AppTextStyles.caption),
+                  trailing: const Icon(Icons.open_in_new,
+                      size: 16, color: AppColors.textTertiary),
+                  onTap: () => _launch(link.url),
+                );
+              },
+            ),
+
+          SizedBox(
+            height:
+                MediaQuery.of(context).padding.bottom + AppConstants.spaceM,
           ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom + AppConstants.spaceM),
         ],
       ),
     );
@@ -424,6 +579,33 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// --- Kategorie-Tag ---
+
+class _CategoryTag extends StatelessWidget {
+  final String label;
+
+  const _CategoryTag({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withAlpha(12),
+        borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+        border: Border.all(color: AppColors.primary.withAlpha(40)),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.labelSmall.copyWith(
+          color: AppColors.primary,
+          fontSize: 10,
+        ),
+      ),
     );
   }
 }

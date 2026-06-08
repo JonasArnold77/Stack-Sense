@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import logging
 
 from models.profile import RecommendationRequest
-from models.recommendation import RecommendationResponse
+from models.recommendation import RecommendationResponse, ProductLink
 from services.claude_service import ClaudeService
 
 router = APIRouter(prefix="/api/v1", tags=["Empfehlungen"])
@@ -53,6 +53,30 @@ async def explain_supplement(request: ExplainRequest) -> dict:
     except Exception as e:
         logger.error(f"Explain-Fehler: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Erklärung konnte nicht generiert werden")
+
+
+class ProductsRequest(BaseModel):
+    supplement_name: str
+    substance_name: str | None = None
+    categories: list[str] = []
+
+
+@router.post("/products")
+async def get_products(request: ProductsRequest) -> dict:
+    """
+    Gibt on-demand KI-generierte Kaufoptionen für ein Supplement zurück.
+    Wird lazy geladen wenn der Nutzer auf den Kauf-Button tippt.
+    """
+    try:
+        links = await claude_service.get_product_suggestions(
+            supplement_name=request.supplement_name,
+            substance_name=request.substance_name,
+            categories=request.categories,
+        )
+        return {"products": [l.model_dump() for l in links]}
+    except Exception as e:
+        logger.error(f"Produkt-Suche Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Produkte konnten nicht geladen werden")
 
 
 @router.get("/health")

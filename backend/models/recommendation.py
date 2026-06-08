@@ -28,7 +28,8 @@ class SupplementRecommendation(BaseModel):
     intake_hint: Optional[str]       # z.B. "Mit fetthaltiger Mahlzeit"
     drug_interaction: Optional[str]  # Wechselwirkungshinweis falls relevant
     simple_explanation: Optional[str] = None
-    product_links: list[ProductLink] = []  # Mehrere Kaufoptionen
+    product_links: list[ProductLink] = []   # Mehrere Kaufoptionen
+    categories: list[str] = []             # Problemfelder z.B. ["Schlaf", "Stressabbau"]
 
 
 class RecommendationResponse(BaseModel):
