@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from datetime import datetime
+from pathlib import Path
 
 import anthropic
 
@@ -9,8 +10,19 @@ from config.settings import settings
 from models.profile import UserProfile
 from models.recommendation import RecommendationResponse, SupplementRecommendation, EvidenceLevel, ProductLink
 from data.products import get_products
+from services.pubmed_service import PubMedService
 
 logger = logging.getLogger(__name__)
+
+# --- Supplement-Wissensdatenbank einmalig laden ---
+_DB_PATH = Path(__file__).parent.parent / "data" / "supplement_knowledge.json"
+try:
+    with open(_DB_PATH, encoding="utf-8") as f:
+        _SUPPLEMENT_DB: dict = json.load(f).get("supplements", {})
+    logger.info(f"Supplement-DB geladen: {len(_SUPPLEMENT_DB)} Einträge")
+except Exception as e:
+    logger.error(f"Supplement-DB konnte nicht geladen werden: {e}")
+    _SUPPLEMENT_DB = {}
 
 
 def _get_season() -> str:
@@ -24,11 +36,85 @@ def _get_season() -> str:
     return "Herbst"
 
 
-# Haupt-Prompt: kein simple_explanation → Haiku bleibt schnell
+def _build_db_context(medications: list[str], conditions: list[str]) -> str:
+    """
+    Baut einen Kontext-Block aus der lokalen Supplement-DB.
+    Fokussiert auf Wechselwirkungen mit den Medikamenten des Nutzers
+    und Kontraindikationen für seine Erkrankungen.
+    """
+    if not _SUPPLEMENT_DB:
+        return ""
+
+    lines = ["=== VERIFIZIERTE SUPPLEMENT-DATENBANK ==="]
+    lines.append("(Aus dieser Datenbank stammen Wechselwirkungen und Kontraindikationen)\n")
+
+    for supp_id, data in _SUPPLEMENT_DB.items():
+        relevant_interactions = []
+
+        # Nur Wechselwirkungen die für diesen Nutzer relevant sind
+        if medications:
+            for interaction in data.get("drug_interactions", []):
+                drug_lower = interaction["drug"].lower()
+                for med in medications:
+                    if any(word in drug_lower for word in med.lower().split()):
+                        relevant_interactions.append(
+                            f"  ⚠️ Mit {med}: {interaction['effect']} "
+                            f"[Schweregrad: {interaction['severity']}]"
+                        )
+
+        # Kontraindikationen für Erkrankungen des Nutzers
+        relevant_contraindications = []
+        if conditions:
+            for contra in data.get("contraindications", []):
+                for cond in conditions:
+                    if any(word in contra.lower() for word in cond.lower().split()):
+                        relevant_contraindications.append(f"  ❌ Vorsicht bei {cond}: {contra}")
+
+        # Nur Supplements mit relevanten Infos oder alle (für Vollständigkeit)
+        entry_lines = [f"[{data['name']}]"]
+        entry_lines.append(f"  Evidenz: {data['evidence_summary']}")
+        entry_lines.append(f"  Beste Form: {', '.join(data.get('optimal_forms', []))}")
+        entry_lines.append(f"  Einnahme: {data.get('intake_notes', '')}")
+
+        if relevant_interactions:
+            entry_lines.append("  WECHSELWIRKUNGEN (für diesen Nutzer):")
+            entry_lines.extend(relevant_interactions)
+
+        if relevant_contraindications:
+            entry_lines.append("  KONTRAINDIKATIONEN:")
+            entry_lines.extend(relevant_contraindications)
+
+        lines.extend(entry_lines)
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def _build_pubmed_context(studies: list[dict]) -> str:
+    """Formatiert PubMed-Studien als lesbaren Kontext-Block."""
+    if not studies:
+        return ""
+
+    lines = ["=== AKTUELLE PUBMED-STUDIEN ==="]
+    for s in studies:
+        if s.get("title"):
+            lines.append(f"[PMID:{s['pmid']} | {s['year']}] {s['title']}")
+        if s.get("abstract"):
+            lines.append(f"  Abstract: {s['abstract']}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 SYSTEM_PROMPT = """Du bist StackSense, ein evidenzbasierter Supplement-Berater.
 
 DEINE AUFGABE:
 Analysiere das Nutzerprofil und erstelle personalisierte Supplement-Empfehlungen für das angegebene Ziel.
+
+DATENQUELLEN (Priorität absteigend):
+1. Die VERIFIZIERTE SUPPLEMENT-DATENBANK im Kontext — diese hat Vorrang vor deinem Trainingswissen
+2. Die PUBMED-STUDIEN im Kontext — aktuelle Forschung für dieses Ziel
+3. Dein allgemeines Trainingswissen als Ergänzung
 
 WICHTIGE REGELN:
 1. Antworte AUSSCHLIESSLICH mit validem JSON — kein Text davor oder danach
@@ -37,7 +123,7 @@ WICHTIGE REGELN:
    - "yellow": Erste Studien zeigen Hinweise, aber Evidenz noch unvollständig
    - "red": Kaum oder keine belastbare Evidenz beim Menschen
 3. Berücksichtige ALLE Profilparameter: Alter, Geschlecht, Erkrankungen, Medikamente, Jahreszeit, Sport
-4. Weise explizit auf Wechselwirkungen mit genannten Medikamenten hin
+4. Wechselwirkungen: Nutze AUSSCHLIESSLICH die Daten aus der Supplement-DB — erfinde keine
 5. Formuliere HWG-konform: keine Heilsversprechen, nur sachliche Informationen
 6. Sortiere: Grün → Gelb → Rot
 7. ZEICHENLIMITS — unbedingt einhalten:
@@ -49,7 +135,7 @@ WICHTIGE REGELN:
 8. Liste ALLE relevanten Supplements auf — typisch 6–12 pro Ziel
    - Mindestens alle wichtigen grünen und gelben Supplements nennen
    - Rote nur wenn sie im Markt verbreitet aber unbegründet sind (zur Aufklärung)
-   - Nicht künstlich kürzen: vollständigkeit ist wichtiger als Kürze
+   - Nicht künstlich kürzen: Vollständigkeit ist wichtiger als Kürze
 
 JSON-FORMAT (exakt einhalten):
 {
@@ -75,7 +161,7 @@ KATEGORIEN-REGELN:
   Herzgesundheit, Schilddrüse, Verdauung, Hormonbalance, Entzündung, Knochen & Gelenke
 - Nur Kategorien die wirklich zutreffen — nicht alle auflisten"""
 
-# Produkt-Such-Prompt: findet passende Kaufoptionen on-demand
+
 PRODUCTS_SYSTEM_PROMPT = """Du bist ein Supplement-Einkaufsberater für den deutschen Markt.
 
 AUFGABE:
@@ -110,7 +196,6 @@ JSON-FORMAT:
   ]
 }"""
 
-# Erklärungs-Prompt: on-demand, Sonnet für bessere Qualität
 EXPLAIN_SYSTEM_PROMPT = """Du erklärst Nahrungsergänzungsmittel für absolute Laien.
 
 REGELN:
@@ -121,7 +206,6 @@ REGELN:
 
 
 def _extract_json(raw: str) -> str:
-    """Entfernt Markdown-Codeblöcke und extrahiert den JSON-String."""
     code_block_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", raw, re.DOTALL)
     if code_block_match:
         return code_block_match.group(1).strip()
@@ -131,7 +215,12 @@ def _extract_json(raw: str) -> str:
     return raw
 
 
-def _build_user_message(profile: UserProfile, goal: str) -> str:
+def _build_user_message(
+    profile: UserProfile,
+    goal: str,
+    db_context: str,
+    pubmed_context: str,
+) -> str:
     season = _get_season()
     gender_map = {"male": "männlich", "female": "weiblich", "diverse": "divers"}
     sport_map = {
@@ -141,13 +230,12 @@ def _build_user_message(profile: UserProfile, goal: str) -> str:
         "intense": "sehr aktiv (5+x/Woche)",
     }
 
-    lines = [
-        "NUTZERPROFIL:",
-        f"- Alter: {profile.age} Jahre",
-        f"- Geschlecht: {gender_map.get(profile.gender, profile.gender)}",
-        f"- Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}",
-        f"- Jahreszeit: {season}",
-    ]
+    lines = ["NUTZERPROFIL:"]
+    lines.append(f"- Alter: {profile.age} Jahre")
+    lines.append(f"- Geschlecht: {gender_map.get(profile.gender, profile.gender)}")
+    lines.append(f"- Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}")
+    lines.append(f"- Jahreszeit: {season}")
+
     if profile.conditions:
         lines.append(f"- Erkrankungen: {', '.join(profile.conditions)}")
     if profile.medications:
@@ -156,6 +244,13 @@ def _build_user_message(profile: UserProfile, goal: str) -> str:
         lines.append("- Schwanger / stillend: ja")
 
     lines.append(f"\nGEWÜNSCHTES ZIEL: {goal}")
+
+    if db_context:
+        lines.append(f"\n{db_context}")
+
+    if pubmed_context:
+        lines.append(f"\n{pubmed_context}")
+
     lines.append("\nErstelle passende Supplement-Empfehlungen als JSON.")
     return "\n".join(lines)
 
@@ -163,15 +258,32 @@ def _build_user_message(profile: UserProfile, goal: str) -> str:
 class ClaudeService:
     def __init__(self):
         self.client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        self.pubmed = PubMedService()
 
     async def get_recommendations(
         self, profile: UserProfile, goal: str
     ) -> RecommendationResponse:
-        user_message = _build_user_message(profile, goal)
-        logger.info(f"Claude Haiku-Anfrage für Ziel: {goal}, Alter: {profile.age}")
+        logger.info(f"Empfehlungsanfrage: Ziel='{goal}', Alter={profile.age}")
+
+        # --- Kontext aufbauen: DB + PubMed ---
+        db_context = _build_db_context(
+            medications=profile.medications or [],
+            conditions=profile.conditions or [],
+        )
+
+        # PubMed-Studien für das gewählte Ziel holen
+        try:
+            pubmed_studies = await self.pubmed.get_goal_evidence(goal=goal, max_results=5)
+            pubmed_context = _build_pubmed_context(pubmed_studies)
+            logger.info(f"PubMed: {len(pubmed_studies)} Studien geladen für '{goal}'")
+        except Exception as e:
+            logger.warning(f"PubMed nicht verfügbar: {e}")
+            pubmed_context = ""
+
+        user_message = _build_user_message(profile, goal, db_context, pubmed_context)
 
         message = self.client.messages.create(
-            model=settings.claude_model,  # Haiku — schnell
+            model=settings.claude_model,
             max_tokens=settings.claude_max_tokens,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
@@ -182,21 +294,15 @@ class ClaudeService:
         try:
             data = json.loads(raw)
         except json.JSONDecodeError as e:
-            logger.error(f"Claude hat kein valides JSON geliefert: {e}\nRaw: {raw}")
+            logger.error(f"Claude JSON-Fehler: {e}\nRaw: {raw[:500]}")
             raise ValueError(f"Claude-Antwort ist kein valides JSON: {e}")
 
         recommendations = []
         for item in data.get("recommendations", []):
             supplement_id = item["id"]
             products = get_products(supplement_id)
-
             product_links = [
-                ProductLink(
-                    label=p["label"],
-                    shop=p["shop"],
-                    url=p["url"],
-                    note=p.get("note"),
-                )
+                ProductLink(label=p["label"], shop=p["shop"], url=p["url"], note=p.get("note"))
                 for p in products
             ]
 
@@ -215,10 +321,8 @@ class ClaudeService:
                 categories=item.get("categories", []),
             )
             recommendations.append(rec)
-            if product_links:
-                logger.info(f"{len(product_links)} Produkte verknüpft: {supplement_id}")
 
-        logger.info(f"Claude lieferte {len(recommendations)} Empfehlungen")
+        logger.info(f"Claude lieferte {len(recommendations)} Empfehlungen (mit DB+PubMed Kontext)")
         return RecommendationResponse(goal=goal, recommendations=recommendations)
 
     async def get_simple_explanation(
@@ -233,13 +337,11 @@ class ClaudeService:
             system=EXPLAIN_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": f"Erkläre mir {name} wie ich 5 Jahre alt bin."}],
         )
-
         return message.content[0].text.strip()
 
     async def get_product_suggestions(
         self, supplement_name: str, substance_name: str | None, categories: list[str]
     ) -> list[ProductLink]:
-        """Findet on-demand passende Kaufoptionen via Claude."""
         name = f"{supplement_name} ({substance_name})" if substance_name else supplement_name
         cats = ", ".join(categories) if categories else "allgemein"
         logger.info(f"Produkt-Suche für: {name}")
@@ -251,7 +353,7 @@ class ClaudeService:
         )
 
         message = self.client.messages.create(
-            model=settings.claude_model,  # Haiku — schnell genug
+            model=settings.claude_model,
             max_tokens=512,
             system=PRODUCTS_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_msg}],

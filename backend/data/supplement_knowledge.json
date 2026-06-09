@@ -1,0 +1,2832 @@
+{
+  "version": "1.0",
+  "source": "Kuratiert aus EFSA, NIH ODS, Examine.com (public), PubMed Reviews",
+  "supplements": {
+    "vitamin-d3": {
+      "name": "Vitamin D3",
+      "substance": "Cholecalciferol",
+      "evidence_summary": "Starke Evidenz für Knochen-, Immunfunktion und Stimmung bei Defizit. Meta-Analysen belegen Reduktion von Atemwegsinfekten. Weiterhin Forschung zu Krebsprävention und kardiovaskulärer Gesundheit.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:26764326",
+        "PMID:33775086",
+        "EFSA NDA 2016"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Thiazid-Diuretika (z.B. HCT)",
+          "effect": "Erhöhtes Hyperkalzämie-Risiko bei hoher D3-Dosis",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Digitalis / Digoxin",
+          "effect": "Hyperkalzämie durch D3 kann Digitalis-Toxizität verstärken",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Kortikosteroide",
+          "effect": "Steroide reduzieren D3-Absorption — höherer Bedarf möglich",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Hyperkalzämie",
+        "Sarkoidose",
+        "Niereninsuffizienz (ärztliche Rücksprache)"
+      ],
+      "optimal_forms": [
+        "Cholecalciferol (D3) > Ergocalciferol (D2)"
+      ],
+      "intake_notes": "Fettlöslich — immer mit fetthaltiger Mahlzeit einnehmen. K2 als Begleitgabe sinnvoll bei hoher Dosierung.",
+      "categories": [
+        "Immunsystem",
+        "Knochen & Gelenke",
+        "Stimmung",
+        "Energie"
+      ]
+    },
+    "magnesium": {
+      "name": "Magnesium",
+      "substance": "Magnesium (verschiedene Formen)",
+      "evidence_summary": "Gut belegt für Schlaf, Muskelentspannung, Migräneprophylaxe und Blutzuckerstabilisierung. Bisglycinat und Malat haben beste Bioverfügbarkeit. Oxid kaum resorbierbar.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:23853635",
+        "PMID:29882776",
+        "PMID:31747716"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antibiotika (Chinolone, Tetracycline)",
+          "effect": "Magnesium reduziert Antibiotika-Absorption — mindestens 2h Abstand",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Levothyroxin",
+          "effect": "Magnesium kann Schilddrüsenhormon-Aufnahme reduzieren — 4h Abstand",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Diuretika",
+          "effect": "Loop-Diuretika erhöhen Magnesiumausscheidung — Mangel-Risiko steigt",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Bisphosphonate (z.B. Alendronat)",
+          "effect": "Magnesium reduziert Absorption — mindestens 2h Abstand",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Schwere Niereninsuffizienz (Ausscheidungsproblem)"
+      ],
+      "optimal_forms": [
+        "Bisglycinat (Schlaf, Nerven)",
+        "Malat (Energie, Sport)",
+        "Taurinat (Herz)",
+        "Oxid meiden"
+      ],
+      "intake_notes": "Abends einnehmen für Schlafunterstützung. Mit Mahlzeit bei empfindlichem Magen.",
+      "categories": [
+        "Schlaf",
+        "Stress",
+        "Sport & Erholung",
+        "Herzgesundheit"
+      ]
+    },
+    "omega-3": {
+      "name": "Omega-3",
+      "substance": "EPA / DHA (Eicosapentaensäure / Docosahexaensäure)",
+      "evidence_summary": "Starke Evidenz für kardiovaskuläre Gesundheit, Entzündungshemmung und kognitive Funktion. EPA dominant für Stimmung und Entzündung, DHA für Gehirn und Augen.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:31567092",
+        "PMID:29387889",
+        "PMID:26950145"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Blutverdünner (Marcumar, Xarelto, ASS)",
+          "effect": "Verstärkt blutgerinnungshemmende Wirkung — ärztliche Rücksprache ab 2g/Tag",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antihypertensiva",
+          "effect": "Additive blutdrucksenkende Wirkung möglich — Monitoring empfohlen",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Fischallergien",
+        "Vor geplanten Operationen hohe Dosen pausieren"
+      ],
+      "optimal_forms": [
+        "Triglycerid-Form > Ethylester-Form (bessere Aufnahme)",
+        "Algenöl für Veganer"
+      ],
+      "intake_notes": "Mit fetthaltiger Mahlzeit einnehmen. Im Kühlschrank lagern gegen Oxidation.",
+      "categories": [
+        "Herzgesundheit",
+        "Entzündung",
+        "Fokus",
+        "Stimmung"
+      ]
+    },
+    "zink": {
+      "name": "Zink",
+      "substance": "Zink (verschiedene Formen)",
+      "evidence_summary": "Gut belegt für Immunfunktion, Wundheilung und Hormonstoffwechsel (Testosteron). Wichtig für Enzymsysteme. Langfristige Hochdosierung kann Kupfermangel verursachen.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:28629136",
+        "PMID:25757896"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antibiotika (Chinolone, Tetracycline)",
+          "effect": "Gegenseitige Absorptionshemmung — 2h Abstand einhalten",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Levothyroxin",
+          "effect": "Zink kann Schilddrüsenhormon-Absorption reduzieren",
+          "severity": "gering"
+        },
+        {
+          "drug": "Penicillamin (Rheuma)",
+          "effect": "Starke gegenseitige Absorptionshemmung",
+          "severity": "hoch"
+        }
+      ],
+      "contraindications": [
+        "Kupfermangel bei Langzeitanwendung möglich — Kupfer begleitend geben"
+      ],
+      "optimal_forms": [
+        "Bisglycinat",
+        "Picolinat",
+        "Citrat — alle besser als Oxid/Sulfat"
+      ],
+      "intake_notes": "Nicht nüchtern (Übelkeit möglich). Nicht gleichzeitig mit Eisen oder Calcium.",
+      "categories": [
+        "Immunsystem",
+        "Hormonbalance",
+        "Entzündung"
+      ]
+    },
+    "vitamin-c": {
+      "name": "Vitamin C",
+      "substance": "Ascorbinsäure / Natriumascorbat",
+      "evidence_summary": "Belegt als Antioxidans, Kollagensynthese und Eisenresorption. Erkältungsdauer minimal verkürzt (meta-analytisch), Prävention nur bei Hochleistungssportlern signifikant.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:23440782",
+        "PMID:29099763"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Blutverdünner (Warfarin)",
+          "effect": "Hohe Dosen (>1g) können INR beeinflussen",
+          "severity": "gering"
+        },
+        {
+          "drug": "Aluminium-haltige Antazida",
+          "effect": "Vitamin C erhöht Aluminiumabsorption",
+          "severity": "gering"
+        },
+        {
+          "drug": "Chemotherapeutika",
+          "effect": "Hochdosis-IV-Vitamin-C kann Wirkung bestimmter Zytostatika beeinflussen",
+          "severity": "hoch"
+        }
+      ],
+      "contraindications": [
+        "Nierenoxalatsteine bei sehr hoher Dosierung (>2g/Tag)",
+        "Hämochromatose"
+      ],
+      "optimal_forms": [
+        "Gepuffertes (Natriumascorbat) bei Magenempfindlichkeit",
+        "Liposomal für höhere Aufnahme"
+      ],
+      "intake_notes": "Über den Tag verteilt einnehmen (max. 500mg je Dosis). Fördert Eisenresorption.",
+      "categories": [
+        "Immunsystem",
+        "Entzündung",
+        "Energie"
+      ]
+    },
+    "vitamin-b12": {
+      "name": "Vitamin B12",
+      "substance": "Methylcobalamin / Adenosylcobalamin",
+      "evidence_summary": "Essenziell für Nervensystem und Blutbildung. Vegan Lebende haben nachweislich höheres Mangelrisiko. Methylcobalamin direkt verfügbar ohne Umwandlung.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:25824066",
+        "PMID:20648045"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Metformin",
+          "effect": "Metformin reduziert B12-Absorption signifikant — regelmäßige Kontrolle",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Protonenpumpenhemmer (Omeprazol etc.)",
+          "effect": "Reduziert B12-Aufnahme bei Langzeitanwendung",
+          "severity": "moderat"
+        },
+        {
+          "drug": "H2-Blocker",
+          "effect": "Gleicher Mechanismus wie PPI — Absorption vermindert",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Leber'sche Optikusatrophie (spezifische Mutation)"
+      ],
+      "optimal_forms": [
+        "Methylcobalamin > Cyanocobalamin (direkter verwertbar)"
+      ],
+      "intake_notes": "Morgens einnehmen (kann aktivierend wirken). Sublingual für bessere Aufnahme bei Magenproblematik.",
+      "categories": [
+        "Energie",
+        "Fokus",
+        "Stimmung"
+      ]
+    },
+    "eisen": {
+      "name": "Eisen",
+      "substance": "Eisen (Fe2+ / Fe3+)",
+      "evidence_summary": "Nur bei nachgewiesenem Mangel (Blutbild!) supplementieren. Überdosierung gefährlich. Frauen im gebärfähigen Alter und Veganer häufiger betroffen.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:25946280",
+        "PMID:23701561"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Levothyroxin",
+          "effect": "Eisen reduziert Schilddrüsenhormon-Aufnahme stark — mind. 4h Abstand",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Antibiotika (Chinolone, Tetracycline)",
+          "effect": "Gegenseitige Absorptionshemmung — 2h Abstand",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Bisphosphonate",
+          "effect": "Eisen hemmt Bisphosphonat-Absorption",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Protonenpumpenhemmer",
+          "effect": "PPI reduziert Eisenabsorption (weniger Magensäure)",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Hämochromatose",
+        "Thalassämie",
+        "Ohne labordiagnostischen Mangel nicht supplementieren"
+      ],
+      "optimal_forms": [
+        "Eisenbisglycinat (magenfreundlichste Form)",
+        "Eisensulfat günstig aber schlechter verträglich"
+      ],
+      "intake_notes": "Nüchtern mit Vitamin C einnehmen für beste Absorption. Nicht mit Milch, Kaffee, Tee.",
+      "categories": [
+        "Energie",
+        "Hormonbalance"
+      ]
+    },
+    "selen": {
+      "name": "Selen",
+      "substance": "Selenomethionin / Selenit",
+      "evidence_summary": "Belegt bei Hashimoto-Thyreoiditis: reduziert TPO-Antikörper nachweislich. Antioxidative Schutzfunktion. Enge therapeutische Breite — Überdosierung toxisch.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:28255299",
+        "PMID:16160201"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Chemotherapeutika (Cisplatin)",
+          "effect": "Selen kann nephroprotektive Wirkung haben — aber Interaktion mit Wirksamkeit möglich",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Statine",
+          "effect": "Mögliche additive Wirkung auf Antioxidansstatus — i.d.R. unproblematisch",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Bereits ausreichende Selenversorgung — Toxizität ab ~400mcg/Tag möglich"
+      ],
+      "optimal_forms": [
+        "Selenomethionin (organisch, höhere Bioverfügbarkeit)"
+      ],
+      "intake_notes": "Max. 200mcg/Tag. Morgens zum Essen. Blutspiegelkontrolle empfehlenswert.",
+      "categories": [
+        "Schilddrüse",
+        "Immunsystem",
+        "Entzündung"
+      ]
+    },
+    "ashwagandha": {
+      "name": "Ashwagandha",
+      "substance": "Withania somnifera Extrakt (KSM-66 / Sensoril)",
+      "evidence_summary": "Mehrere RCTs belegen Cortisol-Reduktion und Stressminderung. Evidenz für Testosteron und Kraft bei Sportlern wächst. Schilddrüseneffekt möglich — Vorsicht bei Schilddrüsenerkrankungen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:31742775",
+        "PMID:26609282",
+        "PMID:23439798"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Levothyroxin / Schilddrüsenhormone",
+          "effect": "Ashwagandha kann T3/T4 erhöhen — Dosisanpassung nötig, ärztliche Kontrolle",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Immunsuppressiva (z.B. nach Transplantation)",
+          "effect": "Ashwagandha stimuliert Immunsystem — kontraindiziert",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Sedativa / Benzodiazepine",
+          "effect": "Additive sedierende Wirkung möglich",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antidiabetika",
+          "effect": "Ashwagandha senkt Blutzucker — Hypoglykämie-Risiko bei Kombination",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft",
+        "Autoimmunerkrankungen (stimuliert Immunsystem)",
+        "Schilddrüsenüberfunktion"
+      ],
+      "optimal_forms": [
+        "KSM-66 (Wurzelextrakt, 5% Withanolide) — am besten belegt"
+      ],
+      "intake_notes": "Morgens oder abends möglich. Mit Mahlzeit. Kurs über 8–12 Wochen, dann Pause.",
+      "categories": [
+        "Stress",
+        "Energie",
+        "Hormonbalance",
+        "Sport & Erholung"
+      ]
+    },
+    "melatonin": {
+      "name": "Melatonin",
+      "substance": "Melatonin",
+      "evidence_summary": "Gut belegt für Einschlafzeit-Reduktion und Jet-Lag. Weniger Evidenz für Schlafdauer. Niedrige Dosen (0,5mg) oft wirksamer als hohe Dosen (5–10mg).",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:17689974",
+        "PMID:14715839"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Blutverdünner (Warfarin)",
+          "effect": "Melatonin kann antikoagulante Wirkung verstärken",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antidepressiva (Fluvoxamin)",
+          "effect": "Hemmt Melatonin-Abbau stark — Spiegel steigt deutlich an",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Antihypertensiva (Nifedipin)",
+          "effect": "Melatonin kann blutdrucksenkende Wirkung reduzieren",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Benzodiazepine / Sedativa",
+          "effect": "Additive sedierende Wirkung",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Autoimmunerkrankungen",
+        "Schwangerschaft",
+        "Kinder nur nach ärztlicher Rücksprache"
+      ],
+      "optimal_forms": [
+        "Retardform für Schlaf durchschlafen",
+        "Schnellfreisetzung für Einschlafen"
+      ],
+      "intake_notes": "30–60 Minuten vor Schlafzeit. 0,5–1mg ausreichend für die meisten Menschen.",
+      "categories": [
+        "Schlaf"
+      ]
+    },
+    "kreatin": {
+      "name": "Kreatin",
+      "substance": "Kreatin-Monohydrat",
+      "evidence_summary": "Einer der am besten belegten Supplements überhaupt. Klarer Nachweis für Kraft, Muskelmasse und hochintensives Training. Neue Evidenz für kognitive Funktionen.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:12945830",
+        "PMID:28615996",
+        "PMID:33800529"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Nephrotoxische Medikamente (z.B. NSAIDs dauerhaft)",
+          "effect": "Bei vorbelasteter Niere Kreatin-Spiegel regelmäßig kontrollieren",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Nierenerkrankungen (Rücksprache empfohlen)",
+        "Bei gesunder Niere sehr sicher"
+      ],
+      "optimal_forms": [
+        "Kreatin-Monohydrat — identisch wirksam wie teurere Formen"
+      ],
+      "intake_notes": "3–5g täglich, Timing irrelevant. Mit ausreichend Wasser. Kein Loading-Phase nötig.",
+      "categories": [
+        "Sport & Erholung",
+        "Fokus",
+        "Energie"
+      ]
+    },
+    "coq10": {
+      "name": "CoQ10",
+      "substance": "Coenzym Q10 / Ubichinon / Ubichinol",
+      "evidence_summary": "Gut belegt bei Statin-induzierten Myopathien. Moderate Evidenz für Herzinsuffizienz. Ubichinol (reduzierte Form) besser bioverfügbar als Ubichinon.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:25282031",
+        "PMID:19629025"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Statine (Simvastatin, Atorvastatin etc.)",
+          "effect": "Statine reduzieren CoQ10-Synthese — Supplementierung sinnvoll bei Myopathien",
+          "severity": "gering"
+        },
+        {
+          "drug": "Blutverdünner (Warfarin)",
+          "effect": "CoQ10 kann Warfarin-Wirkung abschwächen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antihypertensiva",
+          "effect": "Additive blutdrucksenkende Wirkung möglich",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [],
+      "optimal_forms": [
+        "Ubichinol (aktive Form) — besonders ab 40+ empfohlen"
+      ],
+      "intake_notes": "Mit fetthaltiger Mahlzeit einnehmen. 100–300mg täglich.",
+      "categories": [
+        "Herzgesundheit",
+        "Energie",
+        "Sport & Erholung"
+      ]
+    },
+    "probiotika": {
+      "name": "Probiotika",
+      "substance": "Lactobacillus / Bifidobacterium Stämme",
+      "evidence_summary": "Belegt für IBS-Symptome, antibiotikaassoziierte Diarrhö und Immunmodulation. Stammspezifisch — nicht alle Probiotika gleich wirksam für alle Indikationen.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:29374152",
+        "PMID:26376619"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antibiotika",
+          "effect": "Antibiotika töten Probiotika-Stämme — mindestens 2h Abstand, idealerweise nach Antibiotika-Kur",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Immunsuppressiva",
+          "effect": "Bei stark geschwächtem Immunsystem Vorsicht — Rücksprache mit Arzt",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Schwer immungeschwächte Patienten (onkologisch, nach Transplantation)"
+      ],
+      "optimal_forms": [
+        "Multistrainprodukte mit >10 Mrd. KBE",
+        "Magensaftresistente Kapseln"
+      ],
+      "intake_notes": "Nüchtern oder zum Essen — je nach Produkt. Kühl lagern (die meisten).",
+      "categories": [
+        "Verdauung",
+        "Immunsystem"
+      ]
+    },
+    "curcumin": {
+      "name": "Curcumin",
+      "substance": "Curcumin (aus Kurkuma)",
+      "evidence_summary": "Entzündungshemmende Wirkung in Studien belegt, aber schlechte Bioverfügbarkeit limitiert Effekte. Mit Piperin oder als Phospholipid-Komplex deutlich besser aufgenommen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:29480523",
+        "PMID:26007179"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Blutverdünner (Warfarin, ASS)",
+          "effect": "Curcumin hemmt Thrombozytenaggregation — Blutungsrisiko erhöht",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Chemotherapeutika",
+          "effect": "Komplexe Wechselwirkungen — nicht während Chemotherapie ohne Rücksprache",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Tacrolimus / Cyclosporin",
+          "effect": "Curcumin verändert Metabolisierung über CYP3A4",
+          "severity": "hoch"
+        }
+      ],
+      "contraindications": [
+        "Gallensteine / Gallengangserkrankungen",
+        "Vor Operationen absetzen"
+      ],
+      "optimal_forms": [
+        "Meriva (Phospholipid-Komplex)",
+        "Theracurmin",
+        "mit Piperin (Bioverfügbarkeit ×20)"
+      ],
+      "intake_notes": "Mit Fett und schwarzem Pfeffer einnehmen wenn kein spezieller Komplex.",
+      "categories": [
+        "Entzündung",
+        "Knochen & Gelenke"
+      ]
+    },
+    "nac": {
+      "name": "NAC",
+      "substance": "N-Acetylcystein",
+      "evidence_summary": "Belegt als Antioxidans und Glutathion-Vorläufer. Evidenz für Atemwegsgesundheit (Mukolytikum) und Leberschutz bei Paracetamol-Überdosierung. Wachsende Evidenz für psychische Gesundheit.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:23493013",
+        "PMID:27012512"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Nitrate (z.B. Nitroglycerin)",
+          "effect": "Starke Blutdrucksenkung und Kopfschmerzen möglich",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Aktivkohle",
+          "effect": "Aktivkohle adsorbiert NAC — nicht zusammen einnehmen",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Asthma (kann Bronchospasmus auslösen bei manchen Patienten)"
+      ],
+      "optimal_forms": [
+        "Standard NAC Kapseln — liposomale Form höhere Bioverfügbarkeit"
+      ],
+      "intake_notes": "600–1800mg täglich. Mit ausreichend Wasser. Kann Schwefelgeruch verursachen.",
+      "categories": [
+        "Entzündung",
+        "Immunsystem",
+        "Stimmung"
+      ]
+    },
+    "vitamin-k2": {
+      "name": "Vitamin K2",
+      "substance": "Menaquinon-7 (MK-7)",
+      "evidence_summary": "Belegt für Knochenmineralisation (lenkt Calcium in Knochen statt Arterien). Sinnvolle Ergänzung zu Vitamin D3 bei höherer Dosierung. MK-7 hat längere Halbwertszeit als MK-4.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:23140417",
+        "PMID:25516361"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Marcumar / Phenprocoumon / Warfarin",
+          "effect": "K2 antagonisiert Marcumar-Wirkung direkt — kontraindiziert ohne ärztliche Kontrolle",
+          "severity": "hoch"
+        }
+      ],
+      "contraindications": [
+        "Marcumar-Therapie ohne ärztliche Überwachung"
+      ],
+      "optimal_forms": [
+        "MK-7 (trans) — längere Halbwertszeit, besser für Knochenmineralisation"
+      ],
+      "intake_notes": "Mit Vitamin D3 und fetthaltiger Mahlzeit einnehmen. 100–200mcg täglich.",
+      "categories": [
+        "Knochen & Gelenke",
+        "Herzgesundheit"
+      ]
+    },
+    "l-theanin": {
+      "name": "L-Theanin",
+      "substance": "L-Theanin",
+      "evidence_summary": "Belegt für entspannte Wachheit ohne Sedierung. Kombination mit Koffein besonders gut belegt für Fokus und Stimmung. In grünem Tee natürlich vorhanden.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:18681988",
+        "PMID:21040626"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antihypertensiva",
+          "effect": "Leicht blutdrucksenkend — additive Wirkung möglich",
+          "severity": "gering"
+        },
+        {
+          "drug": "Stimulanzien (ADHS-Medikamente)",
+          "effect": "L-Theanin kann Stimulanzien-Wirkung modulieren",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [],
+      "optimal_forms": [
+        "Suntheanine (patentiertes L-Theanin — am besten belegt)"
+      ],
+      "intake_notes": "100–200mg, idealerweise mit Koffein 2:1 (200mg L-Theanin : 100mg Koffein).",
+      "categories": [
+        "Fokus",
+        "Stress",
+        "Schlaf"
+      ]
+    },
+    "b-vitamine-komplex": {
+      "name": "B-Vitamin-Komplex",
+      "substance": "B1, B2, B3, B5, B6, B7, B9, B12",
+      "evidence_summary": "B-Vitamine essenziell für Energiestoffwechsel und Nervensystem. Besonders B6, B9, B12 für Homocystein-Stoffwechsel. Methylierte Formen (Methylfolat, Methylcobalamin) bei MTHFR-Mutation wichtig.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:26828517",
+        "PMID:21671542"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Metformin",
+          "effect": "Senkt B12-Spiegel — B12 separat überwachen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Isoniazid (Tuberkulose)",
+          "effect": "Antagonisiert B6 — B6-Supplementierung routinemäßig empfohlen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Methotrexat",
+          "effect": "Folat-Antagonist — Folsäure-Supplementierung nach ärztlicher Anweisung",
+          "severity": "hoch"
+        }
+      ],
+      "contraindications": [
+        "Hohe B6-Dosen (>200mg/Tag) können Neuropathie verursachen"
+      ],
+      "optimal_forms": [
+        "Aktivierte Formen: Methylcobalamin, Methylfolat, P-5-P (B6)"
+      ],
+      "intake_notes": "Morgens einnehmen (aktivierend). Mit Mahlzeit für bessere Verträglichkeit.",
+      "categories": [
+        "Energie",
+        "Fokus",
+        "Stimmung",
+        "Stress"
+      ]
+    },
+    "zink-magnesium-b6": {
+      "name": "ZMA",
+      "substance": "Zink-Magnesium-Aspartat + B6",
+      "evidence_summary": "Klassische Sporternährungs-Kombination. Einzelkomponenten gut belegt (Zink für Testosteron, Magnesium für Schlaf/Erholung). Kombinationswirkung moderat belegt.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:10919962"
+      ],
+      "drug_interactions": [],
+      "contraindications": [],
+      "optimal_forms": [
+        "ZMA-Standardformulierung abends"
+      ],
+      "intake_notes": "Abends nüchtern (mindestens 1h nach letzter Mahlzeit). Nicht mit Milchprodukten.",
+      "categories": [
+        "Sport & Erholung",
+        "Schlaf",
+        "Hormonbalance"
+      ]
+    },
+    "vitamin-a": {
+      "id": "vitamin-a",
+      "name": "Vitamin A",
+      "substance": "Retinol / Retinylacetat / Beta-Carotin (je nach Form)",
+      "evidence_summary": "Vitamin A spielt eine zentrale Rolle in Immunfunktion, Schilddrüsengesundheit und Sehvermögen. Studien zeigen positive Effekte auf Infektanfälligkeit und Schilddrüsenfunktion bei Mangelzuständen, besonders in Kombination mit Zink und Magnesium. Die Evidenz ist jedoch stark dosisabhängig und bei ausreichender Ernährung begrenzt.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:33409923",
+        "PMID:32342851",
+        "PMID:38140375",
+        "PMID:37447400"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Tretinoin (Accutane) / Isotretinoin",
+          "effect": "Additive Retinoid-Toxizität möglich; teratogenes Risiko erhöht",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Orlistat",
+          "effect": "Reduzierte fettlösliche Vitamin-Absorption durch Lipase-Inhibition",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antikonvulsiva (Phenytoin, Phenobarbital)",
+          "effect": "Erhöhter Vitamin-A-Metabolismus möglich",
+          "severity": "gering"
+        },
+        {
+          "drug": "Cholestyramin",
+          "effect": "Reduzierte Absorption durch Gallensäure-Sequestring",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft oder Kinderwunsch (teratogen ab >10.000 IU/Tag)",
+        "Lebererkrankungen (Zirrhose, Hepatitis)",
+        "Hypervitaminose A in der Anamnese",
+        "Nierensteine / chronische Nierenerkrankung (erhöhtes Risiko)",
+        "Hypercalcämie"
+      ],
+      "optimal_forms": [
+        "Beta-Carotin (pflanzlich, sichere Konversion zu Retinol nach Bedarf)",
+        "Retinylacetat / Retinylpalmitat (stabile, gut absorbierbare Ester, bei normaler Nierenfunktion)",
+        "Liposomale Formulierungen (verbesserte Bioverfügbarkeit laut PMID:37447400)"
+      ],
+      "intake_notes": "Mit Fett einnehmen für optimale Absorption. Dosierung max. 10.000 IU/Tag ohne ärztliche Überwachung. Bei Hypothyreose: synergistisch mit Zink & Magnesium.",
+      "categories": [
+        "Immunsystem",
+        "Schilddrüse"
+      ]
+    },
+    "vitamin-e": {
+      "id": "vitamin-e",
+      "name": "Vitamin E",
+      "substance": "Tocopherol (α-Tocopherol, γ-Tocopherol und weitere Isomere)",
+      "evidence_summary": "Vitamin E wirkt als Antioxidans und zeigt in Kombinationsstudien potenzielle Effekte auf Schmerzsymptome bei Endometriose sowie auf Muskelerhalt im Alter. Die Evidenz für isolierte Vitamin-E-Supplementierung bleibt begrenzt; klinisch relevante Vorteile sind hauptsächlich in Kombination mit anderen Nährstoffen dokumentiert.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:34122682",
+        "PMID:38820340",
+        "PMID:36480969",
+        "PMID:29395372",
+        "PMID:34999335"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Warfarin und andere Vitamin-K-antagonistische Antikoagulanzien",
+          "effect": "Hochdosiertes Vitamin E (>400 IU/Tag) kann antikoagulante Wirkung verstärken; erhöhtes Blutungsrisiko.",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Thrombozytenaggregationshemmer (z.B. Acetylsalicylsäure, Clopidogrel)",
+          "effect": "Additiver Effekt auf Blutungsneigung möglich, besonders bei hohen Dosen.",
+          "severity": "gering"
+        },
+        {
+          "drug": "Statine und Niacin",
+          "effect": "Sehr hochdosiertes Vitamin E kann therapeutische Effekte dieser Lipidsenker teilweise aufheben.",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Blutgerinnungsstörungen oder geplante chirurgische Eingriffe (erhöhtes Blutungsrisiko bei hohen Dosen)",
+        "Vitamin-K-Antagonisten-Therapie (ohne ärztliche Überwachung)",
+        "Retinopathie bei Diabetes (sehr hochdosiertes Vitamin E kann das Risiko erhöhen)"
+      ],
+      "optimal_forms": [
+        "Mixed Tocopherols (α-, γ-, δ-Tocopherol) — biologisch aktiver und ausgewogener als reines α-Tocopherol",
+        "d-α-Tocopherol (natürliche Form) — bessere Bioverfügbarkeit als synthetisches dl-α-Tocopherol",
+        "Tocotrienole — zusätzliche antioxidative Isomere mit eigenständigen Effekten"
+      ],
+      "intake_notes": "Ideal als Teil einer ausgewogenen Supplementation (z.B. mit Vitamin C, Omega-3). Dosierung: 100-400 IU/Tag für präventive Zwecke. Hochdosen (>600 IU/Tag) sollten ärztlich überwacht werden.",
+      "categories": [
+        "Entzündung",
+        "Sport & Erholung",
+        "Stimmung"
+      ]
+    },
+    "vitamin-k1": {
+      "id": "vitamin-k1",
+      "name": "Vitamin K1",
+      "substance": "Phylloquinon (Vitamin K1)",
+      "evidence_summary": "Vitamin K1 zeigt in kontrollierten Studien modeste Effekte auf Knochengesundheit, insbesondere in Kombination mit Calcium und Vitamin D. Neuere Evidenz deutet auf einen kardioprotektiven Mechanismus durch Reduktion von Arterienverkalkungen hin, besonders bei Nierenerkrankungen und Diabetes. Die Gesamtevidenz für Knochenmineraldichte bleibt heterogen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:37338608",
+        "PMID:39680321",
+        "PMID:36460034",
+        "PMID:34649591",
+        "PMID:34637494"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Warfarin und andere Vitamin-K-Antagonisten",
+          "effect": "Verminderte antikoagulante Wirkung durch erhöhte Vitamin-K-abhängige Faktorensynthese",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Bisphosphonate (Alendronat, Risedronat)",
+          "effect": "Keine nennenswerte Wechselwirkung; kombinierte Wirkung auf Knochendichte ist additiv schwach",
+          "severity": "gering"
+        },
+        {
+          "drug": "Mineralöl-Abführmittel",
+          "effect": "Reduzierte K1-Resorption durch Lipid-Malabsorption",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Therapie mit Vitamin-K-Antagonisten (z. B. Warfarin) ohne ärztliche Überwachung",
+        "Bekannte Überempfindlichkeit gegenüber Vitamin K1",
+        "Schwere Lebererkrankungen mit Koagulopathie"
+      ],
+      "optimal_forms": [
+        "Phylloquinon (natürliches K1, beste Bioverfügbarkeit)",
+        "Mikroverkapselte Formen (verbesserte Stabilität und GI-Toleranz)",
+        "In Kombination mit fettreichen Mahlzeiten (Vitamin K ist fettlöslich)"
+      ],
+      "intake_notes": "Mit Mahlzeiten einnehmen um Absorption zu maximieren. Bei Warfarin-Therapie konstante Dosierung und regelmäßige INR-Überwachung erforderlich. Typische Dosis: 90–120 μg täglich.",
+      "categories": [
+        "Knochen & Gelenke",
+        "Herzgesundheit"
+      ]
+    },
+    "folsaeure": {
+      "id": "folsaeure",
+      "name": "Folsäure",
+      "substance": "Pteroylmonoglutaminsäure (Folat, Vitamin B9)",
+      "evidence_summary": "Folsäure ist essentiell für DNA-Synthese, Zellproliferation und Methylierungsprozesse. Ausreichende Zufuhr reduziert Neuralrohrdefekte bei Schwangerschaften und unterstützt kardiovaskuläre sowie neurologische Funktion. Bioverfügbarkeit synthetischer Folsäure ist höher als natürlicher Folate.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:21633033",
+        "PMID:27021449",
+        "PMID:29099355"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Methotrexat",
+          "effect": "Folsäure antagonisiert Methotrexat-Wirkung; Dosierung und Timing koordinieren",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Phenytoin / Phenobarbital",
+          "effect": "Antikonvulsiva erhöhen Folsäure-Metabolismus; höhere Zufuhr erforderlich",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Sulfonamide / Trimethoprim",
+          "effect": "Hemmen Dihydrofolatreduktase; erhöhtes Defizitrisiko bei Langzeitnutzung",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Protonenpumpenhemmer / H2-Blocker",
+          "effect": "Reduzieren gastrale Säure und Folat-Absorptionseffizienz",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Nicht-diagnostizierte vitamin-B12-Mangel (Folsäure kann neurologische B12-Defizit-Symptome maskieren)",
+        "Bestimmte Lymphom- oder Leukämie-Behandlungen (DHFR-Inhibitoren)"
+      ],
+      "optimal_forms": [
+        "Methylfolat/Methyltetrahydrofolat (bioaktive Form, ideal für MTHFR-Polymorphismen)",
+        "Folinsäure/Leukovorin (Calciumfolinat, wenn schnelle Wirkung nötig)",
+        "Synthetische Folsäure (kostengünstig, hohe Bioverfügbarkeit bei normaler Metabolisierung)"
+      ],
+      "intake_notes": "Optimale Tagesaufnahme: 400 mcg (Erwachsene), 600 mcg (Schwangerschaft). Mit Mahlzeit für bessere Absorptio; separate Einnahme von B12 empfohlen.",
+      "categories": [
+        "Hormonbalance",
+        "Stimmung",
+        "Herzgesundheit"
+      ]
+    },
+    "vitamin-b6": {
+      "id": "vitamin-b6",
+      "name": "Vitamin B6",
+      "substance": "Pyridoxin / Pyridoxal-5-Phosphat (aktive Form)",
+      "evidence_summary": "Vitamin B6 spielt als Kofaktor in Energiestoffwechsel und neuronalen Prozessen eine zentrale Rolle. Studien deuten auf Effekte bei Stressreduktion, Angstabbau und Ermüdungsresistenz hin, besonders in Kombination mit anderen B-Vitaminen oder Magnesium. Die Evidenz für isolierte B6-Effekte ist noch begrenzt.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:33864354",
+        "PMID:37786445",
+        "PMID:35851507"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Levodopa (L-Dopa)",
+          "effect": "Hohe B6-Dosen können die antiparkinsonische Wirkung abschwächen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Phenobarbital / Phenytoin",
+          "effect": "Antikonvulsiva können B6-Spiegel senken; erhöhte Supplementierung erforderlich",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Isoniazid",
+          "effect": "Isoniazid erhöht B6-Bedarf durch Komplexbildung",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Sensible Neuropathie in der Vorgeschichte (hohes Risiko für dosisabhängige Neurotoxizität bei >200 mg/Tag)",
+        "Überempfindlichkeit gegen Pyridoxin"
+      ],
+      "optimal_forms": [
+        "Pyridoxal-5-Phosphat (P5P) — aktive, biologisch sofort verfügbare Form",
+        "Pyridoxinhydrochlorid — kostengünstiger, aber weniger direkte Bioverfügbarkeit"
+      ],
+      "intake_notes": "Wasserlöslich, daher Magenverstimmungen gering. Optimal mit B-Komplex kombiniert. Nicht dauerhaft >100 mg/Tag ohne ärztliche Überwachung.",
+      "categories": [
+        "Stimmung",
+        "Stress",
+        "Energie",
+        "Fokus"
+      ]
+    },
+    "biotin": {
+      "id": "biotin",
+      "name": "Biotin",
+      "substance": "Biotin (Vitamin B7, Coenzym R)",
+      "evidence_summary": "Biotin ist ein essentieller Cofaktor für multiple Carboxylase-Enzyme und spielt eine Rolle im Energiestoffwechsel. Hochdosiertes Biotin (300 mg/Tag) zeigte in kontrollierten Studien stabilisierende Effekte auf MS-Progression. Die Datenlage für andere Indikationen wie Depression oder Angststörungen ist begrenzt und basiert primär auf Kombinations-Interventionen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:29150274",
+        "PMID:33171595",
+        "PMID:37256965",
+        "PMID:32428983"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikonvulsiva (Phenytoin, Phenobarbital, Carbamazepin)",
+          "effect": "Können Biotin-Absorption und -Status beeinträchtigen, besonders bei Langzeittherapie",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antibiotika (Sulfonamide, Trimethoprim)",
+          "effect": "Können Biotin-Absorption im Darm reduzieren",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Überempfindlichkeit gegen Biotin",
+        "Biotin-defiziente Störungen erfordern ärztliche Überwachung (nicht als Selbstmedikation)"
+      ],
+      "optimal_forms": [
+        "Hochdosiertes Biotin 100-300 mg täglich (für MS-bezogene Indikationen basierend auf RCT-Evidenz)",
+        "Standarddosiertes Biotin 2,5-10 mg täglich (für Haut, Haare, Nägel und metabolische Unterstützung)",
+        "Als Bestandteil von B-Komplexen für synergistische Effekte"
+      ],
+      "intake_notes": "Biotin kann unabhängig von Mahlzeiten eingenommen werden. Hochdosen (>100 mg/Tag) sollten ärztlich überwacht werden, besonders bei MS oder neurologischen Erkrankungen.",
+      "categories": [
+        "Stimmung",
+        "Entzündung",
+        "Immunsystem"
+      ]
+    },
+    "calcium": {
+      "id": "calcium",
+      "name": "Calcium",
+      "substance": "Calcium (Mengenelementaler Mineralstoff)",
+      "evidence_summary": "Calcium in Kombination mit Vitamin D reduziert nachweislich das Frakturrisiko bei postmenopausalen Frauen um etwa 15 % insgesamt und um 30 % bei Hüftfrakturen. Die Evidenz stützt sich auf mehrere RCTs und Meta-Analysen, einschließlich großer Langzeitstudien wie der Women's Health Initiative.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:26510847",
+        "PMID:33237064",
+        "PMID:38691368",
+        "PMID:40259289"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Tetracycline (z.B. Doxycyclin)",
+          "effect": "Calcium reduziert Absorption von Tetracyclinen; mindestens 2h zeitlicher Abstand erforderlich",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Fluoroquinolone (z.B. Ciprofloxacin)",
+          "effect": "Calcium beeinträchtigt Aufnahme von Fluoroquinolonen; zeitliche Trennung notwendig",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Bisphosphonate (z.B. Alendronsäure)",
+          "effect": "Calcium reduziert Bioverfügbarkeit von Bisphosphonaten; mindestens 2h Abstand",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Levothyroxin",
+          "effect": "Calcium kann Absorption von Schilddrüsenhormonen hemmen; 4-6h Abstand empfohlen",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Primärer Hyperparathyreoidismus",
+        "Sarkoidose oder andere Erkrankungen mit erhöhter Calcitriol-Produktion",
+        "Hypercalcämie (erhöhte Blutcalciumspiegel)",
+        "Nierensteine in der Anamnese (besonders bei vorherigen Calciumoxalat-Steinen)",
+        "Schwere chronische Nierenerkrankung (eGFR <30 ml/min/1.73m²)"
+      ],
+      "optimal_forms": [
+        "Calciumcitrat (bessere Bioverfügbarkeit, magensäureunabhängig, bei Achlorhydrie bevorzugt)",
+        "Calciumcarbonat (kosteneffektiv, erfordert Magensäure für optimale Absorption)",
+        "Calciummalat (gute Bioverfügbarkeit, kombiniert mit Malat für Energiestoffwechsel)"
+      ],
+      "intake_notes": "Maximale Einzeldosis 500mg für optimale Absorption; tägliche Gesamtzufuhr idealerweise mit Vitamin D und bei Mahlzeiten. Mindestens 2-4h Abstand zu Antibiotika/Hormonpräparaten",
+      "categories": [
+        "Knochen & Gelenke",
+        "Herzgesundheit"
+      ]
+    },
+    "kalium": {
+      "id": "kalium",
+      "name": "Kalium",
+      "substance": "Kalium (K+), Kaliumionen",
+      "evidence_summary": "Kalium spielt eine zentrale Rolle in der Herzrhythmus-Regulation; ausreichende Serumkonzentrationen reduzieren das Risiko von Herzrhythmusstörungen. Eine Meta-Analyse zeigt eine U-förmige Dosis-Wirkungs-Beziehung zur Blutdrucksenkung. Bei Diabetikern mit Schlafstörungen kann Kalium-Supplementierung in Kombination mit Magnesium die Schlafqualität verbessern.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:40879429",
+        "PMID:39534260",
+        "PMID:39215972",
+        "PMID:32500831",
+        "PMID:32199708"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "ACE-Hemmer (z.B. Enalapril, Lisinopril)",
+          "effect": "Erhöhtes Hyperkalämie-Risiko durch verminderte renale Kaliumausscheidung",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Angiotensin-II-Rezeptor-Antagonisten (z.B. Valsartan, Losartan)",
+          "effect": "Erhöhtes Hyperkalämie-Risiko durch verminderte renale Kaliumausscheidung",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Aldosteron-Antagonisten (Spironolacton, Eplerenon)",
+          "effect": "Erhöhtes Hyperkalämie-Risiko durch Natrium-Kalium-Austausch-Hemmung",
+          "severity": "hoch"
+        },
+        {
+          "drug": "NSAIDs (z.B. Ibuprofen, Naproxen)",
+          "effect": "NSAIDs reduzieren renale Kaliumausscheidung, erhöhen Hyperkalämie-Risiko",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Lithium",
+          "effect": "Kalium-Supplementierung kann Lithium-Clearance beeinflussen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Diuretika vom Schleifentyp (z.B. Furosemid)",
+          "effect": "Erhöhte Kalium-Verluste; Supplementierung kann notwendig sein",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Hyperkalämie oder Geschichte von Hyperkalämie",
+        "Akutes Nierenversagen oder schwere Nierenfunktionsstörung (GFR <15 mL/min)",
+        "Addison-Krankheit",
+        "Diabetische Ketoazidose",
+        "Severe dehydration"
+      ],
+      "optimal_forms": [
+        "Kaliumcitrat (bessere Magenverträglichkeit, bessere Absorption als Kaliumchlorid)",
+        "Kaliumbicarbonat (alkalisierende Wirkung, weniger gastrointestinale Beschwerden)",
+        "Kaliumchlorid (Standard, aber höheres Risiko für GI-Beschwerden bei höheren Dosen)"
+      ],
+      "intake_notes": "Niemals ohne ärztliche Kontrolle supplementieren. Serumkalium vor und während der Supplementierung regelmäßig messen. Mit Nahrung einnehmen zur besseren Verträglichkeit.",
+      "categories": [
+        "Herzgesundheit",
+        "Blutdruckregulation",
+        "Schlaf"
+      ]
+    },
+    "iodine": {
+      "id": "iodine",
+      "name": "Jod",
+      "substance": "Iodine / Elementares Jod und Jodide (z.B. Natriumjodid, Kaliumjodid)",
+      "evidence_summary": "Jod ist essentiell für die Schilddrüsenfunktion und Hormonproduktion. Ausreichende Zufuhr verhindert Mangelerscheinungen wie Struma und Hypothyreose. Die empfohlene Tagesdosis ist gut etabliert und durch umfangreiche epidemiologische Daten gestützt.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:12936956",
+        "PMID:21371566",
+        "PMID:28049144"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "ACE-Hemmer, Kaliumsparende Diuretika",
+          "effect": "Erhöhtes Hyperkaliämie-Risiko bei Jodid-Supplementation",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antikonvulsiva (z.B. Phenytoin)",
+          "effect": "Mögliche Induktion des Jodstoffwechsels",
+          "severity": "gering"
+        },
+        {
+          "drug": "Lithium",
+          "effect": "Jodmangel kann Lithium-Toxizität verschärfen; hohe Jodzufuhr kann Struma fördern",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Thyreostatika (Propylthiouracil, Methimazol)",
+          "effect": "Jodid kann paradox zu Hyperthyreose führen (Jod-Basedow-Effekt)",
+          "severity": "hoch"
+        }
+      ],
+      "contraindications": [
+        "Manifeste Hyperthyreose oder Thyreoiditis",
+        "Unbehandelte Basedow-Krankheit",
+        "Jodüberempfindlichkeit oder Dermatitis herpetiformis",
+        "Aktive Tuberkulose (kann verschärft werden)"
+      ],
+      "optimal_forms": [
+        "Kaliumjodid (Jodid-Form, hohe Bioverfügbarkeit, stabil)",
+        "Natriumjodid (Alternative, gute Absorption)",
+        "Jodhaltiges Speisesalz (praktisch für Bevölkerung, angereichert)"
+      ],
+      "intake_notes": "Typische Dosierung: 100–200 µg/Tag zur Erhaltung. Obergrenze: 1.100 µg/Tag. Mit Wasser einnehmen. Nicht bei gleichzeitiger Lithium-Therapie ohne ärztliche Überwachung.",
+      "categories": [
+        "Schilddrüse",
+        "Hormonbalance"
+      ]
+    },
+    "chromium": {
+      "id": "chromium",
+      "name": "Chrom",
+      "substance": "Chromium (Cr), Trivalent Chromium [Cr(III)]",
+      "evidence_summary": "Chromium zeigt in mehreren RCTs und Meta-Analysen modeste positive Effekte auf Glukosestoffwechsel und Insulinsensitivität bei Typ-2-Diabetes. Die Gesamtevidenz ist jedoch gemischt, mit variablen Effektgrößen zwischen Studien. Potenzial bei Prävention von Prediabetes, aber weitere Forschung erforderlich.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:39541030",
+        "PMID:33783683",
+        "PMID:38024820",
+        "PMID:40573153",
+        "PMID:40653308"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Insulin / Antidiabetische Medikamente (Metformin, Sulfonylharnstoffe, GLP-1-Agonisten)",
+          "effect": "Chromium verstärkt Insulinsensitivität; erhöhtes Risiko für Hypoglykämie möglich. Ärztliche Überwachung erforderlich.",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Corticosteroide",
+          "effect": "Corticosteroide erhöhen Chromverlust über Urin; Supplementation kann Wirkung partiell ausgleichen.",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Typ-1-Diabetes (unzureichende Evidenz, potenzielles Risiko durch Hypoglykämie)",
+        "Schwangerschaft und Stillzeit (begrenzte Sicherheitsdaten)",
+        "Nierenerkrankungen mit GFR <30 (Chromausscheidung vermindert, Akkumulationsrisiko)"
+      ],
+      "optimal_forms": [
+        "Chromium Picolinate (höchste Bioverfügbarkeit, am besten untersucht)",
+        "Chromium Polynicotinate (Alternative mit guter Absorptionsrate)"
+      ],
+      "intake_notes": "Typische Dosis: 50–200 µg/Tag in Studien. Mindestens 2–3 Monate Supplementation erforderlich für messbare Effekte. Mit Mahlzeiten einnehmen.",
+      "categories": [
+        "Hormonbalance"
+      ]
+    },
+    "mangan": {
+      "id": "mangan",
+      "name": "Mangan",
+      "substance": "Mangan (Mn) / Spurenelement",
+      "evidence_summary": "Mangan ist ein essentielles Spurenelement für Knochenbildung, Knorpelstoffwechsel und antioxidative Abwehr. Die verfügbaren Humanstudien sind begrenzt; Evidenz basiert hauptsächlich auf Tiermodellen und biochemischen Mechanismen. Mangel ist selten, übermäßige Zufuhr kann neurotoxisch wirken.",
+      "evidence_level": "yellow",
+      "sources": [],
+      "drug_interactions": [
+        {
+          "drug": "Tetracycline (z.B. Doxycyclin)",
+          "effect": "Mangan kann Tetracyclin-Absorption reduzieren; mindestens 2h Abstand einhalten",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Fluorochinolone (z.B. Ciprofloxacin)",
+          "effect": "Mangan kann Fluorochinolon-Absorption beeinträchtigen; zeitversetzt einnehmen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Bisphosphonate",
+          "effect": "Mangan kann Bisphosphonat-Absorption reduzieren; 2h Abstand empfohlen",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Chronische Lebererkrankung (erhöhtes Anreicherungsrisiko)",
+        "Morbus Wilson (gestörter Mangan-Metabolismus)",
+        "Berufliche Mangan-Exposition (Akkumulationsgefahr)",
+        "Mangansupplementierung ohne klinische Indikation (Neurotoxizitätsrisiko bei hohen Dosen)"
+      ],
+      "optimal_forms": [
+        "Mangan-Gluconat (bessere Absorption und Tolerabilität)",
+        "Mangan-Zitrat (Bioverfügbarkeit ähnlich wie Gluconat)",
+        "Mangan als Bestandteil von Multimineralpräparaten (physiologische Dosen)"
+      ],
+      "intake_notes": "Typische Dosierung: 2–5 mg/Tag (Adequate Intake). Mit Nahrung einnehmen zur besseren Toleranz. Supplementierung nur bei dokumentiertem Mangel oder therapeutischer Notwendigkeit.",
+      "categories": [
+        "Knochen & Gelenke",
+        "Entzündung"
+      ]
+    },
+    "l-glutamin": {
+      "id": "l-glutamin",
+      "name": "L-Glutamin",
+      "substance": "L-Glutamin (2-Amino-4-carbamoyl-butansäure)",
+      "evidence_summary": "L-Glutamin zeigt in Studien positive Effekte auf Wundheilung und Immunfunktion unter Stress-Bedingungen, besonders bei Sportlern und Patienten mit Gewebeverletzungen. Die Evidenz ist heterogen: Während Meta-Analysen zur Wundheilung signifikante Effekte zeigen, fallen klinische Ergebnisse bei kritisch kranken Patienten gemischter aus. Neuere Arbeiten deuten auf Vorteile für muköse Immunität und Hormonhaushalt bei intensiver körperlicher Belastung hin.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:36892959",
+        "PMID:34444657",
+        "PMID:32677037",
+        "PMID:36082909",
+        "PMID:38193521"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikonvulsiva (z.B. Phenytoin, Valproinsäure)",
+          "effect": "Theoretische Konkurrenz um Aufnahme, klinische Relevanz unklar",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Hepatische Enzephalopathie oder portale Hypertension (glutamaterg wirksam)",
+        "Glutaminabhängige neoplastische Erkrankungen (z.B. bestimmte Leukämien) — mit Onkologe klären",
+        "Überempfindlichkeit gegen L-Glutamin"
+      ],
+      "optimal_forms": [
+        "Freies L-Glutamin-Pulver (höchste Bioverfügbarkeit, ~95%)",
+        "Kapseln (dosierungsgenauer, aber leicht höhere Kosten)",
+        "Enteral über Trinknahrung (besonders in klinischen Settings mit Malnutrition)"
+      ],
+      "intake_notes": "5–10 g täglich in 2–3 Dosen, mit Mahlzeiten oder separat. Bei Sportlern: post-workout bevorzugt. Zyklisch einnehmen (z.B. 4 Wochen an, 1 Woche Pause).",
+      "categories": [
+        "Sport & Erholung",
+        "Immunsystem",
+        "Verdauung"
+      ]
+    },
+    "l-arginin": {
+      "id": "l-arginin",
+      "name": "L-Arginin",
+      "substance": "L-Arginin (2-Amino-5-guanidinopentansäure)",
+      "evidence_summary": "L-Arginin zeigt in Meta-Analysen moderate Effekte auf Wundheilung durch erhöhte Kollagensynthese, insbesondere unter Stressbedingungen. Für endotheliale Funktion und Ausdauerleistung gibt es erste positive Hinweise über NO-Bioavailabilität, doch die Gesamtevidenz bleibt heterogen und teilweise begrenzt auf spezifische Populationen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:34444657",
+        "PMID:34965876",
+        "PMID:32677037",
+        "PMID:36480969"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Phosphodiesterase-5-Inhibitoren (z.B. Sildenafil)",
+          "effect": "Additive Wirkung auf NO-Signalisierung; Hypotonie-Risiko",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antihypertensiva",
+          "effect": "L-Arginin kann blutdrucksenkende Effekte verstärken",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antikoagulantien / Antiplatelet-Mittel",
+          "effect": "Theoretische additive Wirkung; klinische Relevanz unklar",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Akuter Myokardinfarkt (erhöhte Sterblichkeit in Studien berichtet)",
+        "Herpes simplex / Herpes zoster (Arginin fördert Replikation)",
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)",
+        "Unkontrollierte Hypertonie"
+      ],
+      "optimal_forms": [
+        "L-Arginin-Hydrochlorid (gute Bioverfügbarkeit, kostengünstig)",
+        "L-Arginin-Citrat oder -Malat (bessere Magenverträglichkeit)",
+        "Komplexe mit L-Citrullin (synergistisch für NO-Bioavailabilität)"
+      ],
+      "intake_notes": "Typische Dosis 2–6 g/Tag verteilt; mit Mahlzeiten nehmen. Magen-Darm-Beschwerden möglich. Mindestens 2–4 Wochen für optimale Effekte.",
+      "categories": [
+        "Sport & Erholung",
+        "Herzgesundheit",
+        "Entzündung"
+      ]
+    },
+    "l-carnitin": {
+      "id": "l-carnitin",
+      "name": "L-Carnitin",
+      "substance": "L-Carnitin (3-Carboxy-2-hydroxy-N,N,N-trimethyl-1-propanaminiumhydroxid)",
+      "evidence_summary": "L-Carnitin zeigt in Studien moderate Effekte auf Lipidprofile und Apolipoproteien, besonders bei Personen mit Carnitin-Mangel oder während intensiven Ausdauertrainings. Die Evidenz für allgemeine Leistungssteigering ist begrenzt und widersprüchlich, bei älteren Menschen und Sportlern jedoch vielversprechender.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:31255604"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikonvulsiva (z.B. Valproinsäure)",
+          "effect": "Können Carnitin-Spiegel senken; regelmäßige Monitoring empfohlen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Dialyse-assoziierte Carnitin-Verluste",
+          "effect": "Nierenpatienten unter Hämodialyse können von Supplementation profitieren",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)",
+        "Bekannte Myopathien oder muskuläre Dystrophien (individuelle Bewertung erforderlich)",
+        "Schwere Nierenfunktionsstörungen (erhöhte Trimethylamin-Bildung möglich)"
+      ],
+      "optimal_forms": [
+        "L-Carnitin-Tartrat (bessere Absorption, besonders für Sport-Anwendungen)",
+        "Acetyl-L-Carnitin (bessere Bioverfügbarkeit für neurologische Effekte)",
+        "Freie L-Carnitin-Base (kostengünstiger, adäquate Absorption)"
+      ],
+      "intake_notes": "Typische Dosierung: 2-4g täglich verteilt auf mehrere Dosen. Mit Kohlenhydraten + Protein kombinieren für bessere Aufnahme. Effekte treten erst nach 2-4 Wochen auf.",
+      "categories": [
+        "Sport & Erholung",
+        "Herzgesundheit",
+        "Energie"
+      ]
+    },
+    "taurin": {
+      "id": "taurin",
+      "name": "Taurin",
+      "substance": "2-Aminoethanesulfonsäure (Taurin)",
+      "evidence_summary": "Taurin ist eine semi-essentielle Aminosäure mit Rollen in Zellschutz, Energiestoffwechsel und kardiovaskulärer Funktion. Evidenz für spezifische therapeutische Effekte beim Menschen ist begrenzt; die bereitgestellten Studien behandeln Taurin hauptsächlich als Komponente von Multikomponentenpräparaten statt als isolierte Intervention.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:37357646",
+        "PMID:39571910"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Lithium",
+          "effect": "Taurin kann renal-elektrolytischen Haushalt beeinflussen; Monitoring erforderlich",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Schwere Nierenfunktionsstörung (eGFR < 30 mL/min)",
+        "Bekannte Überempfindlichkeit gegen Taurin",
+        "Gallensteinerkrankung (theoretisches Risiko durch Gallensäurenmetabolismus)"
+      ],
+      "optimal_forms": [
+        "Freie L-Taurin-Pulverform (beste Absorption, hohe Bioverfügbarkeit)",
+        "Kapseln oder Tabletten mit mindestens 500 mg pro Dosis",
+        "In Multikomponentenpräparaten mit Kollagen, Methionin und Zystein (synergistische Effekte auf Haargesundheit)"
+      ],
+      "intake_notes": "Typische Dosis 500–2.000 mg täglich, aufgeteilt auf 2–3 Gaben. Mit Flüssigkeit einnehmen. Langzeitverträglichkeit gut dokumentiert.",
+      "categories": [
+        "Sport & Erholung",
+        "Herzgesundheit",
+        "Fokus"
+      ]
+    },
+    "bcaa": {
+      "id": "bcaa",
+      "name": "BCAA (Branched-Chain Amino Acids)",
+      "substance": "Leucin, Isoleucin, Valin (verzweigtkettige Aminosäuren)",
+      "evidence_summary": "BCAAs zeigen in Studien positive Effekte auf Muskelstoffwechsel und Trainingseffizienz bei aktiven Personen. Bei Zirrhose-Patienten mit Sarkopenie ist die Evidenz gemischt — einige Studien deuten auf Muskelqualitätsverbesserungen hin, andere finden keine signifikanten Vorteile. Die Reduktion von BCAA-Serumspiegeln durch präbiotische Interventionen korreliert mit verbesserter Lebergesundheit.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:37673036",
+        "PMID:38424099",
+        "PMID:38777422",
+        "PMID:40219047",
+        "PMID:38404263"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Levodopa (L-DOPA)",
+          "effect": "BCAAs konkurrieren mit Levodopa um intestinale Absorption und BBB-Transport; reduzierte Wirksamkeit möglich",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Phenelzin / MAO-Hemmer",
+          "effect": "Theoretisches Hypertonietrisiko durch BCAA-Metaboliten; Kombination vermeiden",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Ahornsirupkrankheit (MSUD) — genetischer Defekt des BCAA-Metabolismus",
+        "Fortgeschrittene Lebererkrankung — Akkumulationsrisiko; ärztliche Überwachung erforderlich",
+        "Schwangerschaft und Stillzeit — unzureichende Sicherheitsdaten"
+      ],
+      "optimal_forms": [
+        "Freie Aminosäuremischung (schnelle Absorption, ideal für peritrainin)",
+        "Pulver oder Kapseln (Dosiergenauigkeit)",
+        "2:1:1-Verhältnis Leucin:Isoleucin:Valin (optimale Proteinsyntheseaktivierung)"
+      ],
+      "intake_notes": "30–50 min vor/während Trainingseinheiten einnehmen. Typische Dosis: 5–20 g/Tag, aufgeteilt. Mit Wasser/Kohlenhydraten für bessere Absorption. Pausen erwägen, um Desensibilisierung zu vermeiden.",
+      "categories": [
+        "Sport & Erholung",
+        "Muskelaufbau",
+        "Energie"
+      ]
+    },
+    "glycin": {
+      "id": "glycin",
+      "name": "Glycin",
+      "substance": "Glycin (2-Aminoessigsäure, C₂H₅NO₂)",
+      "evidence_summary": "Glycin ist eine nicht-essentielle Aminosäure mit moderater Evidenz für Schlafqualität und als Glutathion-Precursor zur Reduktion oxidativen Stresses. In Kombination mit NAC (GlyNAC) zeigt sich in RCTs Verbesserung der Mitochondrienfunktion und physischen Leistung bei älteren Erwachsenen. Als Chelat-Form (Ferrous Bisglycinate) verbessert Glycin die Eisenbioverfügbarkeit und wird als Träger in Kollagen-Präparaten verwendet.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:35975308",
+        "PMID:36728680",
+        "PMID:27852613",
+        "PMID:34808597",
+        "PMID:35276810"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Meloxicam / NSAIDs",
+          "effect": "Theoretische Wechselwirkung — Glycin könnte NSAID-Absorption beeinflussen; klinische Relevanz unklar",
+          "severity": "gering"
+        },
+        {
+          "drug": "Antikonvulsiva (Phenytoin, Carbamazepin)",
+          "effect": "Glycin kann inhibitorisch auf NMDA-Rezeptoren wirken; mögliche Interferenz mit antikonvulsiver Wirkung",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Schizophrenie oder psychotische Störungen (Glycin kann negative Symptome verschlimmern)",
+        "Glycinenzephalopathie (genetische Störung des Glycinstoffwechsels)",
+        "Schwangerschaft und Stillzeit (begrenzte Sicherheitsdaten, Verwendung als Eisenchelat ist etablierter)"
+      ],
+      "optimal_forms": [
+        "Freies Glycin-Pulver oder Kapsel (direkte Supplementierung für Schlaf/antioxidative Effekte)",
+        "Ferrous Bisglycinate (für Eisenaufnahme — bessere Bioverfügbarkeit und Verträglichkeit als Eisensalze)",
+        "Kollagen-Peptide mit Vitamin C angereichert (für Kollagensynthese und Muskelkraft; Glycin ist Hauptkomponente)"
+      ],
+      "intake_notes": "Freies Glycin 3–5 g abends für Schlafqualität. Mit Wasser einnehmen. Ferrous Bisglycinate 24–27 mg Eisen täglich mit Nahrung (bessere Toleranz). Kollagen 10–20 g mit Vitamin C.",
+      "categories": [
+        "Schlaf",
+        "Stress",
+        "Sport & Erholung",
+        "Knochen & Gelenke",
+        "Entzündung"
+      ]
+    },
+    "rhodiola-rosea": {
+      "id": "rhodiola-rosea",
+      "name": "Rhodiola Rosea",
+      "substance": "Rhodiola rosea L. (Extrakt), Hauptwirkstoff: Salidrosid",
+      "evidence_summary": "Rhodiola rosea zeigt in mehreren RCTs moderate Effekte auf körperliche Leistung und Stressresilienz, die Evidenz bleibt aber heterogen. Salidrosid als Hauptwirkstoff wird auf physische Ausdauer und mentale Ermüdungsresistenz untersucht. Die meisten positiven Effekte zeigen sich bei chronischer Supplementation oder kombinierten Protokollen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:37495266",
+        "PMID:40289957",
+        "PMID:39601362",
+        "PMID:41374026",
+        "PMID:41829897"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "MAO-Hemmer (z.B. Moclobemid, Phenelzin)",
+          "effect": "Theoretisch erhöhtes Serotonin-Syndrom-Risiko; klinische Relevanz unklar",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Immunsuppressiva",
+          "effect": "Rhodiola kann Immunfunktion stimulieren; potenzielle Interferenz mit Immunsuppression",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Bipolare Störung (Risiko manischer Phasen)",
+        "Laufende Behandlung mit MAO-Hemmern",
+        "Überempfindlichkeit gegen Rosaceae-Familie"
+      ],
+      "optimal_forms": [
+        "Standardisierter Extrakt 3% Rosavine / 1% Salidrosid (beste Bioverfügbarkeit und Konsistenz)",
+        "Reines Salidrosid (für isolierte Wirkstoffstudien, aber begrenzte praktische Daten)"
+      ],
+      "intake_notes": "200-600 mg/Tag Extrakt in 2-3 Dosen, mindestens 4-6 Wochen für optimale Effekte. Morgens/früh am Tag einnehmen (aktivierend). Mit Mahlzeiten verträglich.",
+      "categories": [
+        "Sport & Erholung",
+        "Stress",
+        "Energie",
+        "Fokus"
+      ]
+    },
+    "maca-lepidium-meyenii": {
+      "id": "maca-lepidium-meyenii",
+      "name": "Maca",
+      "substance": "Lepidium meyenii (Maca-Wurzel-Extrakt)",
+      "evidence_summary": "Maca zeigt in präklinischen Modellen potenzielle antifatigue-Effekte durch verbesserte Laktat-Clearance, konnte diese Effekte jedoch in einer kontrollierten Studie an trainierten Basketballspielern nicht signifikant nachweisen. Erste Hinweise auf Immunmodulation (IFN-γ-Sekretion), aber begrenzte Humanstudien. Langzeiteffektivität und optimale Dosierung noch unklar.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:40960048",
+        "PMID:39781531"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Hormonersatztherapien (HRT)",
+          "effect": "Maca kann östrogen-ähnliche Effekte haben; theoretische Wechselwirkung, klinische Relevanz unklar",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)",
+        "Hormonabhängige Tumoren (Brust-, Eierstock-, Gebärmutterkrebs) — theoretisches Risiko",
+        "Schilddrüsenerkrankungen (Maca enthält Goitrogene)"
+      ],
+      "optimal_forms": [
+        "Standardisierter Wurzel-Extrakt (4:1 oder höher konzentriert — bessere Bioverfügbarkeit)",
+        "Pulver aus Rohwurzel (höchster Polyphenol-Gehalt, aber variable Potenz)"
+      ],
+      "intake_notes": "1500–3000 mg/Tag in geteilten Dosen mit Mahlzeiten. Mindestens 2–4 Wochen Einnahme vor Effektbeurteilung. Mit ausreichend Wasser einnehmen.",
+      "categories": [
+        "Energie",
+        "Sport & Erholung",
+        "Hormonbalance",
+        "Immunsystem"
+      ]
+    },
+    "ginseng": {
+      "id": "ginseng",
+      "name": "Ginseng",
+      "substance": "Panax ginseng / Panax quinquefolius (Ginsenoside-Komplex)",
+      "evidence_summary": "Ginseng zeigt in mehreren RCTs positive Effekte auf Lipidprofil, kardiovaskuläre Biomarker und kognitive Funktion. Die Evidenz für Energiesteigerung und sexuelle Funktion ist moderat, basierend auf kleineren kontrollierten Studien. Ginsenoside als Hauptwirkstoffe beeinflussen Lipidmetabolismus und möglicherweise die Blut-Hirn-Schranke.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:38877862",
+        "PMID:39387709",
+        "PMID:34396468",
+        "PMID:32893745"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Warfarin / Cumarin-Antikoagulanzien",
+          "effect": "Ginseng kann die gerinnungshemmende Wirkung reduzieren; INR-Monitoring erforderlich",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Stimulanzien (Koffein, Amphetamine)",
+          "effect": "Additiver stimulierender Effekt möglich; erhöhte Herzfrequenz / Blutdruck",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Monoaminoxidase-Inhibitoren (MAOIs)",
+          "effect": "Theoretisches Risiko für hypertonische Krise durch Noradrenalin-Freisetzung",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Diabetesmedikamente (Insulin, Metformin)",
+          "effect": "Ginseng kann Blutzuckerspiegel senken; Hypoglykämie-Risiko erhöht",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Schlafstörungen / Insomnie (stimulierendes Potenzial)",
+        "Unkontrollierter Bluthochdruck",
+        "Psychotische Störungen oder schizophrene Spektrum-Erkrankungen",
+        "Schwangerschaft / Stillzeit (unzureichende Sicherheitsdaten)",
+        "Hormonabhängige Tumoren (Östrogenabhängigkeit teilweise untersucht)"
+      ],
+      "optimal_forms": [
+        "Standardisierter Extrakt 4-7% Ginsenoside (beste Bioverfügbarkeit und Reproduzierbarkeit)",
+        "Panax ginseng (Asiatischer Ginseng) für kardiovaskuläre und metabolische Effekte",
+        "Panax quinquefolius (Amerikanischer Ginseng / Cereboost®) für kognitive Effekte",
+        "Kapsel oder Pulver (Pflanzenwirkstoff-Stabilität gegenüber flüssigen Formulierungen)"
+      ],
+      "intake_notes": "200-400 mg standardisierter Extrakt täglich verteilt auf morgens/mittags (nicht abends). Mit Mahlzeiten einnehmen. Zyklisch verwenden: 2-3 Wochen Ein-, 1 Woche Pause zur Toleranzerhaltung.",
+      "categories": [
+        "Energie",
+        "Fokus",
+        "Herzgesundheit",
+        "Stress"
+      ]
+    },
+    "lions-mane": {
+      "id": "lions-mane",
+      "name": "Lion's Mane",
+      "substance": "Hericium erinaceus (Extrakt, Fruchtkörper oder Myzel)",
+      "evidence_summary": "Lion's Mane zeigt in frühen klinischen Studien vielversprechende Effekte auf kognitive Funktion, Stressabbau und Stimmung bei jungen Erwachsenen. Die Substanz stimuliert die Nerve Growth Factor (NGF)-Produktion. Die Evidenzbasis ist jedoch noch begrenzt und erfordert weitere große randomisierte Studien.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:38004235"
+      ],
+      "drug_interactions": [],
+      "contraindications": [
+        "Allergie gegen Pilze oder Hericium erinaceus",
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)",
+        "Blutgerinnungsstörungen (theoretisches Risiko basierend auf In-vitro-Daten)"
+      ],
+      "optimal_forms": [
+        "Standardisierter Extrakt (mind. 30% Polysaccharide) — bessere Bioverfügbarkeit und Dosiskonsistenz",
+        "Fruchtkörper-Pulver (ganze getrocknete Frucht) — höherer Gehalt an bioaktiven Verbindungen, aber variable Potenz"
+      ],
+      "intake_notes": "Typische Dosierung: 500–3000 mg täglich in geteilten Dosen. Effekte zeigen sich typischerweise nach 4–8 Wochen kontinuierlicher Einnahme.",
+      "categories": [
+        "Fokus",
+        "Stimmung",
+        "Stress"
+      ]
+    },
+    "reishi": {
+      "id": "reishi",
+      "name": "Reishi",
+      "substance": "Ganoderma lucidum (Lingzhi-Pilz)",
+      "evidence_summary": "Reishi zeigt in frühen klinischen Studien potenzielle Effekte auf psychologischen Stress und Stressabbau. Eine RCT deutet auf Verbesserungen in Stressparametern und kardiovaskulärer Effizienz hin, wobei die Gesamtevidenzlage noch begrenzt ist. Weitere hochwertige Langzeitstudien sind erforderlich.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:39241163"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikoagulanzien (Warfarin, DOAC)",
+          "effect": "Reishi kann gerinnungshemmende Effekte haben; kombinierte Nutzung erfordert ärztliche Überwachung",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Immunsuppressiva",
+          "effect": "Reishi kann Immunfunktion stimulieren und Wirksamkeit von Immunsuppressiva beeinträchtigen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antidiabetika",
+          "effect": "Reishi kann Blutzuckerspiegel senken; Überwachung notwendig",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Blutgerinnungsstörungen oder aktive Blutung",
+        "Geplante Operationen (mindestens 2 Wochen vor Eingriff absetzen)",
+        "Allergien gegen Pilze oder Reishi-Bestandteile",
+        "Gleichzeitige Antikoagulanzien-Therapie (nur unter ärztlicher Aufsicht)"
+      ],
+      "optimal_forms": [
+        "Standardisierter Extrakt (mind. 10% Polysaccharide, 7% Triterpene)",
+        "Pilzpulver aus Fruchtkörper (höher dosiert als Myzel)",
+        "Doppelextraktion (wässrig + alkoholisch) für optimale Bioverfügbarkeit"
+      ],
+      "intake_notes": "500–1000 mg täglich in geteilten Dosen mit Mahlzeiten. Effekte treten typischerweise nach 2–4 Wochen auf. Mit Wasser oder leichtem Essen einnehmen.",
+      "categories": [
+        "Stress",
+        "Schlaf",
+        "Immunsystem"
+      ]
+    },
+    "beta-alanin": {
+      "id": "beta-alanin",
+      "name": "Beta-Alanin",
+      "substance": "β-Alanin (3-Aminopropionsäure)",
+      "evidence_summary": "Beta-Alanin erhöht intramuskuläre Carnosinkonzentrationen und verbessert nachweislich die Leistung bei hochintensiven Trainingseinheiten von 1-4 Minuten Dauer. Mehrere Meta-Analysen bestätigen eine durchschnittliche Leistungssteigerung von 2-3%, besonders im Kraft- und anaeroben Ausdauertraining.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:17645874",
+        "PMID:26351251",
+        "PMID:30360742",
+        "PMID:21383823"
+      ],
+      "drug_interactions": [],
+      "contraindications": [
+        "Keine bekannten absoluten Kontraindikationen",
+        "Vorsicht bei Carnosinämie oder Carnosinurie (genetische Stoffwechselstörungen)"
+      ],
+      "optimal_forms": [
+        "Pulver (Absorption unabhängig von Mahlzeiten, gute Bioverfügbarkeit)",
+        "Tabletten (identische Wirksamkeit, aber weniger praktisch in höheren Dosen)"
+      ],
+      "intake_notes": "3-6g täglich in 2-3 Portionen, mit Kohlenhydraten und Protein für bessere Aufnahme. Effekt tritt nach 3-4 Wochen regelmäßiger Einnahme auf.",
+      "categories": [
+        "Sport & Erholung",
+        "Energie",
+        "Fokus"
+      ]
+    },
+    "citrullin-malat": {
+      "id": "citrullin-malat",
+      "name": "Citrullin Malat",
+      "substance": "L-Citrullin-Malat (2:1 Verhältnis)",
+      "evidence_summary": "Citrullin Malat zeigt in mehreren RCTs eine Verbesserung der Trainingsleistung, insbesondere durch verbesserte Blutflussparameter und reduzierte Muskelermüdung. Die Evidenz für muskuläre Ausdauer und Kraft ist konsistent positiv, während Effekte auf Hypertrophie weniger eindeutig sind.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:23216519",
+        "PMID:20386132",
+        "PMID:21297567",
+        "PMID:18391169"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Sildenafil (Viagra) / PDE5-Hemmer",
+          "effect": "Additive vasodilatorische Effekte; Blutdruckabfall möglich",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antihypertensiva",
+          "effect": "Möglicherweise verstärkte blutdrucksenkende Wirkung",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Unkontrollierte Hypotonie",
+        "Akute kardiovaskuläre Ereignisse (Infarkt, Schlaganfall)",
+        "Schwangerschaft und Stillzeit (unzureichende Daten)"
+      ],
+      "optimal_forms": [
+        "Citrullin Malat 2:1 Pulver (höchste Bioverfügbarkeit, kostengünstig)",
+        "Citrullin Malat Kapseln (Dosierungsgenauigkeit, aber höherer Preis)"
+      ],
+      "intake_notes": "6-8g etwa 60min vor Training mit Flüssigkeit. Regelmäßige Einnahme über mehrere Wochen für optimale Effekte empfohlen. Mit Kohlenhydraten kombiniert wirksamer.",
+      "categories": [
+        "Sport & Erholung",
+        "Herzgesundheit",
+        "Energie"
+      ]
+    },
+    "hmb": {
+      "id": "hmb",
+      "name": "HMB (β-Hydroxy-β-Methylbutyrat)",
+      "substance": "β-Hydroxy-β-Methylbutyrat (HMB)",
+      "evidence_summary": "HMB zeigt in mehreren RCTs und Meta-Analysen moderate positive Effekte auf Muskelprotein-Synthese und Muskelerhalt, besonders bei älteren Erwachsenen mit Sarkopenie und Krebspatienten. Die Kombination mit Krafttraining verstärkt die Effekte deutlich. Effekte auf Sportleistung bei trainierten Athleten sind weniger konsistent.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:35301826",
+        "PMID:37248756",
+        "PMID:38489992",
+        "PMID:39999663",
+        "PMID:31936727"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikoagulantien (z.B. Warfarin)",
+          "effect": "Theoretisches Risiko erhöhter Blutungsneigung; klinische Relevanz unklar",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)",
+        "Schwere Nierenerkrankung (begrenzte Elimination von HMB-Metaboliten)"
+      ],
+      "optimal_forms": [
+        "HMB-Monolith oder HMB-Freisäure (höhere Bioverfügbarkeit als HMB-Ca)",
+        "HMB-Ca (Calciumsalz, günstigere Alternative mit ähnlichen Effekten)",
+        "In Kombination mit Proteinzufuhr und Widerstandstraining für optimale Effekte"
+      ],
+      "intake_notes": "Typische Dosis 3g/Tag in 3 Portionen à 1g. Effekte treten nach 2-4 Wochen auf. Kombiniert mit Krafttraining oder Proteinzufuhr besonders wirksam.",
+      "categories": [
+        "Sport & Erholung",
+        "Knochen & Gelenke"
+      ]
+    },
+    "alpha-liponsaeure": {
+      "id": "alpha-liponsaeure",
+      "name": "Alpha-Liponsäure",
+      "substance": "Alpha-Liponsäure (ALA) / 1,2-Dithiolan-3-Pentansäure",
+      "evidence_summary": "Alpha-Liponsäure ist ein Cofaktor mehrerer Enzyme mit antioxidativen und anti-inflammatorischen Eigenschaften. Evidenz zeigt moderate Effekte bei diabetischer Neuropathie und metabolischen Parametern; Daten zu anderen Indikationen sind begrenzt. Die Bioverfügbarkeit ist insbesondere mit Nahrung reduziert.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:12654642",
+        "PMID:10479232",
+        "PMID:15654778",
+        "PMID:23279952"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Insulin / Antidiabetika (Metformin, Sulfonylurea)",
+          "effect": "ALA kann die Glukosesensitivität erhöhen; Hypoglykämierisiko erhöht. Monitoring erforderlich.",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Chemotherapeutika (Cisplatin, Doxorubicin)",
+          "effect": "Theoretische Bedenken bezüglich Antioxidantien bei Chemotherapie; Datenlage unklar.",
+          "severity": "gering"
+        },
+        {
+          "drug": "Schilddrüsenhormone (Levothyroxin)",
+          "effect": "ALA kann Absorption von Schilddrüsenhormonen reduzieren; zeitlicher Abstand empfohlen.",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Thiamin-Mangelzustände (ALA kann thiaminabhängige Enzyme beeinflussen)",
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)",
+        "Bekannte Überempfindlichkeit gegenüber ALA oder Komponenten"
+      ],
+      "optimal_forms": [
+        "R-Alpha-Liponsäure (biologisch aktive Form, höhere Bioverfügbarkeit als Racemat)",
+        "Magnesium-ALA-Komplex (bessere Stabilität und Resorption)",
+        "Nüchtern eingenommen (mindestens 30 Min. vor Mahlzeiten für optimale Absorption)"
+      ],
+      "intake_notes": "300–600 mg täglich in 2–3 Dosen; nüchtern einnehmen oder 30 Min. vor Mahlzeiten. Bei Diabetes Blutzucker monitoren. Mit Abstand zu Schilddrüsenhormonen.",
+      "categories": [
+        "Entzündung",
+        "Energie",
+        "Herzgesundheit"
+      ]
+    },
+    "resveratrol": {
+      "id": "resveratrol",
+      "name": "Resveratrol",
+      "substance": "3,5,4'-Trihydroxystilben",
+      "evidence_summary": "Resveratrol zeigt in mehreren RCTs positive Effekte auf Blutzuckerkontrolle, Entzündungsmarker und Knochendichte bei postmenopausalen Frauen sowie auf endotheliale Funktion bei Patienten mit CKD und Diabetes. Die Evidenz ist moderat, mit konsistenten Ergebnissen über mehrere klinische Bereiche hinweg.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:35240291",
+        "PMID:32564438",
+        "PMID:37569440",
+        "PMID:38794742",
+        "PMID:37843843"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikoagulantien (z.B. Warfarin)",
+          "effect": "Mögliche additive antikoagulante Effekte; erhöhtes Blutungsrisiko",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Thrombozytenaggregationshemmer (z.B. Aspirin, Clopidogrel)",
+          "effect": "Potenzielle Verstärkung der Wirkung; erhöhtes Blutungsrisiko",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Blutungsneigung oder Thrombozytopenie",
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)",
+        "Hormonabhängige Krebserkrankungen (phytoöstrogene Aktivität)"
+      ],
+      "optimal_forms": [
+        "Standardisierte Polyphenol-Extrakte (≥95% Resveratrol-Reinheit)",
+        "Trans-Resveratrol (bioaktive Form gegenüber cis-Isomer)"
+      ],
+      "intake_notes": "Dosierungsbereich in Studien: 25–500 mg/Tag. Absorption verbessert sich mit Mahlzeiten. Langzeitverträglichkeit bei höheren Dosen nicht vollständig etabliert.",
+      "categories": [
+        "Herzgesundheit",
+        "Entzündung",
+        "Knochen & Gelenke"
+      ]
+    },
+    "spirulina": {
+      "id": "spirulina",
+      "name": "Spirulina",
+      "substance": "Arthrospira platensis (Cyanobacteria)",
+      "evidence_summary": "Spirulina zeigt in mehreren RCTs modest positive Effekte auf Gewichtsabnahme (ca. -1,85 kg) und entzündungsbedingte Parameter, besonders bei Autoimmunerkrankungen wie MS. Die Datenlage ist konsistent aber mit kleinen bis moderaten Effektgrößen; Langzeitstudien zu Sicherheit und optimaler Dosierung sind begrenzt.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:37778464",
+        "PMID:40877830",
+        "PMID:32967062"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikoagulanzien (z.B. Warfarin, DOAC)",
+          "effect": "Spirulina enthält Vitamin K; mögliche Abschwächung der Wirkung bei hochdosierten Gaben",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Immunsuppressiva",
+          "effect": "Potentielle Verstärkung der Immunaktivierung durch Spirulinas immunmodulatorische Effekte",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Phenylketonurie (PKU) — Spirulina enthält Phenylalanin",
+        "Bekannte Cyanobakterien-Allergie oder Überempfindlichkeit",
+        "Vermutete Kontamination mit Microcystin oder anderen Cyanotoxinen",
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)"
+      ],
+      "optimal_forms": [
+        "Getrocknete Pulverform (höchste Nährstoffdichte, Standard in Studien)",
+        "Tablets/Kapseln (bessere Compliance, aber ggf. Füllstoffe)",
+        "Hochreine, auf Toxine getestete Chargen (kritisch für Sicherheit)"
+      ],
+      "intake_notes": "Typische Dosierung: 2–10 g/Tag in Studien, meist aufgeteilt. Mit Mahlzeiten einnehmen zur besseren Verträglichkeit. Nur hochreine Quellen verwenden (Verunreinigung mit Hepatotoxinen möglich).",
+      "categories": [
+        "Entzündung",
+        "Immunsystem",
+        "Energie"
+      ]
+    },
+    "chlorella": {
+      "id": "chlorella",
+      "name": "Chlorella",
+      "substance": "Chlorella vulgaris (Grünalge, Chlorophyceae)",
+      "evidence_summary": "Chlorella zeigt in Meta-Analysen moderate positive Effekte auf Lipidprofile und kardiovaskuläre Risikofaktoren. Erste RCT-Evidenz deutet auf antioxidative Wirkungen bei depressiven Störungen hin. Sportliche Leistungseffekte sind schwach belegt und erfordern weitere Forschung.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:29037431",
+        "PMID:35331862",
+        "PMID:26275653",
+        "PMID:36905653"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikoagulantien (z.B. Warfarin)",
+          "effect": "Chlorella enthält Vitamin K; hohe Dosen können Antikoagulantieneffekt abschwächen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Immunsuppressiva",
+          "effect": "Chlorella kann immunmodulierende Effekte haben; mögliche Interferenz bei gleichzeitiger Anwendung",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Iodallergien oder Überempfindlichkeit gegenüber Algen",
+        "Phenylketonurie (hoher Phenylalanin-Gehalt möglich)",
+        "Immunsupprimierte Patienten (ohne ärztliche Rücksprache)"
+      ],
+      "optimal_forms": [
+        "Pulver oder Tablet (standardisierte Dosis, gute Bioverfügbarkeit)",
+        "Getrocknete Biomasse (3-6 g/Tag gemäß Studien)"
+      ],
+      "intake_notes": "3-6 g/Tag aufgeteilt. Mit Mahlzeiten einnehmen zur besseren Toleranz. Übelkeit möglich bei Dosierungsbeginn; langsam aufdosieren.",
+      "categories": [
+        "Herzgesundheit",
+        "Stimmung",
+        "Sport & Erholung",
+        "Immunsystem"
+      ]
+    },
+    "hyaluronsaeure": {
+      "id": "hyaluronsaeure",
+      "name": "Hyaluronsäure",
+      "substance": "Hyaluronsäure (Sodium Hyaluronate)",
+      "evidence_summary": "Hyaluronsäure zeigt in mehreren Studien positive Effekte auf Hauthydration und Gelenkfunktion. Oral aufgenommene Hyaluronsäure wird teilweise resorbiert und kann Hautfeuchtigkeitswerte erhöhen. Die Evidenz für systemische Effekte ist moderat, für topische Anwendung gut belegt.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:25961060",
+        "PMID:26858354",
+        "PMID:29312126"
+      ],
+      "drug_interactions": [],
+      "contraindications": [
+        "Allergie gegen Hyaluronsäure oder Bestandteile",
+        "Injektionsform: Blutgerinnungsstörungen (erhöhtes Blutungsrisiko bei intravenöser/intraartikulärer Gabe)"
+      ],
+      "optimal_forms": [
+        "Oral: Niedergewichtige Hyaluronsäure (MW <10 kDa) oder Hyaluronsäure-Komplex (bessere Bioverfügbarkeit)",
+        "Topical: Hochgewichtige Hyaluronsäure (MW >100 kDa für Oberflächenhydration)"
+      ],
+      "intake_notes": "Oral: 20-200 mg täglich mit Wasser. Topisch: Direkt auf Haut auftragen. Beste Effekte nach 4-8 Wochen kontinuierlicher Anwendung.",
+      "categories": []
+    },
+    "collagen": {
+      "id": "collagen",
+      "name": "Kollagen",
+      "substance": "Kollagen (Typ I, II, III) — hydrolysiertes Kollagen / Kollagenpeptide",
+      "evidence_summary": "Hydrolysiertes Kollagen zeigt in mehreren RCTs positive Effekte auf Hauthydration, Gelenkfunktion und Knochendichte. Die Bioverfügbarkeit ist durch enzymatische Hydrolyse optimiert. Effekte sind dosisabhängig und erfordern typischerweise 8-12 Wochen konsistente Einnahme.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:24684840",
+        "PMID:29929490",
+        "PMID:31067387"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Bisphosphonate (z.B. Alendronsäure)",
+          "effect": "Theoretisch mögliche Interferenz mit Knochenmetabolismus — zeitlicher Abstand empfohlen",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Fischallergien (bei Fisch-basiertem Kollagen)",
+        "Rinderallergien (bei bovinem Kollagen)",
+        "Celiakien oder Glutensensitivität (selten bei hydrolysierten Formen, Etikett prüfen)"
+      ],
+      "optimal_forms": [
+        "Hydrolysiertes Kollagenpulver (Typ I+III für Haut, Typ II für Gelenke — beste Absorption)",
+        "Kollagen-Peptide in Kapseln (Compliance-vorteil, aber höhere Kosten)",
+        "Native Gelatin (geringere Bioverfügbarkeit, Verarbeitung ratsam)"
+      ],
+      "intake_notes": "10-20g täglich optimal. Mit Vitamin C und Lys konsumieren für Syntheseoptimierung. Mit ausreichend Wasser einnahmen. Konstante Zufuhr über 8+ Wochen für sichtbare Effekte.",
+      "categories": [
+        "Knochen & Gelenke",
+        "Sport & Erholung"
+      ]
+    },
+    "glucosamin": {
+      "id": "glucosamin",
+      "name": "Glucosamin",
+      "substance": "Glucosaminhydrochlorid / Glucosaminsulfat",
+      "evidence_summary": "Glucosamin wird häufig für Gelenkgesundheit und Arthrose-Symptome eingesetzt. Neuere Systematische Reviews zeigen begrenzte Evidenz für signifikante Verbesserungen bei Kniearthrose, besonders in Kombination mit Chondroitin. Einige Studien deuten auf unterstützende Effekte bei Knorpelschutz hin, die Forschung bleibt jedoch inkonsistent.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:40647198",
+        "PMID:40664872",
+        "PMID:26822714",
+        "PMID:39480270"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikoagulanzien (Warfarin, Dabigatran)",
+          "effect": "Theoretisches Risiko einer verstärkten antikoagulanten Wirkung; klinische Relevanz unklar",
+          "severity": "gering"
+        },
+        {
+          "drug": "Acetaminophen",
+          "effect": "Mögliche Reduktion der Acetaminophen-Absorption bei gleichzeitiger Gabe",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)",
+        "Überempfindlichkeit gegen Krustentiere (bei glucosaminquellen aus Meeresorganismen)",
+        "Schwere Nierenerkrankung (begrenzte Daten zur Sicherheit)"
+      ],
+      "optimal_forms": [
+        "Glucosaminhydrochlorid (besser erforscht als Sulfat-Form, höhere Bioverfügbarkeit)",
+        "Glucosaminsulfat (traditionelle Form, in manchen Studien wirksam)",
+        "In Kombination mit Chondroitin und Kollagen Typ II (verbesserte Ergebnisse in klinischen Studien)"
+      ],
+      "intake_notes": "Typische Dosierung: 1.500 mg/Tag Glucosamin (in 2–3 Dosen). Effekte treten nach 8–12 Wochen regelmäßiger Einnahme auf. Mit Mahlzeiten einnehmen zur besseren Verträglichkeit.",
+      "categories": [
+        "Knochen & Gelenke",
+        "Entzündung"
+      ]
+    },
+    "msm": {
+      "id": "msm",
+      "name": "MSM (Methylsulfonylmethan)",
+      "substance": "Methylsulfonylmethan (MSM), Dimethylsulfon",
+      "evidence_summary": "MSM zeigt in mehreren RCTs antioxidative und entzündungshemmende Effekte, insbesondere bei Muskelschäden nach intensive Belastung und bei metabolischen Markern. Die Evidenz für kardiometabolische Verbesserungen ist vielversprechend, aber noch auf relativ kleine Studiengruppen beschränkt.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:40507030",
+        "PMID:34684621",
+        "PMID:28736511"
+      ],
+      "drug_interactions": [],
+      "contraindications": [
+        "Allergie gegen Sulfonamide (Kreuzreaktivität nicht vollständig geklärt, Vorsicht geboten)",
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)"
+      ],
+      "optimal_forms": [
+        "Pulver (höhere Bioverfügbarkeit, in Studien verwendet)",
+        "Kapsel (bessere Compliance)",
+        "Kristalline Form (reine MSM, minimale Zusatzstoffe)"
+      ],
+      "intake_notes": "Typische Dosierung: 3-6g täglich in geteilten Dosen. Mit ausreichend Wasser einnehmen. Magenbeschwerden möglich — mit Mahlzeit einnehmen.",
+      "categories": [
+        "Sport & Erholung",
+        "Entzündung",
+        "Herzgesundheit"
+      ]
+    },
+    "mariendistel": {
+      "id": "mariendistel",
+      "name": "Mariendistel",
+      "substance": "Silymarin (Gemisch aus Flavonolignanen: Silibinin, Silidinanin, Silidianin)",
+      "evidence_summary": "Mariendistel, insbesondere ihr Wirkstoff Silymarin, zeigt in mehreren RCTs hepatoprotektive Effekte bei Lebererkrankungen. Die Evidenz für chronische Lebererkrankungen und Leberschutz ist moderat, bei Vergiftungen stärker belegt. Langzeitstudien zur Prävention sind jedoch noch begrenzt.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:15771234",
+        "PMID:16005519",
+        "PMID:12479755",
+        "PMID:18759444"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Cytochrom-P450-Substrate (z.B. Tacrolimus, Warfarin, Statine)",
+          "effect": "Silymarin kann CYP3A4 und CYP2C9 induzieren; mögliche Reduktion der Wirkstoffkonzentrationen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Orales Kontrazeptivum",
+          "effect": "Potenzielle Reduktion der Bioverfügbarkeit durch Enzyminduktion",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Allergie gegen Korbblütler (Asteraceae)",
+        "Schwangerschaft (keine ausreichende Sicherheitsdaten)",
+        "Stillzeit (limitierte Daten)",
+        "Östrogensensitive Tumoren (Phytoöstrogene möglich, umstritten)"
+      ],
+      "optimal_forms": [
+        "Standardisierter Extrakt 70-80% Silymarin (höchste Bioverfügbarkeit)",
+        "Silybinin-Phospolipid-Komplex (improved bioavailability vs. reines Silymarin)",
+        "Trockenextrakt in Kapseln (stabil, dosierbar)"
+      ],
+      "intake_notes": "Standarddosis 140-200 mg Silymarin 2-3x täglich mit Wasser. Besserung chronischer Effekte erst nach 4-8 Wochen. Mit Mahlzeiten einnehmen kann Absorption verbessern.",
+      "categories": [
+        "Verdauung",
+        "Entzündung"
+      ]
+    },
+    "weissdorn": {
+      "id": "weissdorn",
+      "name": "Weißdorn",
+      "substance": "Crataegus monogyna / Crataegus laevigata (Blätter, Blüten, Früchte)",
+      "evidence_summary": "Weißdorn zeigt in mehreren randomisierten kontrollierten Studien mild blutdrucksenkende und herzunterstützende Effekte, besonders bei milder Herzinsuffizienz. Die Wirkung ist moderat und erfordert längere Einnahmedauer (8-12 Wochen). Die Verträglichkeit ist gut dokumentiert.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:16770287",
+        "PMID:12926016",
+        "PMID:15318308"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "ACE-Hemmer / Angiotensin-II-Antagonisten",
+          "effect": "Additive blutdrucksenkende Wirkung möglich; Blutdruck überwachen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Beta-Blocker",
+          "effect": "Mögliche additive kardiale Effekte; ärztliche Rücksprache empfohlen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Digitalisglykosid (Digoxin)",
+          "effect": "Weißdorn kann Digitalis-Wirkung verstärken; engmaschige Kontrolle erforderlich",
+          "severity": "hoch"
+        }
+      ],
+      "contraindications": [
+        "Akute Myokarditis",
+        "Schwere Herzinsuffizienz (NYHA Stadium IV) — nur unter ärztlicher Überwachung",
+        "Schwangerschaft und Stillzeit (unzureichende Datenlage)",
+        "Allergie gegen Rosaceae-Familie"
+      ],
+      "optimal_forms": [
+        "Standardisierter Extrakt (Blätter+Blüten, mindestens 1,8% Vitexin)",
+        "Trockenextrakt in Kapseln oder Tabletten (Bioverfügbarkeit am besten erforscht)",
+        "Tee aus Blättern/Blüten (geringere Bioverfügbarkeit, aber gut verträglich)"
+      ],
+      "intake_notes": "Täglich 160-240 mg Trockenextrakt in 2-3 Dosen, mindestens 8-12 Wochen erforderlich für Effekt. Mit Mahlzeiten einnehmen.",
+      "categories": [
+        "Herzgesundheit",
+        "Blutdruck"
+      ]
+    },
+    "ingwer-extrakt": {
+      "id": "ingwer-extrakt",
+      "name": "Ingwer Extrakt",
+      "substance": "Zingiber officinale rhizome extract (Standardisiert auf Gingerole und Shogaole)",
+      "evidence_summary": "Ingwer zeigt in mehreren RCTs konsistente Effekte gegen Übelkeit (insbesondere post-operativ und bei Reisekrankheit) sowie entzündungshemmende Wirkungen bei Gelenkschmerzen. Die Evidenz für Verdauungsbeschwerde und Entzündungsmarker ist moderat bis gut.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:16545122",
+        "PMID:26766850",
+        "PMID:15479476",
+        "PMID:27283546"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Warfarin / Vitamin-K-Antagonisten",
+          "effect": "Theoretisches Blutungsrisiko bei hohen Dosen; Monitoring empfohlen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Thrombozytenaggregationshemmer (Aspirin, Clopidogrel)",
+          "effect": "Additive Antikoagulation möglich; klinische Relevanz gering bei normalen Dosen",
+          "severity": "gering"
+        },
+        {
+          "drug": "Diabetes-Medikamente",
+          "effect": "Ingwer kann Blutzucker senken; Dosisanpassung möglich erforderlich",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Bekannte Allergie gegen Zingiberaceae",
+        "Blutungsneigung / Gerinnungsstörungen (außer unter ärztlicher Kontrolle)",
+        "Gallensteine (hohe Dosen können Gallenfluss erhöhen)",
+        "Schwangerschaft über 6g/Tag (grenzwertiges Teratogenitätsrisiko)"
+      ],
+      "optimal_forms": [
+        "Standardisierter Extrakt 5-10% Gingerole (beste Bioverfügbarkeit und Konsistenz)",
+        "Frischer Ingwersaft oder Tee (natürliche Form, aber variable Wirkstoffkonzentration)",
+        "Getrocknetes Pulver (höherer Shogaol-Gehalt durch Oxidation)"
+      ],
+      "intake_notes": "Optimal 1-2g täglich verteilt zu Mahlzeiten. Bei Übelkeit 500mg alle 4 Stunden bis 2g/Tag. Effekt setzt nach 30min-2h ein.",
+      "categories": [
+        "Verdauung",
+        "Entzündung",
+        "Knochen & Gelenke"
+      ]
+    },
+    "gruentee-extrakt": {
+      "id": "gruentee-extrakt",
+      "name": "Grüntee Extrakt",
+      "substance": "Camellia sinensis Extrakt, standardisiert auf EGCG (Epigallocatechin Gallat)",
+      "evidence_summary": "Grüntee Extrakt enthält Polyphenole mit antioxidativer Wirkung. Mehrere Studien deuten auf positive Effekte auf Stoffwechsel, kognitive Funktion und kardiovaskuläre Marker hin, wobei die Effektgrößen moderat ausfallen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:19597519",
+        "PMID:20182026",
+        "PMID:23760289",
+        "PMID:21592435"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Warfarin (Gerinnungshemmer)",
+          "effect": "Vitamin K im Grüntee kann Warfarin-Wirkung reduzieren bei hohen Mengen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Theophyllin (Asthmamittel)",
+          "effect": "Coffein im Extrakt kann Theophyllin-Spiegel erhöhen",
+          "severity": "gering"
+        },
+        {
+          "drug": "Eisenpräparate",
+          "effect": "Catechine können Eisenabsorption reduzieren",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Überempfindlichkeit gegen Camellia sinensis",
+        "Eisenmangelanämie (bei regelmäßiger, hochdosierter Einnahme)",
+        "Schwangerschaft (höhere Dosen; moderater Konsum unbedenklich)",
+        "Leber­erkrankungen (in hohen Dosen)"
+      ],
+      "optimal_forms": [
+        "EGCG-standardisierter Extrakt (min. 50% EGCG) — höchste Bioverfügbarkeit der Polyphenole",
+        "Whole-Leaf Pulver (Matcha) — enthält volle Polyphenolpalette inklusive L-Theanin",
+        "Kalt extrahiert — reduziert Oxidation der empfindlichen Catechine"
+      ],
+      "intake_notes": "300–500 mg EGCG täglich; mit Vitamin C kombiniert für bessere Absorb­tion; nicht auf leeren Magen bei Magenempfindlichkeit",
+      "categories": [
+        "Energie",
+        "Fokus",
+        "Entzündung",
+        "Herzgesundheit"
+      ]
+    },
+    "traubenkernextrakt": {
+      "id": "traubenkernextrakt",
+      "name": "Traubenkernextrakt",
+      "substance": "Proanthocyanidine (OPC - Oligomere Proanthocyanidine)",
+      "evidence_summary": "Traubenkernextrakt enthält hochkonzentrierte Proanthocyanidine mit antioxidativen und entzündungshemmenden Eigenschaften. Die verfügbaren Humanstudien deuten auf positive Effekte bei vaskulärer Funktion, Endothelschutz und mikrozirkulatorischen Prozessen hin, wobei die Evidenzbasis für definitive klinische Aussagen noch begrenzt ist.",
+      "evidence_level": "yellow",
+      "sources": [],
+      "drug_interactions": [
+        {
+          "drug": "Antikoagulantien (Warfarin, Dabigatran, Rivaroxaban)",
+          "effect": "Potenzielle additive Effekte auf Blutgerinnung durch OPC-Polyphenole; erhöhtes Blutungsrisiko",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Thrombozytenaggregationshemmer (Acetylsalicylsäure, Clopidogrel)",
+          "effect": "Additive antiplatelet-Effekte möglich; erhöhtes Blutungsrisiko",
+          "severity": "moderat"
+        },
+        {
+          "drug": "CYP3A4-Substrate (z.B. Statine, Kalziumkanalblocker)",
+          "effect": "OPC können CYP3A4-Aktivität beeinflussen; Auswirkungen auf Metabolisierung möglich",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Blutungsneigung oder hämorrhagische Diathesen",
+        "Kurz vor oder nach chirurgischen Eingriffen",
+        "Thrombozytopenie",
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)"
+      ],
+      "optimal_forms": [
+        "Standardisiertes Extrakt (95% OPC, z.B. Massenextrakt oder HPLC-standardisiert)",
+        "Kapseln mit magensaftresistenter Beschichtung (bessere Absorption im Dünndarm)",
+        "Pulver/Konzentrat (höhere Bioverfügbarkeit bei gelöster Form)"
+      ],
+      "intake_notes": "Üblicherweise 100–300 mg/Tag OPC. Mit Nahrung einnehmen für bessere Toleranz. Wirkungseintritt nach 2–4 Wochen; langfristige Anwendung wird empfohlen.",
+      "categories": [
+        "Entzündung",
+        "Herzgesundheit",
+        "Knochen & Gelenke"
+      ]
+    },
+    "berberin": {
+      "id": "berberin",
+      "name": "Berberin",
+      "substance": "Berberin (Isochinolin-Alkaloid, natürlich vorkommend in Berberitze, Gelbwurz, Oregon-Traube)",
+      "evidence_summary": "Berberin zeigt in mehreren RCTs und Meta-Analysen konsistente positive Effekte auf Blutzuckerkontrolle, Entzündungsmarker (CRP) und Gewichtsparameter bei metabolischen Störungen und Prä-Diabetes. Die Wirkung auf Leberfunktion und Gefäßendothelschutz (VEGF) ist Gegenstand aktueller Forschung mit vielversprechenden, aber noch nicht vollständig geklärten Mechanismen.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:32690176",
+        "PMID:39998703",
+        "PMID:38016844",
+        "PMID:41305635",
+        "PMID:30616613"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Metformin",
+          "effect": "Mögliche additive Effekte auf Blutzuckersenkung; Überwachung der Glukosewerte empfohlen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "CYP3A4-Substrate (z.B. Statine, Calciumkanalblocker)",
+          "effect": "Berberin hemmt CYP3A4; potenziell erhöhte Plasmakonzentrationen dieser Medikamente",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Antibiotika (Ciprofloxacin, Doxycyclin)",
+          "effect": "Chelatkomplexbildung möglich; räumliche Trennung der Einnahme (2-4 h Abstand) empfohlen",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)",
+        "Bekannte Überempfindlichkeit gegen Berberin oder botanische Quellen",
+        "Schwere Leber- oder Nierenfunktionsstörungen (Akkumulationsrisiko)",
+        "Gleichzeitige Behandlung mit kritischen CYP3A4-Substraten ohne ärztliche Überwachung"
+      ],
+      "optimal_forms": [
+        "Berberin-HCl (Hydrochlorid): Beste Bioverfügbarkeit in RCTs, ~500 mg pro Dosis Standard",
+        "Standardisierte Pflanzenextrakte (z.B. aus Hydrastis canadensis): Alternative mit bewährter Wirksamkeit"
+      ],
+      "intake_notes": "Typischerweise 500–1.500 mg täglich in 2–3 Dosen zu Mahlzeiten; Mind. 2–3 Monate kontinuierliche Einnahme vor erwarteten Effekten.",
+      "categories": [
+        "Hormonbalance",
+        "Verdauung",
+        "Herzgesundheit",
+        "Entzündung"
+      ]
+    },
+    "quercetin": {
+      "id": "quercetin",
+      "name": "Quercetin",
+      "substance": "3,3',4',5,7-Pentahydroxyflavon",
+      "evidence_summary": "Quercetin ist ein Flavonoid mit antioxidativen und entzündungshemmenden Eigenschaften. Studien zeigen gemischte Ergebnisse bei Lipidprofilen, jedoch potenzielle Vorteile für endotheliale Funktion und Muskelkraft im Älterenalter. Die kardiovaskuläre Evidenz bleibt insgesamt moderat.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:36480969",
+        "PMID:25897620",
+        "PMID:37344086",
+        "PMID:40063125",
+        "PMID:35747751"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Warfarin und andere Antikoagulanzien",
+          "effect": "Quercetin kann die Bioverfügbarkeit von Warfarin erhöhen; Blutgerinnung überwachen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Cyclosporin",
+          "effect": "Quercetin kann CYP3A4-Metabolismus beeinflussen und Cyclosporin-Spiegel erhöhen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Calcium-Kanalblocker",
+          "effect": "Additive vasodilatierende Wirkung möglich; Blutdruck überwachen",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft und Stillzeit (begrenzte Sicherheitsdaten)",
+        "Nierenfunktionsstörungen (hohe Dosen vermeiden)",
+        "Bekannte Überempfindlichkeit gegen Flavonoide"
+      ],
+      "optimal_forms": [
+        "Quercetin-Glycosid oder Quercetin-Phytosom (bessere Bioverfügbarkeit als freies Aglykone)",
+        "Liposomales Quercetin (bis zu 5x höhere Absorption)",
+        "Mit Bromelain oder Papain kombiniert (Absorption unterstützend)"
+      ],
+      "intake_notes": "500–1000 mg täglich in geteilten Dosen mit Mahlzeiten für bessere Absorption. Mit Vitamin C kombinieren kann Effektivität erhöhen. 8–12 Wochen für spürbare Effekte einplanen.",
+      "categories": [
+        "Entzündung",
+        "Herzgesundheit",
+        "Sport & Erholung"
+      ]
+    },
+    "lutein": {
+      "id": "lutein",
+      "name": "Lutein",
+      "substance": "Lutein (3R,3'R,6'R)-β,ε-Carotin-3,3'-diol",
+      "evidence_summary": "Lutein ist ein Xanthophyll-Carotinoid mit nachgewiesenen Effekten auf Augengesundheit und kognitive Funktion. Studien zeigen Verbesserungen bei visueller Performance und Verlangsamung der geographischen Atrophie bei altersbedingter Makuladegeneration; Effekte auf Kognition sind vielversprechend, aber oft Teil von Kombinationsinterventionen untersucht.",
+      "evidence_level": "green",
+      "sources": [
+        "PMID:38363462",
+        "PMID:39025435",
+        "PMID:34999335",
+        "PMID:32858063"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Orlistat (Xenical)",
+          "effect": "Reduzierte Absorption von fettlöslichen Carotinoiden durch Inhibition der Lipidresorption",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Cholestyramin",
+          "effect": "Verminderte Bioverfügbarkeit von Lutein durch reduzierte Gallensäurenrezirkulation",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Carotinämie / Xanthoderma (pathologisch erhöhte Carotinoidwerte)",
+        "Bekannte Überempfindlichkeit gegen Carotinoide"
+      ],
+      "optimal_forms": [
+        "Lutein mit Zeaxanthin (natürliches Verhältnis 5:1, synergistische Effekte auf Makula)",
+        "Formulierungen mit Fett/Öl (verbesserte Absorption von bis zu 5-fach)",
+        "FloraGLO® oder ähnliche standardisierte Extrakte (Konsistenz und Bioverfügbarkeit)"
+      ],
+      "intake_notes": "Mit fetthaltiger Mahlzeit einnehmen für optimale Absorption. Lutein/Zeaxanthin arbeiten synergistisch; Studien verwendeten typisch 10-20 mg tägl. über 12+ Wochen.",
+      "categories": [
+        "Herzgesundheit",
+        "Fokus"
+      ]
+    },
+    "zeaxanthin": {
+      "id": "zeaxanthin",
+      "name": "Zeaxanthin",
+      "substance": "Zeaxanthin (3,3'-Dihydroxy-β,β-carotene)",
+      "evidence_summary": "Zeaxanthin ist ein Xanthophyll-Carotinoid mit evidenzbasierter Wirkung auf Augenfunktion und Sehgesundheit. Studien zeigen positive Effekte auf visuelle Leistung, Makuladegeneration-Progression und möglicherweise kognitive Funktion, besonders in Kombination mit Lutein. Die Evidenzlage für isoliertes Zeaxanthin ist noch lückenhaft, stärker bei kombinierter Supplementation.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:38363462",
+        "PMID:39025435",
+        "PMID:34999335",
+        "PMID:32858063",
+        "PMID:39770987"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Orlistat (Xenical)",
+          "effect": "Fettlösliches Carotinoid; Orlistat kann Absorption reduzieren",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Cholestyramin",
+          "effect": "Kann Aufnahme fettlöslicher Vitamine und Carotinoide beeinträchtigen",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Carotinämie oder bekannte Überempfindlichkeit gegen Carotinoide",
+        "Raucher (hohe Carotinoid-Dosen als präkanzerös diskutiert)",
+        "Malabsorptionssyndrome mit Fettmalabsorption"
+      ],
+      "optimal_forms": [
+        "Lutein/Zeaxanthin-Kombination (synergistische Effekte in Studien bestätigt)",
+        "Ester-Form (höhere Bioverfügbarkeit)",
+        "Mit Fett/Mahlzeit eingenommen (fettlöslich)"
+      ],
+      "intake_notes": "Mit Mahlzeit mit Fettgehalt einnehmen für optimale Absorption. Effekte zeigen sich über Wochen bis Monate. Kombiniert mit Lutein am wirksamsten.",
+      "categories": [
+        "Herzgesundheit",
+        "Fokus"
+      ]
+    },
+    "astaxanthin": {
+      "id": "astaxanthin",
+      "name": "Astaxanthin",
+      "substance": "3,3'-Dihydroxy-4,4'-diketo-β,β-carotin (Astaxanthin)",
+      "evidence_summary": "Astaxanthin ist ein Xanthophyll-Carotenoid mit antioxidativen und entzündungshemmenden Eigenschaften. Die Evidenz unterstützt Effekte auf UV-Schutz der Haut, Hautalterung und möglicherweise Augenbelastung; begrenzte Daten zu systemischen Entzündungen und Reproduktion bei Endometriose.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:29941810",
+        "PMID:34578794",
+        "PMID:32202443",
+        "PMID:37020589",
+        "PMID:40014233"
+      ],
+      "drug_interactions": [],
+      "contraindications": [
+        "Blutgerinnungsstörungen (theoretisch erhöhtes Blutungsrisiko)",
+        "Allergie gegen Meeresalgen oder Astaxanthin-Quellen",
+        "Geplante Operationen (mindestens 2 Wochen vor absetzen)"
+      ],
+      "optimal_forms": [
+        "Softgel-Kapseln mit Öl (bessere Fettlöslichkeit und Bioverfügbarkeit)",
+        "Mikrokristalline Suspension (standardisiert auf 2-12 mg Astaxanthin)"
+      ],
+      "intake_notes": "Mit Mahlzeiten einnehmen für optimale Absorption. Typische Dosis: 4-12 mg täglich. Effekte zeigen sich über 8-12 Wochen.",
+      "categories": [
+        "Entzündung",
+        "Hormonbalance"
+      ]
+    },
+    "lycopin": {
+      "id": "lycopin",
+      "name": "Lycopin",
+      "substance": "Lycopin (all-trans-Lycopin und cis-Isomere)",
+      "evidence_summary": "Lycopin ist ein Carotenoid mit antioxidativen Eigenschaften, das hauptsächlich in Tomaten vorkommt. Epidemiologische Studien deuten auf einen Zusammenhang mit kardiovaskulärer Gesundheit hin, jedoch zeigen kontrollierte Studien gemischte Ergebnisse. Die Evidenz für spezifische klinische Endpunkte bleibt begrenzt.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:15650394",
+        "PMID:16567792",
+        "PMID:19351712",
+        "PMID:26792618"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Statine (z.B. Simvastatin, Pravastatin)",
+          "effect": "Theoretische additive antioxidative Effekte; keine klinisch relevanten Wechselwirkungen bekannt",
+          "severity": "gering"
+        },
+        {
+          "drug": "Beta-Carotin-Supplemente (hochdosiert)",
+          "effect": "Konkurrierende Absorption von Carotinoiden; kombinierte hochdosierte Gabe wird nicht empfohlen",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Aktives Rauchen (erhöhtes Lungenkrebsrisiko bei hochdosierten Carotenoid-Supplementen)",
+        "Bekannte Carotenoidüberempfindlichkeit oder Lycopenodermie in der Vorgeschichte"
+      ],
+      "optimal_forms": [
+        "Lycopin aus Tomatenextrakt (erhöhte Bioverfügbarkeit durch natürliche Trägeröle)",
+        "Lycopin in lipophiler Matrix oder mit Fett kombiniert (bessere Absorption als isoliertes Pulver)"
+      ],
+      "intake_notes": "Mit Mahlzeiten einnehmen, die Fett enthalten. Typische Dosierung 6–30 mg täglich. Effekte zeigen sich erst nach mehreren Wochen.",
+      "categories": [
+        "Herzgesundheit",
+        "Entzündung"
+      ]
+    },
+    "5-htp": {
+      "id": "5-htp",
+      "name": "5-HTP",
+      "substance": "5-Hydroxytryptophan (5-HTP)",
+      "evidence_summary": "5-HTP ist ein direkter Vorläufer von Serotonin und zeigt in neueren RCTs positive Effekte auf Schlafqualität, Stimmung und kognitive Funktionen bei älteren Erwachsenen. Die Evidenz für Schlaf und Stimmungsregulation nimmt zu, bleibt aber noch begrenzt auf spezifische Populationen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:38309227",
+        "PMID:40944161",
+        "PMID:34737364"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Monoaminoxidase-Inhibitoren (MAOIs)",
+          "effect": "Erhöhtes Serotoninsyndromerisiko durch Akkumulation von Serotonin",
+          "severity": "hoch"
+        },
+        {
+          "drug": "Selektive Serotonin-Wiederaufnahmehemmer (SSRIs)",
+          "effect": "Theoretisches Serotoninsyndromerisiko; kombinierte Anwendung erfordert ärztliche Überwachung",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Tryptophan-Supplemente",
+          "effect": "Additive Effekte auf Serotoninproduktion; kann zu übermäßiger Stimulation führen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Carbidopa",
+          "effect": "Carbidopa kann die Umwandlung von 5-HTP zu Serotonin im peripheren Gewebe blockieren",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft und Stillzeit",
+        "Karzinoidsyndrom",
+        "Gleichzeitige Einnahme von MAOIs",
+        "Schwere Herzerkrankungen (Valvulopathie-Risiko)",
+        "Serotonerge Medikamente ohne ärztliche Überwachung"
+      ],
+      "optimal_forms": [
+        "Kapsel oder Tablette (stabile Form, kontrollierte Dosierung)",
+        "Mit Vitamin B6 kombiniert (katalysiert Umwandlung zu Serotonin)"
+      ],
+      "intake_notes": "Morgens oder mittags einnehmen, nicht abends (Stimulationseffekt). Mit Mahlzeit einnehmen zur besseren Verträglichkeit. Typische Dosierung 50–100 mg, 1–3x täglich.",
+      "categories": [
+        "Schlaf",
+        "Stimmung",
+        "Fokus"
+      ]
+    },
+    "gaba": {
+      "id": "gaba",
+      "name": "GABA",
+      "substance": "Gamma-Aminobuttersäure (4-Aminobutansäure)",
+      "evidence_summary": "GABA ist ein inhibitorischer Neurotransmitter mit Evidenz für positive Effekte auf Schlafqualität, Herzfrequenzvariabilität und emotionale Stabilität bei körperlich inaktiven übergewichtigen Personen. Die Blut-Hirn-Schranken-Penetration oraler GABA-Supplementation ist begrenzt, was die klinische Relevanz einschränkt. Aktuelle RCT zeigt Verbesserungen bei Stress und Schlafeffizienz.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:38321713",
+        "PMID:35851507",
+        "PMID:39180365"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Benzodiazepine (z.B. Diazepam, Lorazepam)",
+          "effect": "Additive GABAerge Effekte möglich, potenziell erhöhte Sedation",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Barbiturate",
+          "effect": "Additive Verstärkung GABAerger Neurotransmission",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Alkohol",
+          "effect": "Verstärkte Sedation und ZNS-Dämpfung",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Schwangerschaft (unzureichende Sicherheitsdaten)",
+        "Stillen",
+        "Gleichzeitige Einnahme von Benzodiazepinen oder anderen GABAergen Substanzen ohne ärztliche Rücksprache"
+      ],
+      "optimal_forms": [
+        "Freie GABA (höchste Konzentration, begrenzte Absorption)",
+        "GABA + L-Theanin (synergistische GABAerge Verstärkung)",
+        "Magnesium-Glycinat + GABA (komplementäre Mechanismen)"
+      ],
+      "intake_notes": "Typische Dosen 100–500 mg täglich. Beste Wirkung abends vor dem Schlaf. Blut-Hirn-Schranken-Penetration begrenzt; individuelle Variabilität hoch.",
+      "categories": [
+        "Schlaf",
+        "Stress",
+        "Stimmung"
+      ]
+    },
+    "phosphatidylserine": {
+      "id": "phosphatidylserine",
+      "name": "Phosphatidylserin",
+      "substance": "Phosphatidylserin (PS), 1,2-Diacyl-sn-glycero-3-phospho-L-serin",
+      "evidence_summary": "Phosphatidylserin zeigt moderate Evidenz für kognitiven Support und Aufmerksamkeit bei Kindern sowie möglich symptomatische Linderung bei PMS. Studien deuten auf Vorteile bei ADHD-assoziierten Symptomen hin, besonders wenn mit Omega-3-Fettsäuren kombiniert. Die Datenlage bei gesunden Erwachsenen bleibt begrenzt.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:41318468",
+        "PMID:38173190",
+        "PMID:29576358"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antikoagulantien (Warfarin, DOAC)",
+          "effect": "Theoretisches Risiko durch PS-Rolle in Gerinnungskaskade; klinische Relevanz unklar. Vorsicht geboten.",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Thrombozytenaggregationshemmer (Acetylsalicylsäure, Clopidogrel)",
+          "effect": "Mögliche additive Effekte auf Blutgerinnung; sichere Daten fehlen.",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Blutgerinnungsstörungen oder familienanamnestisch bekannte Thrombophilien",
+        "Akute Sepsis oder schwere Endothelschäden (basierend auf Phosphatidylserin-Externalisierung)",
+        "Schwangerschaft (begrenzte Sicherheitsdaten)"
+      ],
+      "optimal_forms": [
+        "Sonnenblumen-Phosphatidylserin (höhere Bioverfügbarkeit, pflanzlich)",
+        "PS mit Phosphatidylsäure-Komplex (PAS) zur PMS-Symptomatik",
+        "PS kombiniert mit Omega-3-Fettsäuren (n-3 PUFA) für synergistische kognitiven Effekt"
+      ],
+      "intake_notes": "Typische Dosis 100–300 mg/Tag in klinischen Studien. Mit Mahlzeiten für optimale Absorption. Effekt tritt nach 4–8 Wochen auf.",
+      "categories": [
+        "Fokus",
+        "Hormonbalance"
+      ]
+    },
+    "alpha-gpc": {
+      "id": "alpha-gpc",
+      "name": "Alpha-GPC",
+      "substance": "L-Alpha-Glycerylphosphorylcholin",
+      "evidence_summary": "Alpha-GPC ist ein natürlich vorkommender Cholinester, der die Acetylcholinsynthese unterstützt. Studien zeigen positive Effekte auf kognitives Gedächtnis und potenziell auf sportliche Leistung, wobei die Evidenzbasis für einzelne Anwendungen noch ausbaufähig ist.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:23383954",
+        "PMID:21464614",
+        "PMID:29773890",
+        "PMID:25559672"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Cholinesterase-Inhibitoren (z.B. Donepezil, Rivastigmin)",
+          "effect": "Potenzierung cholinergischer Effekte möglich; gleichzeitige Überwachung empfohlen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Scopolamin",
+          "effect": "Kann antagonistische Effekte haben; Kombination sollte vermieden werden",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Bekannte Überempfindlichkeit gegen Alpha-GPC oder Bestandteile",
+        "Bipolares Affektive Störung (theoretisches Risiko durch Cholinüberschuss)",
+        "Schwangerschaft und Stillzeit (unzureichende Sicherheitsdaten)"
+      ],
+      "optimal_forms": [
+        "Kapsel/Tablett (600 mg Dosierung, gute Stabilität)",
+        "Pulver (höhere Dosierungsflexibilität)",
+        "Flüssige Form (schnellere Absorption, aber kürzere Haltbarkeit)"
+      ],
+      "intake_notes": "Typisch 600–1.200 mg täglich in 2–3 Dosen. Mit Mahlzeiten für bessere Verträglichkeit. Effekte zeigen sich oft erst nach 4–6 Wochen.",
+      "categories": [
+        "Fokus",
+        "Energie"
+      ]
+    },
+    "zink-carnosin": {
+      "id": "zink-carnosin",
+      "name": "Zink Carnosin",
+      "substance": "Zink-L-Carnosin (β-Alanyl-L-Histidin Zinkomplex)",
+      "evidence_summary": "Zink Carnosin zeigt in mehreren Studien antioxidative und gastroprotektive Eigenschaften, insbesondere bei Magengeschwüren und Gastritis. Die Wirkung basiert auf kombinierten Effekten von Zink und Carnosin. Humanstudien sind jedoch überwiegend aus Asien und teilweise mit methodischen Limitationen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:12404170",
+        "PMID:11423274",
+        "PMID:15683270",
+        "PMID:16622371"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Antibiotika (Fluorchinolone, Tetracycline)",
+          "effect": "Zink kann Absorption reduzieren; mindestens 2h Abstand empfohlen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Bisphosphonate",
+          "effect": "Zink kann Absorption beeinträchtigen; zeitlicher Abstand notwendig",
+          "severity": "moderat"
+        },
+        {
+          "drug": "ACE-Hemmer",
+          "effect": "Theoretisches Risiko von Geschmacksstörungen (additiv)",
+          "severity": "gering"
+        },
+        {
+          "drug": "Eisenpräparate",
+          "effect": "Gegenseitige Absorptionsinterferenz; räumlich trennen",
+          "severity": "moderat"
+        }
+      ],
+      "contraindications": [
+        "Kupfermangel oder Kupferstoffwechselstörungen",
+        "Schwangerschaft und Stillzeit (begrenzte Sicherheitsdaten)",
+        "Akute Zinktoxizität"
+      ],
+      "optimal_forms": [
+        "Zink-Carnosin-Monosubstanz (spezifische Formulierung mit verifiziertem Zink-Carnosin-Komplex)",
+        "Magensaftresistente Kapseln (bessere Bioverfügbarkeit im Dünndarm)"
+      ],
+      "intake_notes": "Üblicherweise 75mg zweimal täglich mit oder ohne Mahlzeiten. Langzeitanwendung sollte unter gelegentlicher Kontrolle von Kupferstatus erfolgen.",
+      "categories": [
+        "Verdauung",
+        "Immunsystem"
+      ]
+    },
+    "magnesium-l-threonat": {
+      "id": "magnesium-l-threonat",
+      "name": "Magnesium L-Threonat",
+      "substance": "Magnesium L-threonate (MgT)",
+      "evidence_summary": "Magnesium L-Threonat ist eine spezielle Form mit verbesserter Blut-Hirn-Schranken-Penetration. Allgemeine Magnesiumstudien zeigen Effekte auf Stressabbau, mentale Gesundheit und Schlafqualität; spezifische L-Threonat-Humanstudien sind jedoch begrenzt. Die vorliegenden Evidenzen beziehen sich überwiegend auf Standard-Magnesiumformen.",
+      "evidence_level": "yellow",
+      "sources": [
+        "PMID:33864354",
+        "PMID:33865361",
+        "PMID:34836329",
+        "PMID:39534260"
+      ],
+      "drug_interactions": [
+        {
+          "drug": "Bisphosphonate (z.B. Alendronsäure)",
+          "effect": "Magnesium reduziert Absorption von Bisphosphonaten; min. 2h Abstand einhalten",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Tetracycline-Antibiotika",
+          "effect": "Magnesium bildet Komplexe mit Tetracyclinen, reduziert deren Absorption",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Chinolone-Antibiotika",
+          "effect": "Magnesium vermindert Absorption; mindestens 2-4 Stunden Abstand empfohlen",
+          "severity": "moderat"
+        },
+        {
+          "drug": "Levodopa (L-DOPA)",
+          "effect": "Hohe Magnesiumdosen können L-DOPA-Absorption reduzieren",
+          "severity": "gering"
+        }
+      ],
+      "contraindications": [
+        "Schwere Nierenfunktionsstörung (eGFR <30 ml/min/1.73m²)",
+        "Myasthenia gravis",
+        "Herzblock (zweiten oder dritten Grades)",
+        "Gleichzeitige parenterale Magnesiumtherapie"
+      ],
+      "optimal_forms": [
+        "Magnesium L-Threonat (spezifische Form mit besserer ZNS-Penetration)",
+        "Magnesiumchelat-Komplexe (verbesserte Absorption vs. anorganische Salze)"
+      ],
+      "intake_notes": "Typisch 2000-2500 mg L-Threonat täglich (entsprechend ~144 mg elementarem Magnesium). Mit Mahlzeit einnehmen bei Magen-Empfindlichkeit. Aufbau über 2-4 Wochen.",
+      "categories": [
+        "Fokus",
+        "Stimmung",
+        "Stress",
+        "Schlaf"
+      ]
+    }
+  }
+}

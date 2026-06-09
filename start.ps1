@@ -12,7 +12,11 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$projectRoot\
 # Kurz warten bis Backend hochgefahren ist
 Start-Sleep -Seconds 3
 
-# --- 2. ngrok starten und URL auslesen ---
+# --- 2. Alte ngrok-Prozesse beenden + neu starten ---
+Write-Host "Stoppe alte ngrok-Prozesse..." -ForegroundColor Yellow
+Get-Process -Name "ngrok" -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 1
+
 Write-Host "ngrok wird gestartet..." -ForegroundColor Cyan
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "ngrok http 8000"
 
