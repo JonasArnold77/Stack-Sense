@@ -59,6 +59,18 @@ class StackNotifier extends StateNotifier<List<StackEntry>> {
     await _saveToPrefs();
   }
 
+  /// Setzt addedAt aller Stack-Einträge auf ~14 Tage zurück.
+  /// Wird für die Verlaufs-Simulation verwendet damit Korrelationen sichtbar werden.
+  /// Die Supplements sind dann "in Woche 2" hinzugekommen — passend zur Simulationskurve.
+  Future<void> backdateForSimulation() async {
+    if (state.isEmpty) return;
+    final baseDate = DateTime.now().subtract(const Duration(days: 14));
+    state = state
+        .map((e) => e.copyWith(addedAt: baseDate))
+        .toList();
+    await _saveToPrefs();
+  }
+
   /// Alle Einträge für einen bestimmten Zeitslot
   List<StackEntry> forSlot(IntakeSlot slot) =>
       state.where((e) => e.intakeSlot == slot).toList();
@@ -102,9 +114,10 @@ class StackNotifier extends StateNotifier<List<StackEntry>> {
     ];
   }
 
-  /// Case-insensitiver Substring-Match in beide Richtungen.
-  bool _matches(String a, String b) =>
-      a.contains(b) || b.contains(a);
+  /// Exakter case-insensitiver Match auf den vollen Wirkstoff-Namen.
+  /// Da wir eine Supplement-Datenbank mit standardisierten Bezeichnungen nutzen,
+  /// reicht exakter Vergleich — keine Substring-Logik nötig.
+  bool _matches(String a, String b) => a.toLowerCase() == b.toLowerCase();
 
   // --- Persistenz ---
 

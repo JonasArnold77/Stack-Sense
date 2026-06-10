@@ -199,6 +199,59 @@ class ApiService {
         _ => SupplementType.single,
       };
 
+  /// Prüft via Claude Haiku semantisch ob [newSupplement] Wirkstoffe enthält
+  /// die bereits in [stack] vorhanden sind (z.B. B2 == Vitamin B2 == Riboflavin).
+  /// Gibt die IDs der Duplikate und eine Begründung zurück.
+  /// Bei Netzwerkfehler: leeres Ergebnis (kein False-Positive).
+  Future<DuplicateCheckResult> checkDuplicates({
+    required Supplement newSupplement,
+    required List<Supplement> stack,
+  }) async {
+    if (stack.isEmpty) {
+      return const DuplicateCheckResult(duplicateIds: [], reasoning: '');
+    }
+
+    Map<String, dynamic> toInfo(Supplement s) => {
+          'id': s.id,
+          'name': s.name,
+          'substance_name': s.substanceName,
+          'enthaltene_wirkstoffe': s.enthalteneWirkstoffe,
+        };
+
+    final body = jsonEncode({
+      'new_supplement': toInfo(newSupplement),
+      'stack': stack.map(toInfo).toList(),
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/check-duplicates'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final ids = (data['duplicates'] as List<dynamic>? ?? [])
+            .map((e) => e as String)
+            .toList();
+        return DuplicateCheckResult(
+          duplicateIds: ids,
+          reasoning: data['reasoning'] as String? ?? '',
+        );
+      }
+      return const DuplicateCheckResult(duplicateIds: [], reasoning: '');
+    } catch (e) {
+      debugPrint('Duplikat-Check Fehler: $e');
+      return const DuplicateCheckResult(duplicateIds: [], reasoning: '');
+    }
+  }
+
   /// Lädt natürliche Lebensmittelquellen für einen Nährstoff (lazy, on-demand).
   Future<List<FoodSource>> getFoodSources({
     required String supplementName,
@@ -244,4 +297,20 @@ class ApiException implements Exception {
   const ApiException(this.message);
   @override
   String toString() => message;
+}
+
+/// Ergebnis der KI-basierten Duplikatprüfung.
+class DuplicateCheckResult {
+  /// IDs der Stack-Einträge die denselben Wirkstoff enthalten.
+  final List<String> duplicateIds;
+
+  /// Claudes Begründung (für Debug / optionale Anzeige im Dialog).
+  final String reasoning;
+
+  const DuplicateCheckResult({
+    required this.duplicateIds,
+    required this.reasoning,
+  });
+
+  bool get hasDuplicates => duplicateIds.isNotEmpty;
 }

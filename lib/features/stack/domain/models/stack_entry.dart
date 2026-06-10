@@ -59,6 +59,7 @@ class StackEntry {
     bool? hasDuplicateWarning,
     InteractionSeverity? interactionSeverity,
     String? drugInteraction,
+    DateTime? addedAt,
   }) =>
       StackEntry(
         id: id,
@@ -74,7 +75,7 @@ class StackEntry {
         supplementType: supplementType,
         enthalteneWirkstoffe: enthalteneWirkstoffe,
         hasDuplicateWarning: hasDuplicateWarning ?? this.hasDuplicateWarning,
-        addedAt: addedAt,
+        addedAt: addedAt ?? this.addedAt,
       );
 
   /// Supplement → StackEntry konvertieren

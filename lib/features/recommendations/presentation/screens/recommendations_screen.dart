@@ -6,6 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
 import '../../domain/models/supplement.dart';
+import '../../../stack/domain/models/stack_entry.dart' show StackEntry, IntakeSlot;
 import '../widgets/evidence_card.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/domain/models/stack_entry.dart';
@@ -131,18 +132,64 @@ class _RecommendationsScreenState
     }
   }
 
-  // --- Duplikat-Check vor dem Hinzufügen ---
+  // --- KI-basierter Duplikat-Check vor dem Hinzufügen ---
   Future<void> _handleAddToStack(Supplement supplement) async {
     final stackNotifier = ref.read(stackProvider.notifier);
+    final currentStack = ref.read(stackProvider);
 
-    final duplicates = stackNotifier.findDuplicates(supplement);
+    // Stack als Supplement-Liste für den API-Call aufbereiten
+    final stackAsSupplements = currentStack.map(_stackEntryToSupplement).toList();
+
+    // Lade-Indikator zeigen während KI prüft
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(width: 12),
+              Text('Stack wird geprüft…'),
+            ],
+          ),
+          duration: Duration(seconds: 10),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
+    DuplicateCheckResult checkResult;
+    try {
+      checkResult = await ApiService.instance.checkDuplicates(
+        newSupplement: supplement,
+        stack: stackAsSupplements,
+      );
+    } finally {
+      if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    }
+
+    if (!mounted) return;
+
+    if (!checkResult.hasDuplicates) {
+      await stackNotifier.add(supplement);
+      return;
+    }
+
+    // Duplikate aus dem Stack anhand der IDs holen
+    final duplicates = currentStack
+        .where((e) => checkResult.duplicateIds.contains(e.id))
+        .toList();
 
     if (duplicates.isEmpty) {
       await stackNotifier.add(supplement);
       return;
     }
-
-    if (!mounted) return;
 
     // Dialog anzeigen
     final result = await showDialog<_DuplicateDialogResult>(
@@ -151,6 +198,7 @@ class _RecommendationsScreenState
       builder: (_) => _DuplicateDialog(
         newSupplement: supplement,
         duplicates: duplicates,
+        reasoning: checkResult.reasoning,
       ),
     );
 
@@ -167,6 +215,19 @@ class _RecommendationsScreenState
           duplicates.map((e) => e.id).toList());
     }
   }
+
+  /// Konvertiert einen StackEntry in ein minimales Supplement-Objekt für den API-Call.
+  Supplement _stackEntryToSupplement(StackEntry e) => Supplement(
+        id: e.id,
+        name: e.name,
+        substanceName: e.substanceName,
+        evidenceLevel: e.evidenceLevel,
+        evidenceReason: '',
+        dosage: e.dosage,
+        intakeTime: e.intakeTime,
+        supplementType: e.supplementType,
+        enthalteneWirkstoffe: e.enthalteneWirkstoffe,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -324,10 +385,12 @@ class _DuplicateDialogResult {
 class _DuplicateDialog extends StatefulWidget {
   final Supplement newSupplement;
   final List<StackEntry> duplicates;
+  final String reasoning;
 
   const _DuplicateDialog({
     required this.newSupplement,
     required this.duplicates,
+    this.reasoning = '',
   });
 
   @override
@@ -375,6 +438,35 @@ class _DuplicateDialogState extends State<_DuplicateDialog> {
                     'Möchtest du ${widget.duplicates.first.name} entfernen?',
             style: AppTextStyles.bodyMedium,
           ),
+          if (widget.reasoning.isNotEmpty) ...[
+            const SizedBox(height: AppConstants.spaceM),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF6C00).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFEF6C00).withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, size: 14, color: Color(0xFFEF6C00)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      widget.reasoning,
+                      style: AppTextStyles.caption.copyWith(
+                        color: const Color(0xFFEF6C00),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (isMultiple) ...[
             const SizedBox(height: AppConstants.spaceM),
             ...widget.duplicates.map((entry) => CheckboxListTile(

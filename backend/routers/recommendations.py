@@ -103,6 +103,36 @@ async def get_food_sources(request: FoodSourcesRequest) -> dict:
         raise HTTPException(status_code=500, detail="Lebensmittelquellen konnten nicht geladen werden")
 
 
+class SupplementInfo(BaseModel):
+    id: str
+    name: str
+    substance_name: str | None = None
+    enthaltene_wirkstoffe: list[str] = []
+
+
+class DuplicateCheckRequest(BaseModel):
+    new_supplement: SupplementInfo
+    stack: list[SupplementInfo] = []
+
+
+@router.post("/check-duplicates")
+async def check_duplicates(request: DuplicateCheckRequest) -> dict:
+    """
+    Prüft semantisch ob das neue Supplement Wirkstoffe enthält
+    die bereits im Stack vorhanden sind — via Claude Haiku.
+    Gibt { "duplicates": [ids], "reasoning": "..." } zurück.
+    """
+    try:
+        result = await claude_service.check_duplicates(
+            new_supplement=request.new_supplement.model_dump(),
+            stack=[e.model_dump() for e in request.stack],
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Duplikat-Check Fehler: {e}", exc_info=True)
+        return {"duplicates": [], "reasoning": "Prüfung nicht verfügbar."}
+
+
 @router.get("/health")
 async def health():
     """Einfacher Health-Check — prüft ob der Server läuft."""

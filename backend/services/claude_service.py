@@ -190,6 +190,12 @@ WICHTIGE REGELN:
 8. Generiere EXAKT so viele Supplements wie im LIMIT angegeben — nicht mehr, nicht weniger
 9. Überspringe alle Supplements deren IDs in BEREITS GEZEIGT aufgeführt sind
 
+SUPPLEMENT-TYPEN:
+- "single": Enthält genau EINEN Wirkstoff (z.B. Vitamin D3, Magnesium, L-Glycin)
+- "group": Enthält MEHRERE Wirkstoffe in einem Produkt (z.B. B-Komplex, Multivitamin, Omega-3+D3)
+  → Bei "group": enthaltene_wirkstoffe als Liste angeben
+  → Bei "single": enthaltene_wirkstoffe = []
+
 JSON-FORMAT (exakt einhalten):
 {
   "recommendations": [
@@ -197,6 +203,8 @@ JSON-FORMAT (exakt einhalten):
       "id": "vitamin-d3",
       "name": "Vitamin D3",
       "substance_name": "Cholecalciferol",
+      "supplement_type": "single",
+      "enthaltene_wirkstoffe": [],
       "evidence_level": "green",
       "evidence_reason": "Starke RCT-Evidenz bei Defizit — im Winter bei 70% der Deutschen zu niedrig.",
       "dosage": "2.000–4.000 IE täglich",
@@ -278,6 +286,23 @@ JSON-FORMAT (exakt einhalten):
     {"food": "Hühnerei (Eigelb)", "note": "2 Stück ≈ 80 IE"}
   ]
 }"""
+
+
+DUPLICATE_CHECK_PROMPT = """Du prüfst ob ein neues Supplement Wirkstoffe enthält die bereits im Stack des Nutzers vorhanden sind.
+
+REGELN:
+- Erkenne semantisch gleiche Wirkstoffe unabhängig von Schreibweise oder Abkürzung:
+  B2 = Vitamin B2 = Riboflavin, B12 = Vitamin B12 = Cobalamin, Vit. D = Vitamin D3 = Cholecalciferol usw.
+- Kombipräparate überlappen wenn mindestens EIN enthaltener Wirkstoff bereits im Stack ist
+- Antworte AUSSCHLIESSLICH mit validem JSON — kein Text davor oder danach
+
+JSON-FORMAT:
+{
+  "duplicates": ["id-des-stack-eintrags-1", "id-des-stack-eintrags-2"],
+  "reasoning": "Kurze Begründung auf Deutsch, max 100 Zeichen"
+}
+
+Falls keine Duplikate: { "duplicates": [], "reasoning": "Keine Wirkstoffüberschneidung gefunden." }"""
 
 
 def _extract_json(raw: str) -> str:
@@ -403,6 +428,13 @@ class ClaudeService:
                 final_interaction = db_interaction_text or item.get("drug_interaction")
                 final_severity = db_severity
 
+            # supplement_type aus Claude-Antwort lesen — Default: single
+            raw_type = item.get("supplement_type", "single")
+            try:
+                supp_type = SupplementType(raw_type)
+            except ValueError:
+                supp_type = SupplementType.single
+
             rec = SupplementRecommendation(
                 id=supplement_id,
                 name=item["name"],
@@ -417,6 +449,8 @@ class ClaudeService:
                 simple_explanation=None,
                 product_links=product_links,
                 categories=item.get("categories", []),
+                supplement_type=supp_type,
+                enthaltene_wirkstoffe=item.get("enthaltene_wirkstoffe", []),
             )
             recommendations.append(rec)
 
@@ -461,6 +495,51 @@ class ClaudeService:
         except (json.JSONDecodeError, KeyError) as e:
             logger.error(f"Food-Sources JSON Fehler: {e}\nRaw: {raw}")
             return []
+
+    async def check_duplicates(
+        self,
+        new_supplement: dict,
+        stack: list[dict],
+    ) -> dict:
+        """
+        Prüft semantisch ob das neue Supplement Wirkstoffe enthält die bereits im Stack sind.
+        Gibt { "duplicates": [ids...], "reasoning": "..." } zurück.
+        Nutzt Haiku — schnell und günstig für diese einfache Klassifikation.
+        """
+        if not stack:
+            return {"duplicates": [], "reasoning": "Stack ist leer."}
+
+        def _fmt(s: dict) -> str:
+            parts = [f"Name: {s['name']}"]
+            if s.get("substance_name"):
+                parts.append(f"Wirkstoff: {s['substance_name']}")
+            if s.get("enthaltene_wirkstoffe"):
+                parts.append(f"Enthält: {', '.join(s['enthaltene_wirkstoffe'])}")
+            return " | ".join(parts)
+
+        stack_lines = "\n".join(
+            f"- ID={e['id']} | {_fmt(e)}" for e in stack
+        )
+
+        user_msg = (
+            f"NEUES SUPPLEMENT:\n{_fmt(new_supplement)}\n\n"
+            f"AKTUELLER STACK:\n{stack_lines}\n\n"
+            "Welche Stack-Einträge enthalten denselben Wirkstoff wie das neue Supplement?"
+        )
+
+        message = self.client.messages.create(
+            model=settings.claude_model,
+            max_tokens=256,
+            system=DUPLICATE_CHECK_PROMPT,
+            messages=[{"role": "user", "content": user_msg}],
+        )
+
+        raw = _extract_json(message.content[0].text.strip())
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError as e:
+            logger.error(f"Duplikat-Check JSON Fehler: {e}\nRaw: {raw}")
+            return {"duplicates": [], "reasoning": "Fehler bei der Prüfung."}
 
     async def get_product_suggestions(
         self, supplement_name: str, substance_name: str | None, categories: list[str]

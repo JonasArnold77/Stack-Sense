@@ -16,7 +16,8 @@ class HomeScreen extends StatelessWidget {
     final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith(AppRoutes.recommendations)) return 1;
     if (location.startsWith(AppRoutes.checkin)) return 2;
-    if (location.startsWith(AppRoutes.profile)) return 3;
+    if (location.startsWith(AppRoutes.insights)) return 3;
+    if (location.startsWith(AppRoutes.profile)) return 4;
     return 0; // Stack (default)
   }
 
@@ -43,6 +44,8 @@ class HomeScreen extends StatelessWidget {
               case 2:
                 context.go(AppRoutes.checkin);
               case 3:
+                context.go(AppRoutes.insights);
+              case 4:
                 context.go(AppRoutes.profile);
             }
           },
@@ -50,7 +53,7 @@ class HomeScreen extends StatelessWidget {
             BottomNavigationBarItem(
               icon: Icon(Icons.layers_outlined),
               activeIcon: Icon(Icons.layers),
-              label: 'Mein Stack',
+              label: 'Stack',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.search_outlined),
@@ -61,6 +64,11 @@ class HomeScreen extends StatelessWidget {
               icon: Icon(Icons.check_circle_outline),
               activeIcon: Icon(Icons.check_circle),
               label: 'Check-in',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.insights_outlined),
+              activeIcon: Icon(Icons.insights),
+              label: 'Insights',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),

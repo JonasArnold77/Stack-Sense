@@ -11,6 +11,7 @@ import '../../features/recommendations/presentation/screens/recommendations_scre
 import '../../features/stack/presentation/screens/stack_screen.dart';
 import '../../features/checkin/presentation/screens/checkin_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/insights/presentation/screens/insights_screen.dart';
 
 /// Alle Route-Namen als Konstanten — nie Strings direkt verwenden.
 class AppRoutes {
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String stack = '/stack';
   static const String checkin = '/checkin';
   static const String profile = '/profile';
+  static const String insights = '/insights';
 }
 
 /// Riverpod Provider für den Router.
@@ -84,6 +86,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.profile,
             name: 'profile',
             builder: (context, state) => const ProfileScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.insights,
+            name: 'insights',
+            builder: (context, state) => const InsightsScreen(),
           ),
         ],
       ),
