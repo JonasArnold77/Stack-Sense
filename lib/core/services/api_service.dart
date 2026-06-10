@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants/app_constants.dart';
+import '../services/url_config_service.dart';
 import '../../features/onboarding/domain/models/user_profile.dart';
 import '../../features/recommendations/domain/models/supplement.dart';
 // ProductLink wird aus supplement.dart re-exportiert
@@ -13,18 +14,23 @@ class ApiService {
   ApiService._();
   static final ApiService instance = ApiService._();
 
-  // Android-Emulator → 10.0.2.2 = localhost des PCs
-  // Echtes Gerät im selben WLAN → IP-Adresse des PCs
-  static const String _baseUrl = AppConstants.baseUrl;
+  // URL wird zur Laufzeit aus UrlConfigService gelesen — kein Rebuild nötig.
+  String get _baseUrl => UrlConfigService.current;
 
   /// Holt personalisierte Empfehlungen von Claude via Backend.
+  /// [limit] — Anzahl Supplements pro Seite (Standard: 5).
+  /// [excludeIds] — bereits geladene Supplement-IDs, werden übersprungen.
   Future<List<Supplement>> getRecommendations({
     required UserProfile profile,
     required String goal,
+    int limit = 5,
+    List<String> excludeIds = const [],
   }) async {
     final body = jsonEncode({
       'profile': _profileToJson(profile),
       'goal': goal,
+      'limit': limit,
+      'exclude_ids': excludeIds,
     });
 
     try {
@@ -154,6 +160,9 @@ class ApiService {
     final rawCategories = json['categories'] as List<dynamic>? ?? [];
     final categories = rawCategories.map((e) => e as String).toList();
 
+    final rawWirkstoffe = json['enthaltene_wirkstoffe'] as List<dynamic>? ?? [];
+    final enthalteneWirkstoffe = rawWirkstoffe.map((e) => e as String).toList();
+
     return Supplement(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -164,8 +173,11 @@ class ApiService {
       intakeTime: json['intake_time'] as String,
       intakeHint: json['intake_hint'] as String?,
       drugInteraction: json['drug_interaction'] as String?,
+      interactionSeverity: _parseSeverity(json['interaction_severity'] as String?),
       productLinks: productLinks,
       categories: categories,
+      supplementType: _parseSupplementType(json['supplement_type'] as String?),
+      enthalteneWirkstoffe: enthalteneWirkstoffe,
     );
   }
 
@@ -174,6 +186,57 @@ class ApiService {
         'yellow' => EvidenceLevel.yellow,
         _ => EvidenceLevel.red,
       };
+
+  InteractionSeverity _parseSeverity(String? raw) => switch (raw) {
+        'timing' => InteractionSeverity.timing,
+        'moderate' => InteractionSeverity.moderate,
+        'high' => InteractionSeverity.high,
+        _ => InteractionSeverity.none,
+      };
+
+  SupplementType _parseSupplementType(String? raw) => switch (raw) {
+        'group' => SupplementType.group,
+        _ => SupplementType.single,
+      };
+
+  /// Lädt natürliche Lebensmittelquellen für einen Nährstoff (lazy, on-demand).
+  Future<List<FoodSource>> getFoodSources({
+    required String supplementName,
+    String? substanceName,
+  }) async {
+    final body = jsonEncode({
+      'supplement_name': supplementName,
+      'substance_name': substanceName,
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/food-sources'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final list = data['sources'] as List<dynamic>? ?? [];
+        return list
+            .map((e) => FoodSource.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw ApiException('Quellen nicht verfügbar (${response.statusCode})');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Food-Sources Fehler: $e');
+      throw ApiException('Lebensmittelquellen konnten nicht geladen werden.');
+    }
+  }
 }
 
 class ApiException implements Exception {

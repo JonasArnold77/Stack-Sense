@@ -1,54 +1,41 @@
 # StackSense Start-Script
-# Startet Backend, ngrok und Flutter App in einem Schritt
+# Startet Backend + Flutter App (WLAN, kein ngrok)
 
 $projectRoot = "C:\Github\Stack Sense\Stack-Sense"
 $appRoot     = "C:\Github\Stack Sense\stacksense_app"
 $flutter     = "C:\Users\jonas\develop\flutter\bin\flutter.bat"
 
-# --- 1. Backend starten (neues Fenster) ---
-Write-Host "Backend wird gestartet..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$projectRoot\backend'; uvicorn main:app --reload --port 8000"
+# --- 1. Lokale WLAN-IP ermitteln ---
+$localIp = (Get-NetIPAddress -AddressFamily IPv4 |
+    Where-Object { $_.InterfaceAlias -like "*Wi-Fi*" -or $_.InterfaceAlias -like "*WLAN*" } |
+    Select-Object -First 1).IPAddress
 
-# Kurz warten bis Backend hochgefahren ist
-Start-Sleep -Seconds 3
-
-# --- 2. Alte ngrok-Prozesse beenden + neu starten ---
-Write-Host "Stoppe alte ngrok-Prozesse..." -ForegroundColor Yellow
-Get-Process -Name "ngrok" -ErrorAction SilentlyContinue | Stop-Process -Force
-Start-Sleep -Seconds 1
-
-Write-Host "ngrok wird gestartet..." -ForegroundColor Cyan
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "ngrok http 8000"
-
-# Warten bis ngrok API verfügbar ist
-Write-Host "Warte auf ngrok..." -ForegroundColor Yellow
-$ngrokUrl = $null
-for ($i = 0; $i -lt 15; $i++) {
-    Start-Sleep -Seconds 1
-    try {
-        $tunnels = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels" -ErrorAction Stop
-        $https = $tunnels.tunnels | Where-Object { $_.proto -eq "https" } | Select-Object -First 1
-        if ($https) {
-            $ngrokUrl = $https.public_url
-            break
-        }
-    } catch { }
+if (-not $localIp) {
+    # Fallback: erste nicht-loopback IPv4
+    $localIp = (Get-NetIPAddress -AddressFamily IPv4 |
+        Where-Object { $_.IPAddress -ne "127.0.0.1" -and $_.PrefixOrigin -ne "WellKnown" } |
+        Select-Object -First 1).IPAddress
 }
 
-if (-not $ngrokUrl) {
-    Write-Host "ngrok URL konnte nicht automatisch ausgelesen werden." -ForegroundColor Red
-    Write-Host "Bitte URL manuell in app_constants.dart eintragen und script neu starten." -ForegroundColor Red
+if (-not $localIp) {
+    Write-Host "WLAN-IP konnte nicht ermittelt werden." -ForegroundColor Red
     exit 1
 }
 
-Write-Host "ngrok URL: $ngrokUrl" -ForegroundColor Green
+$backendUrl = "http://${localIp}:8000/api/v1"
+Write-Host "Lokale IP: $localIp  →  $backendUrl" -ForegroundColor Green
 
-# --- 3. app_constants.dart automatisch aktualisieren ---
+# --- 2. app_constants.dart aktualisieren ---
 $constantsFile = "$projectRoot\lib\core\constants\app_constants.dart"
 $content = Get-Content $constantsFile -Raw
-$content = $content -replace "defaultValue: '.*?'", "defaultValue: '$ngrokUrl/api/v1'"
+$content = $content -replace "defaultValue: '.*?'", "defaultValue: '$backendUrl'"
 Set-Content $constantsFile $content -NoNewline
 Write-Host "app_constants.dart aktualisiert." -ForegroundColor Green
+
+# --- 3. Backend starten (neues Fenster) ---
+Write-Host "Backend wird gestartet..." -ForegroundColor Cyan
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$projectRoot\backend'; uvicorn main:app --host 0.0.0.0 --reload --port 8000"
+Start-Sleep -Seconds 3
 
 # --- 4. Sync + Flutter run ---
 Write-Host "Sync laeuft..." -ForegroundColor Cyan

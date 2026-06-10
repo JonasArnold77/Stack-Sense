@@ -7,7 +7,9 @@ import '../../domain/models/stack_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 
 /// Card für einen Eintrag im Stack des Nutzers.
-/// Kompakter als die EvidenceCard — zeigt das Wichtigste auf einen Blick.
+///
+/// Hintergrundfarbe = Evidenzstufe (grün/gelb/rot, dezent).
+/// Warnfeld unten = Wechselwirkungsschwere (gelb/orange/rot, auffällig).
 class StackSupplementCard extends StatelessWidget {
   final StackEntry entry;
   final VoidCallback onRemove;
@@ -18,37 +20,97 @@ class StackSupplementCard extends StatelessWidget {
     required this.onRemove,
   });
 
+  // --- Evidenz-Hintergrundfarbe (dezent) ---
+  Color _cardBg() => switch (entry.evidenceLevel) {
+        EvidenceLevel.green => const Color(0xFFECF8F1), // sehr helles Grün
+        EvidenceLevel.yellow => const Color(0xFFFFFBEB), // sehr helles Gelb
+        EvidenceLevel.red => const Color(0xFFFEF0F0),   // sehr helles Rot
+      };
+
+  Color _cardBorder() => switch (entry.evidenceLevel) {
+        EvidenceLevel.green => const Color(0xFFB8E8CC),
+        EvidenceLevel.yellow => const Color(0xFFFFE08A),
+        EvidenceLevel.red => const Color(0xFFFFB8B8),
+      };
+
+  Color _evidenceDot() => switch (entry.evidenceLevel) {
+        EvidenceLevel.green => AppColors.evidenceGreen,
+        EvidenceLevel.yellow => AppColors.evidenceYellow,
+        EvidenceLevel.red => AppColors.evidenceRed,
+      };
+
+  String _evidenceLabel() => switch (entry.evidenceLevel) {
+        EvidenceLevel.green => AppConstants.evidenceGreenLabel,
+        EvidenceLevel.yellow => AppConstants.evidenceYellowLabel,
+        EvidenceLevel.red => AppConstants.evidenceRedLabel,
+      };
+
+  // --- Warnfeld-Farben nach Schwere ---
+  Color? _warnBg() => switch (entry.interactionSeverity) {
+        InteractionSeverity.timing => const Color(0xFFFFFDE7),
+        InteractionSeverity.moderate => const Color(0xFFFFF3E0),
+        InteractionSeverity.high => const Color(0xFFFFEBEE),
+        InteractionSeverity.none => null,
+      };
+
+  Color? _warnBorder() => switch (entry.interactionSeverity) {
+        InteractionSeverity.timing => const Color(0xFFF9A825),
+        InteractionSeverity.moderate => const Color(0xFFEF6C00),
+        InteractionSeverity.high => const Color(0xFFC62828),
+        InteractionSeverity.none => null,
+      };
+
+  Color? _warnIcon() => switch (entry.interactionSeverity) {
+        InteractionSeverity.timing => const Color(0xFFF9A825),
+        InteractionSeverity.moderate => const Color(0xFFEF6C00),
+        InteractionSeverity.high => const Color(0xFFC62828),
+        InteractionSeverity.none => null,
+      };
+
+  String? _warnTitle() => switch (entry.interactionSeverity) {
+        InteractionSeverity.timing => 'Einnahme-Timing beachten',
+        InteractionSeverity.moderate => 'Arzt-Rücksprache empfohlen',
+        InteractionSeverity.high => 'Starke Wechselwirkung',
+        InteractionSeverity.none => null,
+      };
+
+  bool get _hasWarning =>
+      entry.interactionSeverity != InteractionSeverity.none &&
+      entry.drugInteraction != null;
+
   @override
   Widget build(BuildContext context) {
-    final color = _evidenceColor(entry.evidenceLevel);
-
     return Container(
       margin: const EdgeInsets.only(bottom: AppConstants.spaceM),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: _cardBg(),
         borderRadius: BorderRadius.circular(AppConstants.radiusL),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: _cardBorder()),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Header ---
+          // --- Header: Name + Badges + Remove ---
           Padding(
             padding: const EdgeInsets.all(AppConstants.cardPadding),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Evidenz-Indikator (farbiger Balken links)
-                Container(
-                  width: 4,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.radiusRound),
+                // Evidenz-Dot
+                Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: _evidenceDot(),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-                const SizedBox(width: AppConstants.spaceM),
+                const SizedBox(width: AppConstants.spaceS),
 
-                // Name + Substanz
+                // Name + Substanz + Evidenz-Label
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,23 +119,31 @@ class StackSupplementCard extends StatelessWidget {
                       if (entry.substanceName != null)
                         Text(entry.substanceName!,
                             style: AppTextStyles.bodySmall),
+                      const SizedBox(height: 2),
+                      Text(
+                        _evidenceLabel(),
+                        style: AppTextStyles.caption.copyWith(
+                          color: _evidenceDot(),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
-                // Einnahmezeit-Slot Badge
+                // Slot Badge
                 _SlotBadge(slot: entry.intakeSlot),
 
-                const SizedBox(width: AppConstants.spaceS),
+                const SizedBox(width: AppConstants.spaceXS),
 
-                // Entfernen-Button
+                // Entfernen
                 IconButton(
                   onPressed: onRemove,
                   icon: const Icon(Icons.remove_circle_outline,
                       color: AppColors.textTertiary, size: 20),
                   tooltip: 'Aus Stack entfernen',
                   style: IconButton.styleFrom(
-                    minimumSize: const Size(36, 36),
+                    minimumSize: const Size(32, 32),
                     padding: EdgeInsets.zero,
                   ),
                 ),
@@ -81,84 +151,150 @@ class StackSupplementCard extends StatelessWidget {
             ),
           ),
 
-          // --- Einnahme-Info ---
-          Container(
-            margin: const EdgeInsets.fromLTRB(
+          // --- Dosierung + Einnahme-Hinweis ---
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
               AppConstants.cardPadding,
               0,
               AppConstants.cardPadding,
               AppConstants.cardPadding,
             ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.spaceM,
-              vertical: AppConstants.spaceS,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(AppConstants.radiusM),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.scale_outlined,
-                    size: 14, color: AppColors.textTertiary),
-                const SizedBox(width: AppConstants.spaceS),
-                Expanded(
-                  child: Text(
-                    entry.dosage,
-                    style: AppTextStyles.bodySmall
-                        .copyWith(fontWeight: FontWeight.w500),
-                  ),
-                ),
-                if (entry.intakeHint != null) ...[
-                  const Icon(Icons.info_outline,
-                      size: 14, color: AppColors.textTertiary),
-                  const SizedBox(width: AppConstants.spaceXS),
-                  Flexible(
-                    child: Text(
-                      entry.intakeHint!,
-                      style: AppTextStyles.caption,
-                      textAlign: TextAlign.end,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          // Wechselwirkungs-Warnung (falls vorhanden)
-          if (entry.drugInteraction != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppConstants.cardPadding,
-                0,
-                AppConstants.cardPadding,
-                AppConstants.cardPadding,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.spaceM,
+                vertical: AppConstants.spaceS,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                border: Border.all(color: Colors.white.withOpacity(0.8)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_outlined,
-                      size: 14, color: AppColors.warning),
+                  const Icon(Icons.scale_outlined,
+                      size: 14, color: AppColors.textTertiary),
                   const SizedBox(width: AppConstants.spaceS),
                   Expanded(
                     child: Text(
-                      entry.drugInteraction!,
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.warning),
+                      entry.dosage,
+                      style: AppTextStyles.bodySmall
+                          .copyWith(fontWeight: FontWeight.w500),
                     ),
                   ),
+                  if (entry.intakeHint != null) ...[
+                    const SizedBox(width: AppConstants.spaceS),
+                    const Icon(Icons.info_outline,
+                        size: 14, color: AppColors.textTertiary),
+                    const SizedBox(width: AppConstants.spaceXS),
+                    Flexible(
+                      child: Text(
+                        entry.intakeHint!,
+                        style: AppTextStyles.caption,
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                  ],
                 ],
               ),
+            ),
+          ),
+
+          // --- Wechselwirkungs-Warnfeld ---
+          if (_hasWarning)
+            _WarningField(
+              title: _warnTitle()!,
+              text: entry.drugInteraction!,
+              bgColor: _warnBg()!,
+              borderColor: _warnBorder()!,
+              iconColor: _warnIcon()!,
+              severity: entry.interactionSeverity,
+            ),
+
+          // --- Duplikat-Warnfeld (oranger Hinweis bei "Beides behalten") ---
+          if (entry.hasDuplicateWarning)
+            _WarningField(
+              title: 'Wirkstoff doppelt vorhanden',
+              text: 'Überdosierung möglich — überprüfe deinen Stack.',
+              bgColor: const Color(0xFFFFF3E0),
+              borderColor: const Color(0xFFEF6C00),
+              iconColor: const Color(0xFFEF6C00),
+              severity: InteractionSeverity.moderate,
             ),
         ],
       ),
     );
   }
+}
 
-  Color _evidenceColor(EvidenceLevel level) => switch (level) {
-        EvidenceLevel.green => AppColors.evidenceGreen,
-        EvidenceLevel.yellow => AppColors.evidenceYellow,
-        EvidenceLevel.red => AppColors.evidenceRed,
+/// Farbiges Warnfeld innerhalb der Card.
+class _WarningField extends StatelessWidget {
+  final String title;
+  final String text;
+  final Color bgColor;
+  final Color borderColor;
+  final Color iconColor;
+  final InteractionSeverity severity;
+
+  const _WarningField({
+    required this.title,
+    required this.text,
+    required this.bgColor,
+    required this.borderColor,
+    required this.iconColor,
+    required this.severity,
+  });
+
+  IconData get _icon => switch (severity) {
+        InteractionSeverity.high => Icons.error_outline,
+        InteractionSeverity.moderate => Icons.warning_amber_outlined,
+        _ => Icons.access_time_outlined,
       };
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppConstants.cardPadding,
+        0,
+        AppConstants.cardPadding,
+        AppConstants.cardPadding,
+      ),
+      padding: const EdgeInsets.all(AppConstants.spaceM),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppConstants.radiusM),
+        border: Border.all(color: borderColor, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Titel-Zeile mit Icon
+          Row(
+            children: [
+              Icon(_icon, size: 16, color: iconColor),
+              const SizedBox(width: AppConstants.spaceS),
+              Text(
+                title,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: iconColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.spaceXS),
+          // Warn-Text
+          Text(
+            text,
+            style: AppTextStyles.caption.copyWith(
+              color: iconColor.withOpacity(0.85),
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SlotBadge extends StatelessWidget {
@@ -170,7 +306,7 @@ class _SlotBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: Colors.white.withOpacity(0.7),
         borderRadius: BorderRadius.circular(AppConstants.radiusRound),
         border: Border.all(color: AppColors.border),
       ),

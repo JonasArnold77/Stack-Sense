@@ -34,9 +34,9 @@ class AppConstants {
   // --- API ---
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://panorama-freeness-dares.ngrok-free.dev/api/v1',
+    defaultValue: 'http://192.168.178.186:8000/api/v1',
   );
-  static const Duration apiTimeout = Duration(seconds: 30);
+  static const Duration apiTimeout = Duration(seconds: 90);
 
   // --- Onboarding ---
   static const int onboardingTotalSteps = 3;

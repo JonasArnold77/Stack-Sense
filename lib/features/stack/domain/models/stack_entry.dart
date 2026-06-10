@@ -31,6 +31,10 @@ class StackEntry {
   final IntakeSlot intakeSlot; // Kalender-Slot (automatisch abgeleitet)
   final String? intakeHint;
   final String? drugInteraction;
+  final InteractionSeverity interactionSeverity;
+  final SupplementType supplementType;
+  final List<String> enthalteneWirkstoffe; // Nur bei Kombipräparaten befüllt
+  final bool hasDuplicateWarning; // Orange Warnung wenn Wirkstoff doppelt im Stack
   final DateTime addedAt;
 
   const StackEntry({
@@ -43,8 +47,35 @@ class StackEntry {
     required this.intakeSlot,
     this.intakeHint,
     this.drugInteraction,
+    this.interactionSeverity = InteractionSeverity.none,
+    this.supplementType = SupplementType.single,
+    this.enthalteneWirkstoffe = const [],
+    this.hasDuplicateWarning = false,
     required this.addedAt,
   });
+
+  /// Kopiert diesen Eintrag mit optionalen Änderungen.
+  StackEntry copyWith({
+    bool? hasDuplicateWarning,
+    InteractionSeverity? interactionSeverity,
+    String? drugInteraction,
+  }) =>
+      StackEntry(
+        id: id,
+        name: name,
+        substanceName: substanceName,
+        evidenceLevel: evidenceLevel,
+        dosage: dosage,
+        intakeTime: intakeTime,
+        intakeSlot: intakeSlot,
+        intakeHint: intakeHint,
+        drugInteraction: drugInteraction ?? this.drugInteraction,
+        interactionSeverity: interactionSeverity ?? this.interactionSeverity,
+        supplementType: supplementType,
+        enthalteneWirkstoffe: enthalteneWirkstoffe,
+        hasDuplicateWarning: hasDuplicateWarning ?? this.hasDuplicateWarning,
+        addedAt: addedAt,
+      );
 
   /// Supplement → StackEntry konvertieren
   factory StackEntry.fromSupplement(Supplement s) => StackEntry(
@@ -57,6 +88,9 @@ class StackEntry {
         intakeSlot: _deriveSlot(s.intakeTime),
         intakeHint: s.intakeHint,
         drugInteraction: s.drugInteraction,
+        interactionSeverity: s.interactionSeverity,
+        supplementType: s.supplementType,
+        enthalteneWirkstoffe: s.enthalteneWirkstoffe,
         addedAt: DateTime.now(),
       );
 
@@ -87,20 +121,36 @@ class StackEntry {
         'intakeSlot': intakeSlot.name,
         'intakeHint': intakeHint,
         'drugInteraction': drugInteraction,
+        'interactionSeverity': interactionSeverity.name,
+        'supplementType': supplementType.name,
+        'enthalteneWirkstoffe': enthalteneWirkstoffe,
+        'hasDuplicateWarning': hasDuplicateWarning,
         'addedAt': addedAt.toIso8601String(),
       };
 
-  factory StackEntry.fromJson(Map<String, dynamic> json) => StackEntry(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        substanceName: json['substanceName'] as String?,
-        evidenceLevel:
-            EvidenceLevel.values.byName(json['evidenceLevel'] as String),
-        dosage: json['dosage'] as String,
-        intakeTime: json['intakeTime'] as String,
-        intakeSlot: IntakeSlot.values.byName(json['intakeSlot'] as String),
-        intakeHint: json['intakeHint'] as String?,
-        drugInteraction: json['drugInteraction'] as String?,
-        addedAt: DateTime.parse(json['addedAt'] as String),
-      );
+  factory StackEntry.fromJson(Map<String, dynamic> json) {
+    final severityRaw = json['interactionSeverity'] as String?;
+    final typeRaw = json['supplementType'] as String?;
+    final rawWirkstoffe = json['enthalteneWirkstoffe'] as List<dynamic>? ?? [];
+    return StackEntry(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      substanceName: json['substanceName'] as String?,
+      evidenceLevel: EvidenceLevel.values.byName(json['evidenceLevel'] as String),
+      dosage: json['dosage'] as String,
+      intakeTime: json['intakeTime'] as String,
+      intakeSlot: IntakeSlot.values.byName(json['intakeSlot'] as String),
+      intakeHint: json['intakeHint'] as String?,
+      drugInteraction: json['drugInteraction'] as String?,
+      interactionSeverity: severityRaw != null
+          ? InteractionSeverity.values.byName(severityRaw)
+          : InteractionSeverity.none,
+      supplementType: typeRaw != null
+          ? SupplementType.values.byName(typeRaw)
+          : SupplementType.single,
+      enthalteneWirkstoffe: rawWirkstoffe.map((e) => e as String).toList(),
+      hasDuplicateWarning: json['hasDuplicateWarning'] as bool? ?? false,
+      addedAt: DateTime.parse(json['addedAt'] as String),
+    );
+  }
 }

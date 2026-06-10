@@ -8,7 +8,7 @@ import anthropic
 
 from config.settings import settings
 from models.profile import UserProfile
-from models.recommendation import RecommendationResponse, SupplementRecommendation, EvidenceLevel, ProductLink
+from models.recommendation import RecommendationResponse, SupplementRecommendation, EvidenceLevel, InteractionSeverity, SupplementType, ProductLink
 from data.products import get_products
 from services.pubmed_service import PubMedService
 
@@ -25,6 +25,24 @@ except Exception as e:
     _SUPPLEMENT_DB = {}
 
 
+# --- Fester Gruppen-Supplement Platzhalter (immer angehängt) ---
+_BKOMPLEX = SupplementRecommendation(
+    id="vitamin-b-komplex",
+    name="Vitamin B-Komplex",
+    substance_name="B1, B2, B3, B5, B6, B7, B9, B12",
+    evidence_level=EvidenceLevel.green,
+    evidence_reason="Alle B-Vitamine gut erforscht — sinnvoll wenn mehrere niedrig sind.",
+    dosage="1 Kapsel täglich",
+    intake_time="Morgens",
+    intake_hint="Zum Frühstück — B-Vitamine wasserlöslich",
+    drug_interaction=None,
+    interaction_severity=InteractionSeverity.none,
+    supplement_type=SupplementType.group,
+    enthaltene_wirkstoffe=["B1", "B2", "B3", "B5", "B6", "B7", "B9", "B12"],
+    categories=["Energie", "Nervensystem", "Immunsystem"],
+)
+
+
 def _get_season() -> str:
     month = datetime.now().month
     if month in (12, 1, 2):
@@ -34,6 +52,43 @@ def _get_season() -> str:
     if month in (6, 7, 8):
         return "Sommer"
     return "Herbst"
+
+
+def _severity_from_db(supplement_id: str, medications: list[str]) -> tuple[InteractionSeverity, str | None]:
+    """
+    Sucht in der lokalen DB nach Wechselwirkungen zwischen dem Supplement
+    und den Medikamenten des Nutzers. Gibt die schlimmste Severity + Text zurück.
+    Mapping DB-Severity → InteractionSeverity:
+      "gering"  → timing   (gelb — Zeitabstand genügt meist)
+      "moderat" → moderate (orange — Arzt-Rücksprache)
+      "hoch"    → high     (rot — starke Wechselwirkung)
+    """
+    if not medications or supplement_id not in _SUPPLEMENT_DB:
+        return InteractionSeverity.none, None
+
+    db_entry = _SUPPLEMENT_DB[supplement_id]
+    severity_rank = {"gering": 1, "moderat": 2, "hoch": 3}
+    severity_map = {
+        "gering": InteractionSeverity.timing,
+        "moderat": InteractionSeverity.moderate,
+        "hoch": InteractionSeverity.high,
+    }
+
+    worst_severity = 0
+    worst_text = None
+    worst_level = InteractionSeverity.none
+
+    for interaction in db_entry.get("drug_interactions", []):
+        drug_lower = interaction["drug"].lower()
+        for med in medications:
+            if any(word in drug_lower for word in med.lower().split()):
+                rank = severity_rank.get(interaction.get("severity", "gering"), 1)
+                if rank > worst_severity:
+                    worst_severity = rank
+                    worst_text = interaction["effect"]
+                    worst_level = severity_map.get(interaction.get("severity", "gering"), InteractionSeverity.timing)
+
+    return worst_level, worst_text
 
 
 def _build_db_context(medications: list[str], conditions: list[str]) -> str:
@@ -132,10 +187,8 @@ WICHTIGE REGELN:
    - intake_time: max 40 Zeichen
    - intake_hint: max 80 Zeichen (oder null)
    - drug_interaction: max 80 Zeichen (oder null)
-8. Liste ALLE relevanten Supplements auf — typisch 6–12 pro Ziel
-   - Mindestens alle wichtigen grünen und gelben Supplements nennen
-   - Rote nur wenn sie im Markt verbreitet aber unbegründet sind (zur Aufklärung)
-   - Nicht künstlich kürzen: Vollständigkeit ist wichtiger als Kürze
+8. Generiere EXAKT so viele Supplements wie im LIMIT angegeben — nicht mehr, nicht weniger
+9. Überspringe alle Supplements deren IDs in BEREITS GEZEIGT aufgeführt sind
 
 JSON-FORMAT (exakt einhalten):
 {
@@ -205,6 +258,28 @@ REGELN:
 - Antworte NUR mit dem Erklärungstext — kein JSON, keine Formatierung"""
 
 
+FOOD_SOURCES_SYSTEM_PROMPT = """Du bist ein Ernährungsexperte und nennst die besten natürlichen Lebensmittelquellen für Nährstoffe.
+
+AUFGABE:
+Nenne 4–6 Lebensmittel die besonders reich an dem angegebenen Nährstoff sind.
+
+REGELN:
+- Antworte AUSSCHLIESSLICH mit validem JSON
+- Sortiere nach Gehalt (höchster Gehalt zuerst)
+- food: Name des Lebensmittels, max 35 Zeichen
+- note: kurze Mengenangabe oder Kontext, max 50 Zeichen (z.B. "100g ≈ 600 IE", "nur wenn fettreich")
+- Realistische, alltagstaugliche Lebensmittel bevorzugen
+- Keine Supplements — nur echte Lebensmittel
+
+JSON-FORMAT (exakt einhalten):
+{
+  "sources": [
+    {"food": "Lachs", "note": "100g ≈ 600 IE Vitamin D"},
+    {"food": "Hühnerei (Eigelb)", "note": "2 Stück ≈ 80 IE"}
+  ]
+}"""
+
+
 def _extract_json(raw: str) -> str:
     code_block_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", raw, re.DOTALL)
     if code_block_match:
@@ -220,6 +295,8 @@ def _build_user_message(
     goal: str,
     db_context: str,
     pubmed_context: str,
+    limit: int = 5,
+    exclude_ids: list[str] | None = None,
 ) -> str:
     season = _get_season()
     gender_map = {"male": "männlich", "female": "weiblich", "diverse": "divers"}
@@ -244,6 +321,10 @@ def _build_user_message(
         lines.append("- Schwanger / stillend: ja")
 
     lines.append(f"\nGEWÜNSCHTES ZIEL: {goal}")
+    lines.append(f"\nLIMIT: Generiere exakt {limit} Supplements.")
+
+    if exclude_ids:
+        lines.append(f"BEREITS GEZEIGT (überspringen): {', '.join(exclude_ids)}")
 
     if db_context:
         lines.append(f"\n{db_context}")
@@ -261,7 +342,8 @@ class ClaudeService:
         self.pubmed = PubMedService()
 
     async def get_recommendations(
-        self, profile: UserProfile, goal: str
+        self, profile: UserProfile, goal: str,
+        limit: int = 5, exclude_ids: list[str] | None = None,
     ) -> RecommendationResponse:
         logger.info(f"Empfehlungsanfrage: Ziel='{goal}', Alter={profile.age}")
 
@@ -280,7 +362,10 @@ class ClaudeService:
             logger.warning(f"PubMed nicht verfügbar: {e}")
             pubmed_context = ""
 
-        user_message = _build_user_message(profile, goal, db_context, pubmed_context)
+        user_message = _build_user_message(
+            profile, goal, db_context, pubmed_context,
+            limit=limit, exclude_ids=exclude_ids or [],
+        )
 
         message = self.client.messages.create(
             model=settings.claude_model,
@@ -306,6 +391,18 @@ class ClaudeService:
                 for p in products
             ]
 
+            # Wechselwirkung + Severity aus DB (verifiziert) — überschreibt Claude
+            db_severity, db_interaction_text = _severity_from_db(
+                supplement_id, profile.medications or []
+            )
+            # Falls DB nichts kennt, Claudes Hinweis als Fallback (timing-Level)
+            if db_severity == InteractionSeverity.none and item.get("drug_interaction"):
+                final_interaction = item.get("drug_interaction")
+                final_severity = InteractionSeverity.timing
+            else:
+                final_interaction = db_interaction_text or item.get("drug_interaction")
+                final_severity = db_severity
+
             rec = SupplementRecommendation(
                 id=supplement_id,
                 name=item["name"],
@@ -315,14 +412,19 @@ class ClaudeService:
                 dosage=item["dosage"],
                 intake_time=item["intake_time"],
                 intake_hint=item.get("intake_hint"),
-                drug_interaction=item.get("drug_interaction"),
+                drug_interaction=final_interaction,
+                interaction_severity=final_severity,
                 simple_explanation=None,
                 product_links=product_links,
                 categories=item.get("categories", []),
             )
             recommendations.append(rec)
 
-        logger.info(f"Claude lieferte {len(recommendations)} Empfehlungen (mit DB+PubMed Kontext)")
+        # B-Komplex anhängen — außer er ist bereits in exclude_ids (wurde schon gezeigt)
+        if _BKOMPLEX.id not in (exclude_ids or []):
+            recommendations.append(_BKOMPLEX)
+
+        logger.info(f"Claude lieferte {len(recommendations)} Empfehlungen + Gruppen-Platzhalter (mit DB+PubMed Kontext)")
         return RecommendationResponse(goal=goal, recommendations=recommendations)
 
     async def get_simple_explanation(
@@ -338,6 +440,27 @@ class ClaudeService:
             messages=[{"role": "user", "content": f"Erkläre mir {name} wie ich 5 Jahre alt bin."}],
         )
         return message.content[0].text.strip()
+
+    async def get_food_sources(
+        self, supplement_name: str, substance_name: str | None
+    ) -> list[dict]:
+        name = f"{supplement_name} ({substance_name})" if substance_name else supplement_name
+        logger.info(f"Lebensmittelquellen für: {name}")
+
+        message = self.client.messages.create(
+            model=settings.claude_explain_model,
+            max_tokens=512,
+            system=FOOD_SOURCES_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": f"Nährstoff: {name}"}],
+        )
+
+        raw = _extract_json(message.content[0].text.strip())
+        try:
+            data = json.loads(raw)
+            return data.get("sources", [])
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.error(f"Food-Sources JSON Fehler: {e}\nRaw: {raw}")
+            return []
 
     async def get_product_suggestions(
         self, supplement_name: str, substance_name: str | None, categories: list[str]

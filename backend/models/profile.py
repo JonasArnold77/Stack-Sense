@@ -30,3 +30,5 @@ class UserProfile(BaseModel):
 class RecommendationRequest(BaseModel):
     profile: UserProfile
     goal: str = Field(..., description="Aktuell ausgewähltes Ziel/Problemfeld")
+    limit: int = Field(default=5, ge=1, le=20, description="Anzahl Supplements pro Seite")
+    exclude_ids: list[str] = Field(default=[], description="Bereits gezeigte Supplement-IDs")

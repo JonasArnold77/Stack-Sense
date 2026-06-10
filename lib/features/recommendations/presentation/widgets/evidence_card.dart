@@ -33,6 +33,10 @@ class _EvidenceCardState extends State<EvidenceCard> {
   String? _explanation;
   bool _loadingExplanation = false;
 
+  bool _foodExpanded = false;
+  List<FoodSource>? _foodSources; // null = noch nicht geladen
+  bool _loadingFoodSources = false;
+
   // Produkt-Cache: null = noch nicht geladen, [] = geladen aber leer
   List<ProductLink>? _cachedLinks;
 
@@ -58,6 +62,29 @@ class _EvidenceCardState extends State<EvidenceCard> {
         }
       } finally {
         if (mounted) setState(() => _loadingExplanation = false);
+      }
+    }
+  }
+
+  Future<void> _toggleFoodSources() async {
+    if (_foodExpanded) {
+      setState(() => _foodExpanded = false);
+      return;
+    }
+    setState(() => _foodExpanded = true);
+
+    if (_foodSources == null && !_loadingFoodSources) {
+      setState(() => _loadingFoodSources = true);
+      try {
+        final sources = await ApiService.instance.getFoodSources(
+          supplementName: widget.supplement.name,
+          substanceName: widget.supplement.substanceName,
+        );
+        if (mounted) setState(() => _foodSources = sources);
+      } catch (_) {
+        if (mounted) setState(() => _foodSources = []);
+      } finally {
+        if (mounted) setState(() => _loadingFoodSources = false);
       }
     }
   }
@@ -249,6 +276,82 @@ class _EvidenceCardState extends State<EvidenceCard> {
                     ),
             ),
             crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            duration: AppConstants.animNormal,
+          ),
+
+          // --- "In Lebensmitteln" aufklappbar ---
+          InkWell(
+            onTap: _toggleFoodSources,
+            borderRadius: BorderRadius.circular(AppConstants.radiusM),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.cardPadding,
+                vertical: AppConstants.spaceS,
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.eco_outlined, size: 16, color: Color(0xFF388E3C)),
+                  const SizedBox(width: AppConstants.spaceS),
+                  Text(
+                    'In Lebensmitteln',
+                    style: AppTextStyles.labelMedium
+                        .copyWith(color: const Color(0xFF388E3C)),
+                  ),
+                  const Spacer(),
+                  AnimatedRotation(
+                    turns: _foodExpanded ? 0.5 : 0,
+                    duration: AppConstants.animFast,
+                    child: const Icon(Icons.keyboard_arrow_down,
+                        size: 20, color: Color(0xFF388E3C)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(
+                AppConstants.cardPadding,
+                0,
+                AppConstants.cardPadding,
+                AppConstants.spaceS,
+              ),
+              padding: const EdgeInsets.all(AppConstants.spaceM),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                border: Border.all(color: const Color(0xFFA5D6A7)),
+              ),
+              child: _loadingFoodSources
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppConstants.spaceS),
+                        child: SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Color(0xFF388E3C)),
+                        ),
+                      ),
+                    )
+                  : (_foodSources == null || _foodSources!.isEmpty)
+                      ? Text(
+                          'Keine Daten verfügbar.',
+                          style: AppTextStyles.bodySmall
+                              .copyWith(color: AppColors.textSecondary),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: _foodSources!
+                              .map((src) => _FoodSourceRow(source: src))
+                              .toList(),
+                        ),
+            ),
+            crossFadeState: _foodExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             duration: AppConstants.animNormal,
           ),
 
@@ -518,6 +621,47 @@ class _ProductSheetState extends State<_ProductSheet> {
 }
 
 // --- Sub-Widgets ---
+
+class _FoodSourceRow extends StatelessWidget {
+  final FoodSource source;
+  const _FoodSourceRow({required this.source});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppConstants.spaceS),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('🥦', style: TextStyle(fontSize: 14)),
+          const SizedBox(width: AppConstants.spaceS),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: source.food,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (source.note.isNotEmpty)
+                    TextSpan(
+                      text: '  ${source.note}',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _EvidenceBadge extends StatelessWidget {
   final EvidenceLevel level;

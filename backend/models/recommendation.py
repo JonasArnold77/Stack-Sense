@@ -9,27 +9,41 @@ class EvidenceLevel(str, Enum):
     red = "red"
 
 
+class InteractionSeverity(str, Enum):
+    none = "none"         # Keine Wechselwirkung
+    timing = "timing"     # Zeitabstand ausreichend → gelbes Feld
+    moderate = "moderate" # Arzt-Rücksprache empfohlen → oranges Feld
+    high = "high"         # Starke bekannte Wechselwirkung → rotes Feld
+
+
+class SupplementType(str, Enum):
+    single = "single"   # Einzelner Wirkstoff (z.B. Magnesium Bisglycinat)
+    group = "group"     # Kombipräparat (z.B. Vitamin B-Komplex)
+
+
 class ProductLink(BaseModel):
-    """Eine einzelne Kaufoption für ein Supplement."""
-    label: str       # z.B. "Melatonin 0,5mg (isoliert)"
-    shop: str        # z.B. "Sunday Natural"
+    label: str
+    shop: str
     url: str
-    note: Optional[str] = None  # z.B. "Mit Vitamin B6"
+    note: Optional[str] = None
 
 
 class SupplementRecommendation(BaseModel):
-    id: str                          # Eindeutiger Slug z.B. "vitamin-d3"
-    name: str                        # Anzeigename z.B. "Vitamin D3"
-    substance_name: Optional[str]    # Wirkstoffname z.B. "Cholecalciferol"
+    id: str
+    name: str
+    substance_name: Optional[str]
     evidence_level: EvidenceLevel
-    evidence_reason: str             # Max ~120 Zeichen, HWG-konform
-    dosage: str                      # z.B. "2.000–4.000 IE täglich"
-    intake_time: str                 # z.B. "Morgens"
-    intake_hint: Optional[str]       # z.B. "Mit fetthaltiger Mahlzeit"
-    drug_interaction: Optional[str]  # Wechselwirkungshinweis falls relevant
+    evidence_reason: str
+    dosage: str
+    intake_time: str
+    intake_hint: Optional[str]
+    drug_interaction: Optional[str]
+    interaction_severity: InteractionSeverity = InteractionSeverity.none
     simple_explanation: Optional[str] = None
-    product_links: list[ProductLink] = []   # Mehrere Kaufoptionen
-    categories: list[str] = []             # Problemfelder z.B. ["Schlaf", "Stressabbau"]
+    product_links: list[ProductLink] = []
+    categories: list[str] = []
+    supplement_type: SupplementType = SupplementType.single
+    enthaltene_wirkstoffe: list[str] = []  # Nur für Kombipräparate befüllt
 
 
 class RecommendationResponse(BaseModel):

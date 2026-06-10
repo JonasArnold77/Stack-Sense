@@ -1,5 +1,19 @@
-/// Evidenzlevel — entspricht der Grün/Gelb/Rot-Ampel
+/// Evidenzlevel — Grün/Gelb/Rot-Ampel
 enum EvidenceLevel { green, yellow, red }
+
+/// Schwere einer Wechselwirkung — bestimmt Farbe des Warnfelds im Stack
+enum InteractionSeverity {
+  none,     // Keine Wechselwirkung
+  timing,   // Zeitabstand ausreichend → gelbes Feld
+  moderate, // Arzt-Rücksprache empfohlen → oranges Feld
+  high,     // Starke bekannte Wechselwirkung → rotes Feld
+}
+
+/// Typ des Supplements — Einzel-Wirkstoff oder Kombipräparat
+enum SupplementType {
+  single, // Einzelner Wirkstoff (z.B. Magnesium Bisglycinat)
+  group,  // Kombipräparat (z.B. Vitamin B-Komplex)
+}
 
 /// Eine einzelne Kaufoption für ein Supplement.
 class ProductLink {
@@ -23,6 +37,19 @@ class ProductLink {
       );
 }
 
+/// Eine natürliche Lebensmittelquelle für einen Nährstoff.
+class FoodSource {
+  final String food;
+  final String note;
+
+  const FoodSource({required this.food, required this.note});
+
+  factory FoodSource.fromJson(Map<String, dynamic> json) => FoodSource(
+        food: json['food'] as String,
+        note: json['note'] as String? ?? '',
+      );
+}
+
 /// Ein Supplement mit allen relevanten Informationen für die Card-Anzeige.
 class Supplement {
   final String id;
@@ -34,8 +61,12 @@ class Supplement {
   final String intakeTime;
   final String? intakeHint;
   final String? drugInteraction;
-  final List<ProductLink> productLinks; // Mehrere Kaufoptionen
-  final List<String> categories; // Problemfelder z.B. ['Schlaf', 'Stressabbau']
+  final InteractionSeverity interactionSeverity;
+  final List<ProductLink> productLinks;
+  final List<String> categories;
+  final SupplementType supplementType;
+  /// Enthaltene Wirkstoffe — nur bei Kombipräparaten befüllt
+  final List<String> enthalteneWirkstoffe;
 
   const Supplement({
     required this.id,
@@ -47,20 +78,10 @@ class Supplement {
     required this.intakeTime,
     this.intakeHint,
     this.drugInteraction,
+    this.interactionSeverity = InteractionSeverity.none,
     this.productLinks = const [],
     this.categories = const [],
+    this.supplementType = SupplementType.single,
+    this.enthalteneWirkstoffe = const [],
   });
-
-  factory Supplement.fromJson(Map<String, dynamic> json) => Supplement(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        substanceName: json['substanceName'] as String?,
-        evidenceLevel: EvidenceLevel.values.byName(json['evidenceLevel'] as String),
-        evidenceReason: json['evidenceReason'] as String,
-        dosage: json['dosage'] as String,
-        intakeTime: json['intakeTime'] as String,
-        intakeHint: json['intakeHint'] as String?,
-        drugInteraction: json['drugInteraction'] as String?,
-        productLinks: const [],
-      );
 }

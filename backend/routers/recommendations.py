@@ -24,6 +24,8 @@ async def get_recommendations(request: RecommendationRequest) -> RecommendationR
         result = await claude_service.get_recommendations(
             profile=request.profile,
             goal=request.goal,
+            limit=request.limit,
+            exclude_ids=request.exclude_ids,
         )
         return result
     except ValueError as e:
@@ -77,6 +79,28 @@ async def get_products(request: ProductsRequest) -> dict:
     except Exception as e:
         logger.error(f"Produkt-Suche Fehler: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Produkte konnten nicht geladen werden")
+
+
+class FoodSourcesRequest(BaseModel):
+    supplement_name: str
+    substance_name: str | None = None
+
+
+@router.post("/food-sources")
+async def get_food_sources(request: FoodSourcesRequest) -> dict:
+    """
+    Gibt natürliche Lebensmittelquellen für einen Nährstoff zurück.
+    Wird lazy geladen wenn der Nutzer auf 'In Lebensmitteln' tippt.
+    """
+    try:
+        sources = await claude_service.get_food_sources(
+            supplement_name=request.supplement_name,
+            substance_name=request.substance_name,
+        )
+        return {"sources": sources}
+    except Exception as e:
+        logger.error(f"Food-Sources Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Lebensmittelquellen konnten nicht geladen werden")
 
 
 @router.get("/health")
