@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../data/stack_provider.dart';
+import '../../data/taken_provider.dart';
 import '../../domain/models/stack_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 
@@ -61,6 +62,7 @@ class _IntakeCalendarState extends ConsumerState<IntakeCalendar> {
             return _TimeSlotSection(
               slot: slot,
               supplements: supplements,
+              selectedDay: _weekDays[_selectedDayIndex],
             );
           }),
       ],
@@ -155,10 +157,12 @@ class _WeekStrip extends StatelessWidget {
 class _TimeSlotSection extends StatelessWidget {
   final IntakeSlot slot;
   final List<StackEntry> supplements;
+  final DateTime selectedDay;
 
   const _TimeSlotSection({
     required this.slot,
     required this.supplements,
+    required this.selectedDay,
   });
 
   @override
@@ -215,72 +219,188 @@ class _TimeSlotSection extends StatelessWidget {
               ),
             )
           else
-            ...supplements.map((entry) => _CalendarSupplementTile(entry: entry)),
+            ...supplements.map((entry) => _CalendarSupplementTile(
+                  entry: entry,
+                  selectedDay: selectedDay,
+                )),
         ],
       ),
     );
   }
 }
 
-class _CalendarSupplementTile extends StatelessWidget {
+class _CalendarSupplementTile extends ConsumerWidget {
   final StackEntry entry;
-  const _CalendarSupplementTile({required this.entry});
+  final DateTime selectedDay;
+
+  const _CalendarSupplementTile({
+    required this.entry,
+    required this.selectedDay,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    final color = _evidenceColor(entry.evidenceLevel);
+  Widget build(BuildContext context, WidgetRef ref) {
+    // watch löst Rebuild aus wenn sich der Set ändert
+    ref.watch(takenProvider);
+    final takenNotifier = ref.read(takenProvider.notifier);
+    final taken = takenNotifier.isTaken(entry.id, selectedDay);
+    final evidenceColor = _evidenceColor(entry.evidenceLevel);
 
-    return Container(
+    return AnimatedContainer(
+      duration: AppConstants.animFast,
       margin: const EdgeInsets.only(bottom: AppConstants.spaceS),
-      padding: const EdgeInsets.all(AppConstants.spaceM),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: taken
+            ? AppColors.evidenceGreen.withOpacity(0.06)
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(AppConstants.radiusM),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: taken ? AppColors.evidenceGreen.withOpacity(0.4) : AppColors.border,
+        ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 3,
-            height: 36,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: AppConstants.spaceM),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(entry.name, style: AppTextStyles.labelLarge),
-                Text(entry.dosage, style: AppTextStyles.bodySmall),
-              ],
-            ),
-          ),
-          if (entry.intakeHint != null)
-            Flexible(
-              child: Text(
-                entry.intakeHint!,
-                style: AppTextStyles.caption,
-                textAlign: TextAlign.end,
-                maxLines: 2,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppConstants.radiusM),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Evidenzfarb-Streifen links
+              Container(
+                width: 4,
+                color: evidenceColor,
               ),
-            ),
-          const SizedBox(width: AppConstants.spaceS),
-          // Einnahme-Checkbox (visuell, TODO: echtes Tracking in Phase 2)
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(AppConstants.radiusS),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: const Icon(Icons.check,
-                size: 16, color: AppColors.textTertiary),
+              // Inhalt
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name + Dosierung
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  entry.name,
+                                  style: AppTextStyles.labelLarge.copyWith(
+                                    color: taken
+                                        ? AppColors.textSecondary
+                                        : AppColors.textPrimary,
+                                    decoration: taken
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  entry.dosage,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: AppConstants.spaceS),
+                          // Evidenz-Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: evidenceColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(
+                                  AppConstants.radiusRound),
+                            ),
+                            child: Text(
+                              _evidenceLabel(entry.evidenceLevel),
+                              style: AppTextStyles.caption.copyWith(
+                                color: evidenceColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Einnahme-Hinweis
+                      if (entry.intakeHint != null) ...[
+                        const SizedBox(height: AppConstants.spaceS),
+                        Row(
+                          children: [
+                            const Icon(Icons.info_outline,
+                                size: 12, color: AppColors.textTertiary),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                entry.intakeHint!,
+                                style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textTertiary),
+                                maxLines: 2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(height: AppConstants.spaceM),
+
+                      // Einnahme-Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: taken
+                            ? OutlinedButton.icon(
+                                onPressed: () =>
+                                    takenNotifier.toggle(entry.id, selectedDay),
+                                icon: const Icon(Icons.check_circle,
+                                    size: 16,
+                                    color: AppColors.evidenceGreen),
+                                label: Text(
+                                  'Eingenommen',
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                      color: AppColors.evidenceGreen),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                      color: AppColors.evidenceGreen
+                                          .withOpacity(0.5)),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        AppConstants.radiusM),
+                                  ),
+                                ),
+                              )
+                            : FilledButton.icon(
+                                onPressed: () =>
+                                    takenNotifier.toggle(entry.id, selectedDay),
+                                icon: const Icon(Icons.check, size: 16),
+                                label: const Text('Als eingenommen markieren'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor:
+                                      AppColors.primary.withOpacity(0.1),
+                                  foregroundColor: AppColors.primary,
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 8),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        AppConstants.radiusM),
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -289,6 +409,12 @@ class _CalendarSupplementTile extends StatelessWidget {
         EvidenceLevel.green => AppColors.evidenceGreen,
         EvidenceLevel.yellow => AppColors.evidenceYellow,
         EvidenceLevel.red => AppColors.evidenceRed,
+      };
+
+  String _evidenceLabel(EvidenceLevel level) => switch (level) {
+        EvidenceLevel.green => AppConstants.evidenceGreenLabel,
+        EvidenceLevel.yellow => AppConstants.evidenceYellowLabel,
+        EvidenceLevel.red => AppConstants.evidenceRedLabel,
       };
 }
 

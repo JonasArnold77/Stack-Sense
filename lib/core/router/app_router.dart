@@ -12,6 +12,7 @@ import '../../features/stack/presentation/screens/stack_screen.dart';
 import '../../features/checkin/presentation/screens/checkin_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/insights/presentation/screens/insights_screen.dart';
+import '../../features/heute/presentation/screens/heute_screen.dart';
 
 /// Alle Route-Namen als Konstanten — nie Strings direkt verwenden.
 class AppRoutes {
@@ -22,6 +23,7 @@ class AppRoutes {
   static const String onboardingStep2 = '/onboarding/step2';
   static const String onboardingStep3 = '/onboarding/step3';
   static const String home = '/home';
+  static const String heute = '/heute';
   static const String recommendations = '/recommendations';
   static const String stack = '/stack';
   static const String checkin = '/checkin';
@@ -62,6 +64,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => HomeScreen(child: child),
         routes: [
+          GoRoute(
+            path: AppRoutes.heute,
+            name: 'heute',
+            builder: (context, state) => const HeuteScreen(),
+          ),
           GoRoute(
             path: AppRoutes.home,
             name: 'home',

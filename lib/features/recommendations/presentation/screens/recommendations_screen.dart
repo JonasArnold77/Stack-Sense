@@ -233,32 +233,38 @@ class _RecommendationsScreenState
   Widget build(BuildContext context) {
     final stackNotifier = ref.read(stackProvider.notifier);
     final stack = ref.watch(stackProvider);
+    final hasGoal = _selectedGoal != null;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Entdecken'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(100),
-          child: Column(
-            children: [
-              _GoalSelector(
-                selectedGoal: _selectedGoal,
-                onSelect: _loadRecommendations,
-              ),
-              _TypeToggle(
-                selected: _typeFilter,
-                onSelect: (t) => setState(() => _typeFilter = t),
-              ),
-            ],
-          ),
-        ),
+        // AppBar-Chips + Toggle nur wenn ein Ziel aktiv ist
+        bottom: hasGoal
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(100),
+                child: Column(
+                  children: [
+                    _GoalSelector(
+                      selectedGoal: _selectedGoal,
+                      onSelect: _loadRecommendations,
+                    ),
+                    _TypeToggle(
+                      selected: _typeFilter,
+                      onSelect: (t) => setState(() => _typeFilter = t),
+                    ),
+                  ],
+                ),
+              )
+            : null,
       ),
       body: _buildBody(stackNotifier, stack),
     );
   }
 
   Widget _buildBody(StackNotifier stackNotifier, List<StackEntry> stack) {
-    if (_selectedGoal == null) return const _EmptyState();
+    if (_selectedGoal == null) {
+      return _GoalTileGrid(onSelect: _loadRecommendations);
+    }
     if (_isLoading) return const _LoadingState();
     if (_error != null) {
       return _ErrorState(
@@ -717,18 +723,17 @@ class _GoalSelector extends StatelessWidget {
           horizontal: AppConstants.screenPaddingH,
           vertical: 10,
         ),
-        itemCount: _goalCategories.length,
+        itemCount: _goalData.length,
         separatorBuilder: (_, __) =>
             const SizedBox(width: AppConstants.spaceS),
         itemBuilder: (context, index) {
-          final goal = _goalCategories[index];
-          final selected = selectedGoal == goal;
+          final goal = _goalData[index];
+          final selected = selectedGoal == goal.label;
           return GestureDetector(
-            onTap: () => onSelect(goal),
+            onTap: () => onSelect(goal.label),
             child: AnimatedContainer(
               duration: AppConstants.animFast,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: selected
                     ? AppColors.primary
@@ -742,13 +747,26 @@ class _GoalSelector extends StatelessWidget {
                 ),
               ),
               child: Center(
-                child: Text(
-                  goal,
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: selected
-                        ? AppColors.textInverse
-                        : AppColors.textSecondary,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      goal.icon,
+                      size: 13,
+                      color: selected
+                          ? AppColors.textInverse
+                          : AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      goal.label,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: selected
+                            ? AppColors.textInverse
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -822,44 +840,147 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+/// Kachelgitter für die Zielauswahl — erscheint wenn noch kein Ziel gewählt ist.
+class _GoalTileGrid extends StatelessWidget {
+  final void Function(String) onSelect;
+  const _GoalTileGrid({required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spaceXL),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search, size: 64, color: AppColors.border),
-            const SizedBox(height: AppConstants.spaceM),
-            Text('Wähle ein Thema aus',
-                style: AppTextStyles.headlineMedium,
-                textAlign: TextAlign.center),
-            const SizedBox(height: AppConstants.spaceS),
-            Text(
-              'Claude analysiert dann dein Profil und gibt '
-              'dir personalisierte Empfehlungen.',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppConstants.screenPaddingH,
+              AppConstants.spaceL,
+              AppConstants.screenPaddingH,
+              AppConstants.spaceS,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Was beschäftigt dich?',
+                    style: AppTextStyles.headlineMedium),
+                const SizedBox(height: AppConstants.spaceXS),
+                Text(
+                  'Claude analysiert dein Profil und gibt personalisierte Empfehlungen.',
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.screenPaddingH,
+            vertical: AppConstants.spaceS,
+          ),
+          sliver: SliverGrid.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: AppConstants.spaceM,
+            crossAxisSpacing: AppConstants.spaceM,
+            childAspectRatio: 1.35,
+            children: _goalData.map((goal) {
+              return _GoalTile(goal: goal, onTap: () => onSelect(goal.label));
+            }).toList(),
+          ),
+        ),
+        // Etwas Abstand unten
+        const SliverToBoxAdapter(child: SizedBox(height: AppConstants.spaceXL)),
+      ],
+    );
+  }
+}
+
+class _GoalTile extends StatelessWidget {
+  final _GoalData goal;
+  final VoidCallback onTap;
+
+  const _GoalTile({required this.goal, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppConstants.radiusL),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppConstants.radiusL),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppConstants.radiusL),
+            child: Padding(
+              padding: const EdgeInsets.all(AppConstants.spaceM),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.radiusM),
+                    ),
+                    child: Icon(
+                      goal.icon,
+                      size: 20,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spaceS),
+                  Text(
+                    goal.label,
+                    style: AppTextStyles.labelMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-const _goalCategories = [
-  'Mehr Energie',
-  'Besserer Schlaf',
-  'Fokus & Konzentration',
-  'Immunsystem',
-  'Sport & Regeneration',
-  'Stimmung & Wohlbefinden',
-  'Herzgesundheit',
-  'Frauengesundheit',
+// ---- Ziel-Daten ----
+
+class _GoalData {
+  final String label;
+  final IconData icon;
+  const _GoalData({required this.label, required this.icon});
+}
+
+const _goalData = [
+  _GoalData(label: 'Mehr Energie', icon: Icons.bolt_outlined),
+  _GoalData(label: 'Besserer Schlaf', icon: Icons.bedtime_outlined),
+  _GoalData(label: 'Fokus & Konzentration', icon: Icons.psychology_outlined),
+  _GoalData(label: 'Sport & Regeneration', icon: Icons.fitness_center_outlined),
+  _GoalData(label: 'Immunsystem stärken', icon: Icons.shield_outlined),
+  _GoalData(label: 'Stimmung & Wohlbefinden', icon: Icons.mood_outlined),
+  _GoalData(label: 'Herzgesundheit', icon: Icons.favorite_outline),
+  _GoalData(label: 'Haut & Haare', icon: Icons.spa_outlined),
+  _GoalData(label: 'Gewichtsmanagement', icon: Icons.scale_outlined),
+  _GoalData(label: 'Gelenkgesundheit', icon: Icons.elderly_outlined),
+  _GoalData(label: 'Frauengesundheit / Zyklus', icon: Icons.female),
+  _GoalData(label: 'Hormonbalance', icon: Icons.science_outlined),
 ];

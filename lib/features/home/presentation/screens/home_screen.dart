@@ -5,7 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/router/app_router.dart';
 
 /// Shell-Screen mit Bottom Navigation.
-/// Die eigentlichen Inhalte kommen vom ShellRoute als [child].
+/// Tabs: Heute | Entdecken | Stack | Insights | Profil
+/// Check-in ist als CTA in Heute integriert (kein eigener Tab).
 class HomeScreen extends StatelessWidget {
   final Widget child;
 
@@ -14,11 +15,13 @@ class HomeScreen extends StatelessWidget {
   // Aktive Tab-Route aus aktuellem Pfad ableiten
   int _selectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
+    if (location.startsWith(AppRoutes.heute)) return 0;
     if (location.startsWith(AppRoutes.recommendations)) return 1;
-    if (location.startsWith(AppRoutes.checkin)) return 2;
+    if (location.startsWith(AppRoutes.stack)) return 2;
     if (location.startsWith(AppRoutes.insights)) return 3;
     if (location.startsWith(AppRoutes.profile)) return 4;
-    return 0; // Stack (default)
+    // /home und /checkin: kein eigener Tab — Heute als Default
+    return 0;
   }
 
   @override
@@ -38,11 +41,11 @@ class HomeScreen extends StatelessWidget {
           onTap: (index) {
             switch (index) {
               case 0:
-                context.go(AppRoutes.stack);
+                context.go(AppRoutes.heute);
               case 1:
                 context.go(AppRoutes.recommendations);
               case 2:
-                context.go(AppRoutes.checkin);
+                context.go(AppRoutes.stack);
               case 3:
                 context.go(AppRoutes.insights);
               case 4:
@@ -51,9 +54,9 @@ class HomeScreen extends StatelessWidget {
           },
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.layers_outlined),
-              activeIcon: Icon(Icons.layers),
-              label: 'Stack',
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Heute',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.search_outlined),
@@ -61,9 +64,9 @@ class HomeScreen extends StatelessWidget {
               label: 'Entdecken',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.check_circle_outline),
-              activeIcon: Icon(Icons.check_circle),
-              label: 'Check-in',
+              icon: Icon(Icons.layers_outlined),
+              activeIcon: Icon(Icons.layers),
+              label: 'Stack',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.insights_outlined),

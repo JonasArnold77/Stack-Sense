@@ -23,7 +23,7 @@ class _OnboardingStep3ScreenState
     extends ConsumerState<OnboardingStep3Screen> {
   Future<void> _finish() async {
     await ref.read(onboardingProvider.notifier).completeOnboarding();
-    if (mounted) context.go(AppRoutes.home);
+    if (mounted) context.go(AppRoutes.heute);
   }
 
   @override
