@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/widgets/xp_reward_overlay.dart';
 import '../../data/stack_provider.dart';
 import '../../data/taken_provider.dart';
 import '../../domain/models/stack_entry.dart';
+import '../../../gamification/data/xp_provider.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 
 /// Einnahme-Kalender — zeigt die Supplements in Zeitslots (Morgen/Mittag/Abend/Nacht).
@@ -306,22 +308,35 @@ class _CalendarSupplementTile extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: AppConstants.spaceS),
-                          // Evidenz-Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: evidenceColor.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(
-                                  AppConstants.radiusRound),
-                            ),
-                            child: Text(
-                              _evidenceLabel(entry.evidenceLevel),
-                              style: AppTextStyles.caption.copyWith(
-                                color: evidenceColor,
-                                fontWeight: FontWeight.w600,
+                          // Badges-Spalte rechts
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              // Evidenz-Badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: evidenceColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(
+                                      AppConstants.radiusRound),
+                                ),
+                                child: Text(
+                                  _evidenceLabel(entry.evidenceLevel),
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: evidenceColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                            ),
+                              // Temporär-Badge
+                              if (entry.isTemporary &&
+                                  entry.phaseEndDate != null) ...[
+                                const SizedBox(height: 4),
+                                _TemporaryBadge(
+                                    endDate: entry.phaseEndDate!),
+                              ],
+                            ],
                           ),
                         ],
                       ),
@@ -376,8 +391,16 @@ class _CalendarSupplementTile extends ConsumerWidget {
                                 ),
                               )
                             : FilledButton.icon(
-                                onPressed: () =>
-                                    takenNotifier.toggle(entry.id, selectedDay),
+                                onPressed: () async {
+                                  await takenNotifier.toggle(entry.id, selectedDay);
+                                  // 15 XP vergeben + Belohnungsanimation auslösen
+                                  ref.read(xpProvider.notifier).addXp(15);
+                                  ref.read(xpRewardProvider.notifier).state =
+                                      XpRewardEvent(
+                                    amount: 15,
+                                    id: DateTime.now().microsecondsSinceEpoch,
+                                  );
+                                },
                                 icon: const Icon(Icons.check, size: 16),
                                 label: const Text('Als eingenommen markieren'),
                                 style: FilledButton.styleFrom(
@@ -416,6 +439,43 @@ class _CalendarSupplementTile extends ConsumerWidget {
         EvidenceLevel.yellow => AppConstants.evidenceYellowLabel,
         EvidenceLevel.red => AppConstants.evidenceRedLabel,
       };
+}
+
+/// Lila Badge für temporäre Phasenziel-Supplements.
+class _TemporaryBadge extends StatelessWidget {
+  final DateTime endDate;
+  const _TemporaryBadge({required this.endDate});
+
+  static const _accent = Color(0xFF5C35CC);
+
+  String get _formatted =>
+      '${endDate.day.toString().padLeft(2, '0')}.${endDate.month.toString().padLeft(2, '0')}.${endDate.year}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: _accent.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+        border: Border.all(color: _accent.withOpacity(0.30)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.flag_outlined, size: 10, color: _accent),
+          const SizedBox(width: 3),
+          Text(
+            'Temporär · bis $_formatted',
+            style: AppTextStyles.caption.copyWith(
+              color: _accent,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _EmptyCalendar extends StatelessWidget {

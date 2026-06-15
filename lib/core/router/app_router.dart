@@ -13,6 +13,10 @@ import '../../features/checkin/presentation/screens/checkin_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/insights/presentation/screens/insights_screen.dart';
 import '../../features/heute/presentation/screens/heute_screen.dart';
+import '../../features/profile_recommendations/presentation/screens/profile_recommendations_screen.dart';
+import '../../features/phase_goals/presentation/screens/phase_goals_screen.dart';
+import '../../features/phase_goals/presentation/screens/phase_goal_recommendations_screen.dart';
+import '../../features/phase_goals/presentation/screens/phase_goal_detail_screen.dart';
 
 /// Alle Route-Namen als Konstanten — nie Strings direkt verwenden.
 class AppRoutes {
@@ -29,6 +33,10 @@ class AppRoutes {
   static const String checkin = '/checkin';
   static const String profile = '/profile';
   static const String insights = '/insights';
+  static const String profileRecommendations = '/profile-recommendations';
+  static const String phaseGoals = '/phase-goals';
+  static const String phaseGoalRecommendations = '/phase-goals/recommendations';
+  static const String phaseGoalDetail = '/phase-goals/detail';
 }
 
 /// Riverpod Provider für den Router.
@@ -58,6 +66,40 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.onboardingStep3,
         name: 'onboardingStep3',
         builder: (context, state) => const OnboardingStep3Screen(),
+      ),
+
+      // --- Profil-Empfehlungen (kein Shell/Bottom-Nav — wird gepusht) ---
+      GoRoute(
+        path: AppRoutes.profileRecommendations,
+        name: 'profileRecommendations',
+        builder: (context, state) {
+          final fromOnboarding =
+              state.uri.queryParameters['from'] == 'onboarding';
+          return ProfileRecommendationsScreen(fromOnboarding: fromOnboarding);
+        },
+      ),
+
+      // --- Phasenziele (kein Shell — werden gepusht) ---
+      GoRoute(
+        path: AppRoutes.phaseGoals,
+        name: 'phaseGoals',
+        builder: (context, state) => const PhaseGoalsScreen(),
+      ),
+      GoRoute(
+        path: '${AppRoutes.phaseGoalRecommendations}/:goalId',
+        name: 'phaseGoalRecommendations',
+        builder: (context, state) {
+          final goalId = state.pathParameters['goalId']!;
+          return PhaseGoalRecommendationsScreen(goalId: goalId);
+        },
+      ),
+      GoRoute(
+        path: '${AppRoutes.phaseGoalDetail}/:goalId',
+        name: 'phaseGoalDetail',
+        builder: (context, state) {
+          final goalId = state.pathParameters['goalId']!;
+          return PhaseGoalDetailScreen(goalId: goalId);
+        },
       ),
 
       // --- Haupt-App (Shell mit Bottom Navigation) ---

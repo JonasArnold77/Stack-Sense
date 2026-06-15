@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../domain/models/supplement.dart';
 import '../../../stack/domain/models/stack_entry.dart' show StackEntry, IntakeSlot;
 import '../widgets/evidence_card.dart';
@@ -236,28 +237,45 @@ class _RecommendationsScreenState
     final hasGoal = _selectedGoal != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Entdecken'),
-        // AppBar-Chips + Toggle nur wenn ein Ziel aktiv ist
-        bottom: hasGoal
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(100),
-                child: Column(
-                  children: [
-                    _GoalSelector(
-                      selectedGoal: _selectedGoal,
-                      onSelect: _loadRecommendations,
-                    ),
-                    _TypeToggle(
-                      selected: _typeFilter,
-                      onSelect: (t) => setState(() => _typeFilter = t),
-                    ),
-                  ],
-                ),
-              )
-            : null,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GradientScreenHeader(
+            title: 'Entdecken',
+            subtitle: _selectedGoal == null
+                ? 'Personalisierte Empfehlungen für dich'
+                : 'Ziel: $_selectedGoal',
+            bottomPadding: hasGoal ? 0 : 20,
+            bottom: hasGoal
+                ? Column(
+                    children: [
+                      _GoalSelector(
+                        selectedGoal: _selectedGoal,
+                        onSelect: _loadRecommendations,
+                        onDark: true,
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  )
+                : null,
+          ),
+          // Type-Toggle unter dem Header auf weißem Grund
+          if (hasGoal)
+            Container(
+              color: AppColors.surface,
+              child: Column(
+                children: [
+                  _TypeToggle(
+                    selected: _typeFilter,
+                    onSelect: (t) => setState(() => _typeFilter = t),
+                  ),
+                  Container(height: 1, color: AppColors.border),
+                ],
+              ),
+            ),
+          Expanded(child: _buildBody(stackNotifier, stack)),
+        ],
       ),
-      body: _buildBody(stackNotifier, stack),
     );
   }
 
@@ -709,19 +727,23 @@ class _LoadMoreIndicator extends StatelessWidget {
 class _GoalSelector extends StatelessWidget {
   final String? selectedGoal;
   final void Function(String) onSelect;
+  /// Wenn true: für dunklen (Gradient-)Hintergrund gestylt
+  final bool onDark;
 
-  const _GoalSelector(
-      {required this.selectedGoal, required this.onSelect});
+  const _GoalSelector({
+    required this.selectedGoal,
+    required this.onSelect,
+    this.onDark = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 52,
+      height: 44,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(
           horizontal: AppConstants.screenPaddingH,
-          vertical: 10,
         ),
         itemCount: _goalData.length,
         separatorBuilder: (_, __) =>
@@ -729,21 +751,36 @@ class _GoalSelector extends StatelessWidget {
         itemBuilder: (context, index) {
           final goal = _goalData[index];
           final selected = selectedGoal == goal.label;
+
+          // Farben je nach Hintergrund
+          final bgSelected = onDark
+              ? Colors.white.withOpacity(0.22)
+              : AppColors.primary;
+          final bgUnselected = onDark
+              ? Colors.white.withOpacity(0.09)
+              : AppColors.surfaceVariant;
+          final borderSelected = onDark
+              ? Colors.white.withOpacity(0.7)
+              : AppColors.primary;
+          final borderUnselected = onDark
+              ? Colors.white.withOpacity(0.2)
+              : AppColors.border;
+          final textSelected = onDark ? Colors.white : AppColors.textInverse;
+          final textUnselected = onDark
+              ? Colors.white.withOpacity(0.75)
+              : AppColors.textSecondary;
+
           return GestureDetector(
             onTap: () => onSelect(goal.label),
             child: AnimatedContainer(
               duration: AppConstants.animFast,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: selected
-                    ? AppColors.primary
-                    : AppColors.surfaceVariant,
+                color: selected ? bgSelected : bgUnselected,
                 borderRadius:
                     BorderRadius.circular(AppConstants.radiusRound),
                 border: Border.all(
-                  color: selected
-                      ? AppColors.primary
-                      : AppColors.border,
+                  color: selected ? borderSelected : borderUnselected,
                 ),
               ),
               child: Center(
@@ -753,17 +790,14 @@ class _GoalSelector extends StatelessWidget {
                     Icon(
                       goal.icon,
                       size: 13,
-                      color: selected
-                          ? AppColors.textInverse
-                          : AppColors.textSecondary,
+                      color: selected ? textSelected : textUnselected,
                     ),
                     const SizedBox(width: 5),
                     Text(
                       goal.label,
                       style: AppTextStyles.labelMedium.copyWith(
-                        color: selected
-                            ? AppColors.textInverse
-                            : AppColors.textSecondary,
+                        color: selected ? textSelected : textUnselected,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
                   ],
@@ -947,7 +981,7 @@ class _GoalTile extends StatelessWidget {
                   Text(
                     goal.label,
                     style: AppTextStyles.labelMedium.copyWith(
-                      fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w600,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

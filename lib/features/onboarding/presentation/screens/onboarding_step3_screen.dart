@@ -23,7 +23,12 @@ class _OnboardingStep3ScreenState
     extends ConsumerState<OnboardingStep3Screen> {
   Future<void> _finish() async {
     await ref.read(onboardingProvider.notifier).completeOnboarding();
-    if (mounted) context.go(AppRoutes.heute);
+    // Direkt zu den Profil-Empfehlungen → erster Aha-Moment der personalisierten Daten
+    if (mounted) {
+      context.go(
+        '${AppRoutes.profileRecommendations}?from=onboarding',
+      );
+    }
   }
 
   @override

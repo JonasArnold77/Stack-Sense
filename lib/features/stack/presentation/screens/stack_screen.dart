@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../data/stack_provider.dart';
 import '../../domain/models/stack_entry.dart';
@@ -31,84 +32,89 @@ class StackScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Mein Stack'),
-          actions: [
-            if (stack.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(right: AppConstants.spaceS),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius:
-                          BorderRadius.circular(AppConstants.radiusRound),
-                    ),
-                    child: Text(
-                      '${stack.length} Supplements',
-                      style: AppTextStyles.labelSmall
-                          .copyWith(color: AppColors.primary),
-                    ),
-                  ),
-                ),
-              ),
-            IconButton(
-              icon: const Icon(Icons.add),
-              tooltip: 'Supplement hinzufügen',
-              onPressed: () => context.go(AppRoutes.recommendations),
-            ),
-          ],
-          bottom: TabBar(
-            labelStyle: AppTextStyles.labelMedium,
-            unselectedLabelStyle: AppTextStyles.labelMedium
-                .copyWith(color: AppColors.textSecondary),
-            indicatorColor: AppColors.primary,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textSecondary,
-            tabs: const [
-              Tab(text: 'Supplements'),
-              Tab(text: 'Kalender'),
-            ],
-          ),
-        ),
-        body: TabBarView(
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- Tab 1: Supplement-Liste ---
-            stack.isEmpty
-                ? _EmptyStack()
-                : Column(
-                    children: [
-                      // Aufmerksamkeits-Header (nur wenn Warnungen vorhanden)
-                      if (warningCount > 0)
-                        _AttentionHeader(count: warningCount),
-
-                      // Supplement-Cards
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(
-                              AppConstants.screenPaddingH),
-                          itemCount: stack.length,
-                          itemBuilder: (context, index) {
-                            final entry = stack[index];
-                            return StackSupplementCard(
-                              entry: entry,
-                              onRemove: () => ref
-                                  .read(stackProvider.notifier)
-                                  .remove(entry.id),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+            GradientScreenHeader(
+              title: 'Mein Stack',
+              subtitle: stack.isEmpty
+                  ? 'Noch keine Supplements hinzugefügt'
+                  : '${stack.length} Supplement${stack.length == 1 ? '' : 's'} aktiv',
+              actions: [
+                if (warningCount > 0)
+                  GradientHeaderBadge(
+                    label: '$warningCount Warnung${warningCount == 1 ? '' : 'en'}',
+                    icon: Icons.warning_amber_rounded,
                   ),
+                const SizedBox(width: AppConstants.spaceXS),
+                GradientHeaderAction(
+                  icon: Icons.add,
+                  tooltip: 'Supplement hinzufügen',
+                  onPressed: () => context.go(AppRoutes.recommendations),
+                ),
+              ],
+              bottomPadding: 0,
+              bottom: const TabBar(
+                labelColor: Colors.white,
+                unselectedLabelColor: Color(0x99FFFFFF),
+                indicatorColor: Colors.white,
+                indicatorWeight: 2.5,
+                dividerColor: Colors.transparent,
+                labelStyle: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+                tabs: [
+                  Tab(text: 'Supplements'),
+                  Tab(text: 'Kalender'),
+                ],
+              ),
+            ),
+            // TabBarView als Expanded in der Column
+            Expanded(
+              child: TabBarView(
+                children: [
+                  // --- Tab 1: Supplement-Liste ---
+                  stack.isEmpty
+                      ? _EmptyStack()
+                      : Column(
+                          children: [
+                            // Aufmerksamkeits-Header (nur wenn Warnungen vorhanden)
+                            if (warningCount > 0)
+                              _AttentionHeader(count: warningCount),
 
-            // --- Tab 2: Kalender ---
-            SingleChildScrollView(
-              padding:
-                  const EdgeInsets.all(AppConstants.screenPaddingH),
-              child: const IntakeCalendar(),
+                            // Supplement-Cards
+                            Expanded(
+                              child: ListView.builder(
+                                padding: const EdgeInsets.all(
+                                    AppConstants.screenPaddingH),
+                                itemCount: stack.length,
+                                itemBuilder: (context, index) {
+                                  final entry = stack[index];
+                                  return StackSupplementCard(
+                                    entry: entry,
+                                    onRemove: () => ref
+                                        .read(stackProvider.notifier)
+                                        .remove(entry.id),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+
+                  // --- Tab 2: Kalender ---
+                  SingleChildScrollView(
+                    padding:
+                        const EdgeInsets.all(AppConstants.screenPaddingH),
+                    child: const IntakeCalendar(),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -182,15 +188,10 @@ class _EmptyStack extends StatelessWidget {
               'Gehe zu "Entdecken" um Supplements '
               'zu deinem Stack hinzuzufügen.',
               style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+                              .copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.spaceXL),
-            FilledButton.icon(
-              onPressed: () => context.go(AppRoutes.recommendations),
-              icon: const Icon(Icons.search, size: 18),
-              label: const Text('Entdecken'),
-            ),
           ],
         ),
       ),

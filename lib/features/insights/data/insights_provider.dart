@@ -93,11 +93,13 @@ InsightsData _compute(
     };
 
     for (final dim in dims.entries) {
+      // Nur auswerten wenn das Supplement zur Dimension passt.
+      // "Gesamt" ist die Ausnahme — immer berechnen als Gesamtüberblick.
+      if (dim.key != 'Gesamt' && !_matchesDimension(entry, dim.key)) continue;
+
       final avgBefore = recentBefore.map(dim.value).reduce((a, b) => a + b) / recentBefore.length;
       final avgAfter = recentAfter.map(dim.value).reduce((a, b) => a + b) / recentAfter.length;
 
-      // Nur "Gesamt"-Korrelation anzeigen wenn der Unterschied nicht signifikant genug ist
-      // für einzelne Dimensionen; immer alle Dimensionen berechnen aber nur signifikante zeigen
       correlations.add(CorrelationInsight(
         supplementId: entry.id,
         supplementName: entry.name,
@@ -123,6 +125,43 @@ InsightsData _compute(
     correlations: significant,
     totalCheckins: checkins.length,
     streak: _computeStreak(sorted),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Dimension ↔ Kategorie-Matching
+// ---------------------------------------------------------------------------
+
+/// Schlüsselwörter pro Dimension — case-insensitiver Substring-Vergleich.
+const _dimensionKeywords = <String, List<String>>{
+  'Energie': [
+    'energie', 'ausdauer', 'fatigue', 'müdigkeit', 'vitalität',
+    'energy', 'vitality', 'erschöpfung', 'kraft',
+  ],
+  'Schlaf': [
+    'schlaf', 'entspannung', 'stress', 'ruhe', 'sleep',
+    'relaxation', 'einschlafen', 'durchschlafen', 'melatonin',
+  ],
+  'Fokus': [
+    'fokus', 'kognition', 'konzentration', 'gedächtnis', 'brain',
+    'nerven', 'focus', 'cognitive', 'mental', 'gedächtnis',
+  ],
+  'Stimmung': [
+    'stimmung', 'wohlbefinden', 'psyche', 'hormon', 'mood',
+    'wellbeing', 'depression', 'angst', 'emotion',
+  ],
+};
+
+/// Prüft ob ein StackEntry zur gegebenen Dimension gehört.
+/// Gleicht entry.categories case-insensitiv gegen die Schlüsselwörter ab.
+bool _matchesDimension(StackEntry entry, String dimension) {
+  final keywords = _dimensionKeywords[dimension];
+  if (keywords == null || keywords.isEmpty) return true; // Safety fallback
+  if (entry.categories.isEmpty) return true; // Kein Tag = alle Dimensionen
+
+  final catLower = entry.categories.map((c) => c.toLowerCase()).toList();
+  return keywords.any(
+    (kw) => catLower.any((cat) => cat.contains(kw)),
   );
 }
 

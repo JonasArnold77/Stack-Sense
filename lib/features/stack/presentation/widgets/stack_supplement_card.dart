@@ -127,6 +127,10 @@ class StackSupplementCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      if (entry.isTemporary && entry.phaseEndDate != null) ...[
+                        const SizedBox(height: 4),
+                        _TemporaryBadge(endDate: entry.phaseEndDate!),
+                      ],
                     ],
                   ),
                 ),
@@ -313,6 +317,43 @@ class _SlotBadge extends StatelessWidget {
       child: Text(
         '${slot.emoji} ${slot.label}',
         style: AppTextStyles.caption,
+      ),
+    );
+  }
+}
+
+/// Lila Badge für temporäre Phasenziel-Supplements.
+class _TemporaryBadge extends StatelessWidget {
+  final DateTime endDate;
+  const _TemporaryBadge({required this.endDate});
+
+  static const _accent = Color(0xFF5C35CC);
+
+  String get _formatted =>
+      '${endDate.day.toString().padLeft(2, '0')}.${endDate.month.toString().padLeft(2, '0')}.${endDate.year}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: _accent.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+        border: Border.all(color: _accent.withOpacity(0.30)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.flag_outlined, size: 10, color: _accent),
+          const SizedBox(width: 3),
+          Text(
+            'Temporär · bis $_formatted',
+            style: AppTextStyles.caption.copyWith(
+              color: _accent,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

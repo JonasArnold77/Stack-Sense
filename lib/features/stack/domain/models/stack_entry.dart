@@ -34,7 +34,15 @@ class StackEntry {
   final InteractionSeverity interactionSeverity;
   final SupplementType supplementType;
   final List<String> enthalteneWirkstoffe; // Nur bei Kombipräparaten befüllt
+  final List<String> categories;           // Themen-Tags z.B. ["Schlaf", "Entspannung"]
   final bool hasDuplicateWarning; // Orange Warnung wenn Wirkstoff doppelt im Stack
+
+  /// Wenn gesetzt: dieses Supplement gehört zu einem Phasenziel und ist temporär.
+  final String? phaseGoalId;
+
+  /// Automatisches Enddatum: nach diesem Datum wird das Supplement aus dem Stack entfernt.
+  final DateTime? phaseEndDate;
+
   final DateTime addedAt;
 
   const StackEntry({
@@ -50,9 +58,15 @@ class StackEntry {
     this.interactionSeverity = InteractionSeverity.none,
     this.supplementType = SupplementType.single,
     this.enthalteneWirkstoffe = const [],
+    this.categories = const [],
     this.hasDuplicateWarning = false,
+    this.phaseGoalId,
+    this.phaseEndDate,
     required this.addedAt,
   });
+
+  /// Ob dieses Supplement temporär (für ein Phasenziel) ist.
+  bool get isTemporary => phaseGoalId != null;
 
   /// Kopiert diesen Eintrag mit optionalen Änderungen.
   StackEntry copyWith({
@@ -74,7 +88,10 @@ class StackEntry {
         interactionSeverity: interactionSeverity ?? this.interactionSeverity,
         supplementType: supplementType,
         enthalteneWirkstoffe: enthalteneWirkstoffe,
+        categories: categories,
         hasDuplicateWarning: hasDuplicateWarning ?? this.hasDuplicateWarning,
+        phaseGoalId: phaseGoalId,
+        phaseEndDate: phaseEndDate,
         addedAt: addedAt ?? this.addedAt,
       );
 
@@ -92,6 +109,8 @@ class StackEntry {
         interactionSeverity: s.interactionSeverity,
         supplementType: s.supplementType,
         enthalteneWirkstoffe: s.enthalteneWirkstoffe,
+        categories: s.categories,
+        // phaseGoalId + phaseEndDate werden via StackNotifier.addForPhaseGoal() gesetzt
         addedAt: DateTime.now(),
       );
 
@@ -125,7 +144,10 @@ class StackEntry {
         'interactionSeverity': interactionSeverity.name,
         'supplementType': supplementType.name,
         'enthalteneWirkstoffe': enthalteneWirkstoffe,
+        'categories': categories,
         'hasDuplicateWarning': hasDuplicateWarning,
+        'phaseGoalId': phaseGoalId,
+        'phaseEndDate': phaseEndDate?.toIso8601String(),
         'addedAt': addedAt.toIso8601String(),
       };
 
@@ -150,7 +172,12 @@ class StackEntry {
           ? SupplementType.values.byName(typeRaw)
           : SupplementType.single,
       enthalteneWirkstoffe: rawWirkstoffe.map((e) => e as String).toList(),
+      categories: List<String>.from(json['categories'] ?? []),
       hasDuplicateWarning: json['hasDuplicateWarning'] as bool? ?? false,
+      phaseGoalId: json['phaseGoalId'] as String?,
+      phaseEndDate: json['phaseEndDate'] != null
+          ? DateTime.parse(json['phaseEndDate'] as String)
+          : null,
       addedAt: DateTime.parse(json['addedAt'] as String),
     );
   }

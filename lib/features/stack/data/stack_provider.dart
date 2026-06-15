@@ -59,6 +59,64 @@ class StackNotifier extends StateNotifier<List<StackEntry>> {
     await _saveToPrefs();
   }
 
+  /// Fügt ein Supplement als temporären Phasenziel-Eintrag zum Stack hinzu.
+  /// Das Supplement wird mit [phaseGoalId] und [endDate] markiert.
+  Future<void> addForPhaseGoal({
+    required Supplement supplement,
+    required String phaseGoalId,
+    required DateTime endDate,
+  }) async {
+    if (contains(supplement.id)) return;
+    // fromSupplement baut den Basis-Entry; wir rekonstruieren ihn mit Phase-Feldern.
+    final base = StackEntry.fromSupplement(supplement);
+    final entry = StackEntry(
+      id: base.id,
+      name: base.name,
+      substanceName: base.substanceName,
+      evidenceLevel: base.evidenceLevel,
+      dosage: base.dosage,
+      intakeTime: base.intakeTime,
+      intakeSlot: base.intakeSlot,
+      intakeHint: base.intakeHint,
+      drugInteraction: base.drugInteraction,
+      interactionSeverity: base.interactionSeverity,
+      supplementType: base.supplementType,
+      enthalteneWirkstoffe: base.enthalteneWirkstoffe,
+      categories: base.categories,
+      phaseGoalId: phaseGoalId,
+      phaseEndDate: endDate,
+      addedAt: DateTime.now(),
+    );
+    state = [...state, entry];
+    await _saveToPrefs();
+  }
+
+  /// Entfernt alle Stack-Einträge die zu einem bestimmten Phasenziel gehören.
+  Future<void> removeByPhaseGoal(String phaseGoalId) async {
+    state = state.where((e) => e.phaseGoalId != phaseGoalId).toList();
+    await _saveToPrefs();
+  }
+
+  /// Entfernt automatisch alle abgelaufenen Phasenziel-Supplements.
+  /// Gibt die IDs der entfernten phaseGoalIds zurück.
+  Future<List<String>> removeExpiredPhaseSupplements() async {
+    final now = DateTime.now();
+    final expired = state
+        .where((e) =>
+            e.phaseEndDate != null && now.isAfter(e.phaseEndDate!))
+        .map((e) => e.phaseGoalId!)
+        .toSet()
+        .toList();
+    if (expired.isNotEmpty) {
+      state = state
+          .where((e) =>
+              e.phaseEndDate == null || !now.isAfter(e.phaseEndDate!))
+          .toList();
+      await _saveToPrefs();
+    }
+    return expired;
+  }
+
   /// Setzt addedAt aller Stack-Einträge auf ~14 Tage zurück.
   /// Wird für die Verlaufs-Simulation verwendet damit Korrelationen sichtbar werden.
   /// Die Supplements sind dann "in Woche 2" hinzugekommen — passend zur Simulationskurve.

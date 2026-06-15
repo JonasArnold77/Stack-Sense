@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../data/insights_provider.dart';
 import '../../domain/models/insight_data.dart';
 import '../../../checkin/data/checkin_provider.dart';
@@ -65,71 +66,95 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'Insights',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        actions: [
-          // Demo-Button: Verlauf simulieren
-          _simLoading
-              ? const Padding(
-                  padding: EdgeInsets.all(14),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GradientScreenHeader(
+            title: 'Insights',
+            subtitle: 'Dein Fortschritt auf einen Blick',
+            actions: [
+              if (_simLoading)
+                const Padding(
+                  padding: EdgeInsets.all(10),
                   child: SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   ),
                 )
-              : PopupMenuButton<String>(
-                  icon: const Icon(Icons.science_outlined, color: AppColors.textSecondary),
-                  tooltip: 'Demo',
-                  onSelected: (v) async {
-                    if (v == 'simulate') await _runSimulation();
-                    if (v == 'reset') await _resetSimulation();
-                  },
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                      value: 'simulate',
-                      child: Row(
-                        children: [
-                          Icon(Icons.play_arrow_outlined, size: 18),
-                          SizedBox(width: 10),
-                          Text('Verlauf simulieren (21 Tage)'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'reset',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                          SizedBox(width: 10),
-                          Text('Simulationsdaten löschen',
-                              style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
+              else
+                _GradientPopupMenu(
+                  onSimulate: _runSimulation,
+                  onReset: _resetSimulation,
                 ),
+            ],
+            bottomPadding: 0,
+            bottom: _DimFilter(
+              selected: _selectedDim,
+              onChanged: (d) => setState(() => _selectedDim = d),
+              onDark: true,
+            ),
+          ),
+          Expanded(
+            child: data.hasData
+                ? _InsightsBody(data: data, dim: _selectedDim)
+                : _EmptyState(onSimulate: _runSimulation, loading: _simLoading),
+          ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
-          child: _DimFilter(
-            selected: _selectedDim,
-            onChanged: (d) => setState(() => _selectedDim = d),
+      ),
+    );
+  }
+}
+
+// ─── Gradient Popup Menu ─────────────────────────────────────────────────────
+
+/// Demo-Menü im Gradient-Header (weiße Icons)
+class _GradientPopupMenu extends StatelessWidget {
+  final VoidCallback onSimulate;
+  final VoidCallback onReset;
+
+  const _GradientPopupMenu({required this.onSimulate, required this.onReset});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.science_outlined, color: Colors.white, size: 22),
+      tooltip: 'Demo',
+      style: IconButton.styleFrom(
+        backgroundColor: Colors.white.withOpacity(0.12),
+        shape: const CircleBorder(),
+        padding: const EdgeInsets.all(8),
+      ),
+      onSelected: (v) async {
+        if (v == 'simulate') onSimulate();
+        if (v == 'reset') onReset();
+      },
+      itemBuilder: (_) => [
+        const PopupMenuItem(
+          value: 'simulate',
+          child: Row(
+            children: [
+              Icon(Icons.play_arrow_outlined, size: 18),
+              SizedBox(width: 10),
+              Text('Verlauf simulieren (21 Tage)'),
+            ],
           ),
         ),
-      ),
-      body: data.hasData
-          ? _InsightsBody(data: data, dim: _selectedDim)
-          : _EmptyState(onSimulate: _runSimulation, loading: _simLoading),
+        const PopupMenuItem(
+          value: 'reset',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, size: 18, color: Colors.red),
+              SizedBox(width: 10),
+              Text('Simulationsdaten löschen',
+                  style: TextStyle(color: Colors.red)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -139,16 +164,21 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
 class _DimFilter extends StatelessWidget {
   final _Dim selected;
   final ValueChanged<_Dim> onChanged;
+  final bool onDark;
 
-  const _DimFilter({required this.selected, required this.onChanged});
+  const _DimFilter({
+    required this.selected,
+    required this.onChanged,
+    this.onDark = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 52,
+      height: 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         children: _Dim.values.map((d) {
           final isSelected = d == selected;
           return Padding(
@@ -159,10 +189,14 @@ class _DimFilter extends StatelessWidget {
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isSelected ? d.color : Colors.transparent,
+                  color: isSelected
+                      ? (onDark ? Colors.white.withOpacity(0.22) : d.color)
+                      : (onDark ? Colors.white.withOpacity(0.09) : Colors.transparent),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? d.color : AppColors.border,
+                    color: isSelected
+                        ? (onDark ? Colors.white.withOpacity(0.7) : d.color)
+                        : (onDark ? Colors.white.withOpacity(0.2) : AppColors.border),
                     width: 1.5,
                   ),
                 ),
@@ -171,7 +205,11 @@ class _DimFilter extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    color: isSelected
+                        ? Colors.white
+                        : (onDark
+                            ? Colors.white.withOpacity(0.7)
+                            : AppColors.textSecondary),
                   ),
                 ),
               ),

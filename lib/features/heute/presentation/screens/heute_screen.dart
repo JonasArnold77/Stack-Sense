@@ -17,6 +17,8 @@ import '../../../stack/data/stack_provider.dart';
 import '../../../stack/data/taken_provider.dart';
 import '../../../stack/domain/models/stack_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart';
+import '../../../phase_goals/data/phase_goals_provider.dart';
+import '../../../phase_goals/presentation/widgets/phase_goals_home_panel.dart';
 
 /// Heute-Screen — täglicher Einstiegspunkt der App.
 /// Zeigt: Begrüßung, heutiger Einnahmeplan, Check-in-Status, Streak/Level, Insights-Snippet.
@@ -137,6 +139,26 @@ class HeuteScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppConstants.spaceS),
                 _PlanCard(stack: stack, today: today),
+
+                // --- Profil-Empfehlungen Banner (nur bei leerem Stack) ---
+                if (stack.isEmpty) ...[
+                  const SizedBox(height: AppConstants.spaceL),
+                  _ProfileRecommendationsBanner(),
+                ],
+
+                // --- Aktive Phasenziele Panel ---
+                const SizedBox(height: AppConstants.spaceL),
+                const PhaseGoalsHomePanel(),
+
+                const SizedBox(height: AppConstants.spaceS),
+
+                // --- Phasenziele Einstieg ---
+                _PhaseGoalsCard(onTap: () => context.push(AppRoutes.phaseGoals)),
+
+                const SizedBox(height: AppConstants.spaceL),
+
+                // --- Entdecken Schnellzugang ---
+                _DiscoverCard(onTap: () => context.go(AppRoutes.recommendations)),
 
                 const SizedBox(height: AppConstants.spaceL),
 
@@ -435,6 +457,10 @@ class _CompactSupplementRow extends ConsumerWidget {
                   style: AppTextStyles.caption
                       .copyWith(color: AppColors.textTertiary),
                 ),
+                if (entry.isTemporary && entry.phaseEndDate != null) ...[
+                  const SizedBox(height: 3),
+                  _TemporaryBadgeSmall(endDate: entry.phaseEndDate!),
+                ],
               ],
             ),
           ),
@@ -842,6 +868,461 @@ class _InsightSnippetCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Temporär-Badge (kompakt, für die Plan-Zeilen)
+// ---------------------------------------------------------------------------
+
+class _TemporaryBadgeSmall extends StatelessWidget {
+  final DateTime endDate;
+  const _TemporaryBadgeSmall({required this.endDate});
+
+  static const _accent = Color(0xFF5C35CC);
+
+  String get _formatted =>
+      '${endDate.day.toString().padLeft(2, '0')}.${endDate.month.toString().padLeft(2, '0')}.${endDate.year}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.flag_outlined, size: 9, color: _accent),
+        const SizedBox(width: 3),
+        Text(
+          'Temporär · bis $_formatted',
+          style: AppTextStyles.caption.copyWith(
+            color: _accent,
+            fontWeight: FontWeight.w600,
+            fontSize: 9,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Phasenziele Einstieg
+// ---------------------------------------------------------------------------
+
+class _PhaseGoalsCard extends ConsumerWidget {
+  final VoidCallback onTap;
+
+  const _PhaseGoalsCard({required this.onTap});
+
+  static const _purple = Color(0xFF5C35CC);
+  static const _purpleLight = Color(0xFF7B5CE8);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeGoals = ref.watch(phaseGoalsProvider);
+    final hasActive = activeGoals.isNotEmpty;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF3D1FAB), Color(0xFF5C35CC), Color(0xFF7B5CE8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppConstants.radiusL),
+          boxShadow: [
+            BoxShadow(
+              color: _purple.withOpacity(0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Dekorative Kreise im Hintergrund
+            Positioned(
+              top: -20,
+              right: -20,
+              child: Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.07),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -30,
+              right: 60,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.05),
+                ),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.spaceL),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                        ),
+                        child: const Icon(Icons.flag_rounded,
+                            color: Colors.white, size: 26),
+                      ),
+                      const Spacer(),
+                      if (hasActive)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+                          ),
+                          child: Text(
+                            '${activeGoals.length} aktiv',
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppConstants.spaceM),
+                  Text(
+                    'Phasenziele',
+                    style: AppTextStyles.headlineMedium.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Temporäre Supplement-Stacks für besondere Lebensphasen',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Colors.white.withOpacity(0.80),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spaceM),
+                  // Beispiel-Chips
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _PhaseChip(label: '🏃 Marathon'),
+                      _PhaseChip(label: '📚 Prüfungsphase'),
+                      _PhaseChip(label: '✈️ Reise'),
+                      _PhaseChip(label: '💪 Muskelaufbau'),
+                    ],
+                  ),
+                  const SizedBox(height: AppConstants.spaceM),
+                  Row(
+                    children: [
+                      Text(
+                        hasActive
+                            ? 'Ziele verwalten'
+                            : 'Erstes Ziel starten',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.arrow_forward_rounded,
+                          color: Colors.white, size: 18),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PhaseChip extends StatelessWidget {
+  final String label;
+  const _PhaseChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+        border: Border.all(color: Colors.white.withOpacity(0.25)),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Entdecken Hero-Panel
+// ---------------------------------------------------------------------------
+
+class _DiscoverCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _DiscoverCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppConstants.radiusL),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Farbiger Header-Bereich
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppConstants.spaceL),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    AppColors.accent,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(AppConstants.radiusL),
+                  topRight: Radius.circular(AppConstants.radiusL),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 9, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.20),
+                            borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+                          ),
+                          child: Text(
+                            'KI-gestützt',
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Supplements\nentdecken',
+                          style: AppTextStyles.headlineMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Wähle ein Ziel — Claude analysiert\ndie Studienlage für dich',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white.withOpacity(0.85),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppConstants.spaceM),
+                  // Großes Icon
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(AppConstants.radiusL),
+                    ),
+                    child: const Icon(Icons.explore_rounded,
+                        color: Colors.white, size: 34),
+                  ),
+                ],
+              ),
+            ),
+            // Evidenz-Legende im unteren Teil
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.spaceM),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Jedes Supplement bewertet nach Studienlage:',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _EvidenceChip(
+                        color: const Color(0xFF2E7D32),
+                        bg: const Color(0xFFE8F5E9),
+                        label: '● Belegt',
+                      ),
+                      const SizedBox(width: 8),
+                      _EvidenceChip(
+                        color: const Color(0xFFF57F17),
+                        bg: const Color(0xFFFFF8E1),
+                        label: '● Hinweise',
+                      ),
+                      const SizedBox(width: 8),
+                      _EvidenceChip(
+                        color: const Color(0xFFC62828),
+                        bg: const Color(0xFFFFEBEE),
+                        label: '● Unbelegt',
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.arrow_forward_rounded,
+                          color: AppColors.accent, size: 20),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EvidenceChip extends StatelessWidget {
+  final Color color;
+  final Color bg;
+  final String label;
+  const _EvidenceChip({required this.color, required this.bg, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Profil-Empfehlungen Banner (nur bei leerem Stack)
+// ---------------------------------------------------------------------------
+
+class _ProfileRecommendationsBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.profileRecommendations),
+      child: Container(
+        padding: const EdgeInsets.all(AppConstants.spaceM),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primary.withOpacity(0.09),
+              AppColors.accent.withOpacity(0.06),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppConstants.radiusL),
+          border: Border.all(color: AppColors.primary.withOpacity(0.18)),
+        ),
+        child: Row(
+          children: [
+            // Pulsierendes Icon
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.auto_awesome,
+                color: AppColors.primary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: AppConstants.spaceM),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Passende Supplements für dich',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Personalisierte Empfehlungen basierend auf deinem Profil entdecken →',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textSecondary),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

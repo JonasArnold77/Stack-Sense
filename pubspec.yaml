@@ -33,6 +33,9 @@ dependencies:
   # URLs im Browser öffnen (Produktlinks)
   url_launcher: ^6.3.0
 
+  # Audio für XP-Belohnungsgeräusch
+  audioplayers: ^6.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -44,4 +47,5 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/sounds/
     - .env

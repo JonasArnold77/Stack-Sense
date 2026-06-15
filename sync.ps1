@@ -16,6 +16,11 @@ Write-Host "  lib/ synced" -ForegroundColor Green
 Copy-Item "$src\pubspec.yaml" "$dst\pubspec.yaml" -Force
 Write-Host "  pubspec.yaml synced" -ForegroundColor Green
 
+# assets/ kopieren (Bilder, Icons, Sounds)
+Remove-Item "$dst\assets" -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item "$src\assets" "$dst\assets" -Recurse -Force
+Write-Host "  assets/ synced" -ForegroundColor Green
+
 # .env kopieren (falls vorhanden)
 if (Test-Path "$src\.env") {
     Copy-Item "$src\.env" "$dst\.env" -Force
