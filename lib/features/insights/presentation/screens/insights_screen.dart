@@ -773,81 +773,154 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.insights_outlined,
-              size: 64,
-              color: Colors.grey[300],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          // Icon
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1565C0).withOpacity(0.08),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Noch keine Daten',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+            child: const Icon(Icons.insights_outlined,
+                size: 44, color: Color(0xFF1565C0)),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Noch keine Insights',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Mach deinen ersten Check-in und füge Supplements zu deinem Stack hinzu — '
-              'dann erkenne ich automatisch Zusammenhänge.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 32),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Insights zeigen dir wie deine Supplements mit deinem Wohlbefinden zusammenhängen — '
+            'basierend auf deinen täglichen Check-ins.',
+            style: TextStyle(
+                fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
 
-            // Demo-Button prominent im Empty-State
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: loading ? null : onSimulate,
-                icon: loading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.science_outlined, size: 18),
-                label: Text(loading ? 'Wird simuliert…' : 'Verlauf simulieren (21 Tage)'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+          // So funktioniert es
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE3F2FD),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF90CAF9)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'So bekommst du deine ersten Insights:',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1565C0),
                   ),
                 ),
+                const SizedBox(height: 12),
+                _InsightStep(
+                  number: '1',
+                  text: 'Füge min. 1 Supplement zu deinem Stack hinzu',
+                  icon: Icons.layers_outlined,
+                ),
+                const SizedBox(height: 8),
+                _InsightStep(
+                  number: '2',
+                  text: 'Mach mindestens 3 tägliche Check-ins (Energie, Schlaf, Fokus, Stimmung)',
+                  icon: Icons.check_circle_outline,
+                ),
+                const SizedBox(height: 8),
+                _InsightStep(
+                  number: '3',
+                  text: 'Insights erscheinen automatisch und werden täglich präziser',
+                  icon: Icons.auto_graph_outlined,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Demo-Button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: loading ? null : onSimulate,
+              icon: loading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.science_outlined, size: 18),
+              label: Text(loading ? 'Wird simuliert…' : 'Demo: 21 Tage simulieren'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Zeigt dir wie Insights mit echten Daten aussehen würden.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-            ),
-
-            const SizedBox(height: 32),
-            Icon(Icons.arrow_downward, size: 20, color: Colors.grey[400]),
-            const SizedBox(height: 4),
-            Text(
-              'Oder: Zum Check-in wechseln',
-              style: TextStyle(fontSize: 13, color: Colors.grey[400]),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Zeigt dir wie Insights mit echten Daten aussehen.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _InsightStep extends StatelessWidget {
+  final String number;
+  final String text;
+  final IconData icon;
+  const _InsightStep(
+      {required this.number, required this.text, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          decoration: const BoxDecoration(
+            color: Color(0xFF1565C0),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(number,
+                style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white)),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Icon(icon, size: 16, color: const Color(0xFF1565C0)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(text,
+              style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF1565C0),
+                  height: 1.4)),
+        ),
+      ],
     );
   }
 }

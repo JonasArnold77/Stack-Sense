@@ -28,12 +28,21 @@ class ProductLink(BaseModel):
     note: Optional[str] = None
 
 
+class SecondaryBenefit(BaseModel):
+    """Profilrelevanter Zusatznutzen — nicht durch das aktuelle Ziel getrieben,
+    sondern durch Erkrankungen / Zustände im Nutzerprofil."""
+    text: str
+    evidence_level: EvidenceLevel
+    condition: str  # Die Erkrankung / der Kontext aus dem Profil
+
+
 class SupplementRecommendation(BaseModel):
     id: str
     name: str
     substance_name: Optional[str]
     evidence_level: EvidenceLevel
     evidence_reason: str
+    secondary_benefit: Optional[SecondaryBenefit] = None
     dosage: str
     intake_time: str
     intake_hint: Optional[str]

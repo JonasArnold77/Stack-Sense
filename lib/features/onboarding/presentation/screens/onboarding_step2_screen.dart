@@ -39,11 +39,13 @@ class _OnboardingStep2ScreenState
     }
   }
 
-  void _continue() {
+  Future<void> _finish() async {
     final notifier = ref.read(onboardingProvider.notifier);
     notifier.updateMedications(_medications);
-    // Erkrankungen wurden schon per toggleCondition gesetzt
-    context.go(AppRoutes.onboardingStep3);
+    await notifier.completeOnboarding();
+    if (mounted) {
+      context.go('${AppRoutes.profileRecommendations}?from=onboarding');
+    }
   }
 
   @override
@@ -195,12 +197,12 @@ class _OnboardingStep2ScreenState
               child: Column(
                 children: [
                   FilledButton(
-                    onPressed: _continue,
-                    child: const Text('Weiter'),
+                    onPressed: _finish,
+                    child: const Text('Profil erstellen & starten'),
                   ),
                   const SizedBox(height: AppConstants.spaceS),
                   TextButton(
-                    onPressed: () => context.go(AppRoutes.onboardingStep3),
+                    onPressed: _finish,
                     child: Text(
                       'Überspringen',
                       style: AppTextStyles.bodyMedium.copyWith(

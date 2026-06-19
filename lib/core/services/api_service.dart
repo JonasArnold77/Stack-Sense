@@ -163,6 +163,10 @@ class ApiService {
     final rawWirkstoffe = json['enthaltene_wirkstoffe'] as List<dynamic>? ?? [];
     final enthalteneWirkstoffe = rawWirkstoffe.map((e) => e as String).toList();
 
+    final rawSecondary = json['secondary_benefit'] as Map<String, dynamic>?;
+    final secondaryBenefit =
+        rawSecondary != null ? SecondaryBenefit.fromJson(rawSecondary) : null;
+
     return Supplement(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -178,6 +182,7 @@ class ApiService {
       categories: categories,
       supplementType: _parseSupplementType(json['supplement_type'] as String?),
       enthalteneWirkstoffe: enthalteneWirkstoffe,
+      secondaryBenefit: secondaryBenefit,
     );
   }
 
@@ -249,6 +254,47 @@ class ApiService {
     } catch (e) {
       debugPrint('Duplikat-Check Fehler: $e');
       return const DuplicateCheckResult(duplicateIds: [], reasoning: '');
+    }
+  }
+
+  /// Lädt PubMed-Studien für ein Supplement (lazy, on-demand).
+  Future<List<PubMedStudy>> getStudies({
+    required String supplementName,
+    String? substanceName,
+    String? goal,
+  }) async {
+    final body = jsonEncode({
+      'supplement_name': supplementName,
+      'substance_name': substanceName,
+      'goal': goal,
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/studies'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final list = data['studies'] as List<dynamic>? ?? [];
+        return list
+            .map((e) => PubMedStudy.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw ApiException('Studien nicht verfügbar (${response.statusCode})');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Studies Fehler: $e');
+      throw ApiException('Studien konnten nicht geladen werden.');
     }
   }
 

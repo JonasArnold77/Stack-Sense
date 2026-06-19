@@ -58,6 +58,8 @@ class _SupplementDetailScreenState
   // Lazy-geladene Inhalte
   String? _explanation;
   bool _loadingExplanation = true; // Sofort beim Öffnen laden
+  List<PubMedStudy>? _studies;
+  bool _loadingStudies = false;
   List<FoodSource>? _foodSources;
   bool _loadingFoodSources = false;
   List<ProductLink>? _productLinks;
@@ -84,6 +86,22 @@ class _SupplementDetailScreenState
       }
     } finally {
       if (mounted) setState(() => _loadingExplanation = false);
+    }
+  }
+
+  Future<void> _loadStudies() async {
+    if (_studies != null || _loadingStudies) return;
+    setState(() => _loadingStudies = true);
+    try {
+      final results = await ApiService.instance.getStudies(
+        supplementName: widget.supplement.name,
+        substanceName: widget.supplement.substanceName,
+      );
+      if (mounted) setState(() => _studies = results);
+    } catch (_) {
+      if (mounted) setState(() => _studies = []);
+    } finally {
+      if (mounted) setState(() => _loadingStudies = false);
     }
   }
 
@@ -191,6 +209,33 @@ class _SupplementDetailScreenState
                               style: AppTextStyles.bodyMedium
                                   .copyWith(height: 1.5),
                             ),
+                    ),
+
+                    const SizedBox(height: AppConstants.spaceM),
+
+                    // ── Studien (lazy) ──
+                    _ExpandableSection(
+                      icon: Icons.biotech_outlined,
+                      iconColor: const Color(0xFF5C6BC0),
+                      title: 'Studien',
+                      onExpand: _loadStudies,
+                      child: _loadingStudies
+                          ? const _LoadingIndicator()
+                          : (_studies == null || _studies!.isEmpty)
+                              ? Text(
+                                  'Keine Studien gefunden.',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                )
+                              : Column(
+                                  children: _studies!
+                                      .map((study) => _StudyRow(
+                                            study: study,
+                                            onTap: () => _launch(study.url),
+                                          ))
+                                      .toList(),
+                                ),
                     ),
 
                     const SizedBox(height: AppConstants.spaceM),
@@ -947,6 +992,91 @@ class _ProductRow extends StatelessWidget {
               ),
               const Icon(Icons.open_in_new,
                   size: 15, color: AppColors.textTertiary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StudyRow extends StatelessWidget {
+  final PubMedStudy study;
+  final VoidCallback onTap;
+
+  const _StudyRow({required this.study, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppConstants.spaceS),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppConstants.radiusM),
+        child: Container(
+          padding: const EdgeInsets.all(AppConstants.spaceM),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F4FF),
+            borderRadius: BorderRadius.circular(AppConstants.radiusM),
+            border: Border.all(color: const Color(0xFF5C6BC0).withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.article_outlined,
+                      size: 15, color: Color(0xFF5C6BC0)),
+                  const SizedBox(width: AppConstants.spaceS),
+                  Expanded(
+                    child: Text(
+                      study.title,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  if (study.year.isNotEmpty) ...[
+                    const SizedBox(width: AppConstants.spaceS),
+                    Text(
+                      study.year,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (study.abstract.isNotEmpty) ...[
+                const SizedBox(height: AppConstants.spaceS),
+                Text(
+                  study.abstract.length > 200
+                      ? '${study.abstract.substring(0, 200)}…'
+                      : study.abstract,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppConstants.spaceS),
+              Row(
+                children: [
+                  const Icon(Icons.open_in_new,
+                      size: 12, color: Color(0xFF5C6BC0)),
+                  const SizedBox(width: 4),
+                  Text(
+                    'PubMed ansehen',
+                    style: AppTextStyles.caption.copyWith(
+                      color: const Color(0xFF5C6BC0),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

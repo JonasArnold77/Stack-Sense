@@ -7,6 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/gradient_screen_header.dart';
+import '../../../../core/widgets/empty_state.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../data/stack_provider.dart';
 import '../../domain/models/stack_entry.dart';
@@ -172,29 +173,29 @@ class _AttentionHeader extends StatelessWidget {
 class _EmptyStack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spaceXL),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.layers_outlined, size: 72, color: AppColors.border),
-            const SizedBox(height: AppConstants.spaceL),
-            Text('Dein Stack ist noch leer',
-                style: AppTextStyles.headlineMedium,
-                textAlign: TextAlign.center),
-            const SizedBox(height: AppConstants.spaceS),
-            Text(
-              'Gehe zu "Entdecken" um Supplements '
-              'zu deinem Stack hinzuzufügen.',
-              style: AppTextStyles.bodyMedium
-                              .copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.spaceXL),
-          ],
+    return EmptyState(
+      icon: Icons.layers_outlined,
+      iconColor: AppColors.primary,
+      title: 'Dein Stack ist leer',
+      subtitle:
+          'Dein Stack sind alle Supplements die du täglich nimmst — '
+          'übersichtlich mit Einnahmezeiten und Wirkungsanalyse.',
+      steps: [
+        emptyStateStep(
+          icon: Icons.search_outlined,
+          label: 'Wähle ein Ziel im Entdecken-Tab',
         ),
-      ),
+        emptyStateStep(
+          icon: Icons.verified_outlined,
+          label: 'Prüfe die Evidenz: Grün = belegt, Gelb = Hinweise, Rot = unbewiesen',
+        ),
+        emptyStateStep(
+          icon: Icons.add_circle_outline,
+          label: 'Füge passende Supplements zu deinem Stack hinzu',
+        ),
+      ],
+      buttonLabel: 'Supplements entdecken',
+      onButton: () => context.go(AppRoutes.recommendations),
     );
   }
 }

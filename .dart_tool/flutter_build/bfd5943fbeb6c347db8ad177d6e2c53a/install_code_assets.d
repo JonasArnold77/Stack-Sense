@@ -1,0 +1,1 @@
+ C:\\Github\\Stack\ Sense\\Stack-Sense\\.dart_tool\\flutter_build\\bfd5943fbeb6c347db8ad177d6e2c53a\\native_assets.json: 

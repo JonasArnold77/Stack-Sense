@@ -36,6 +36,13 @@ dependencies:
   # Audio für XP-Belohnungsgeräusch
   audioplayers: ^6.0.0
 
+  # AWS Cognito Auth
+  amplify_flutter: ^2.4.1
+  amplify_auth_cognito: ^2.4.1
+
+  # Google Sign-In (für Cognito Social Provider)
+  google_sign_in: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

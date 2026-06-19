@@ -130,6 +130,9 @@ class _PhaseGoalRecommendationsScreenState
     final def = goal.definition;
     final accent = def?.accentColor ?? AppColors.primary;
     final existingStack = ref.watch(stackProvider);
+    // Nach Evidenz-Level sortieren: Grün → Gelb → Rot
+    final sortedSupplements = [..._supplements]
+      ..sort((a, b) => a.evidenceLevel.index.compareTo(b.evidenceLevel.index));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -211,8 +214,8 @@ class _PhaseGoalRecommendationsScreenState
                   else if (_supplements.isEmpty)
                     _EmptyResult()
                   else
-                    ...List.generate(_supplements.length, (i) {
-                      final s = _supplements[i];
+                    ...List.generate(sortedSupplements.length, (i) {
+                      final s = sortedSupplements[i];
                       final alreadyInStack =
                           existingStack.any((e) => e.id == s.id);
                       return Padding(
@@ -221,6 +224,7 @@ class _PhaseGoalRecommendationsScreenState
                         child: EvidenceCard(
                           supplement: s,
                           isInStack: alreadyInStack,
+                          rank: i < 3 ? i + 1 : null,
                           onAddToStack:
                               alreadyInStack ? null : () => _addToStack(s, goal),
                         ),

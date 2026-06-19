@@ -298,10 +298,11 @@ class _RecommendationsScreenState
       );
     }
 
-    // Nach aktivem Typ-Filter filtern
+    // Nach aktivem Typ-Filter filtern + nach Evidenz-Level sortieren (Grün → Gelb → Rot)
     final filtered = _supplements
         .where((s) => s.supplementType == _typeFilter)
-        .toList();
+        .toList()
+      ..sort((a, b) => a.evidenceLevel.index.compareTo(b.evidenceLevel.index));
 
     if (filtered.isEmpty) {
       return Center(
@@ -347,9 +348,12 @@ class _RecommendationsScreenState
         if (item is _SupplementItem) {
           final supplement = item.supplement;
           final isInStack = stack.any((e) => e.id == supplement.id);
+          // Ersten 3 Supplements mit Gold/Silber/Bronze hervorheben
+          final rank = index < 3 ? index + 1 : null;
           return EvidenceCard(
             supplement: supplement,
             isInStack: isInStack,
+            rank: rank,
             onAddToStack: () => _handleAddToStack(supplement),
             onRemoveFromStack: () =>
                 ref.read(stackProvider.notifier).remove(supplement.id),
@@ -894,6 +898,43 @@ class _GoalTileGrid extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Erklärungs-Banner
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary.withOpacity(0.07),
+                        AppColors.primary.withOpacity(0.03),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: AppColors.primary.withOpacity(0.15)),
+                  ),
+                  child: Column(
+                    children: [
+                      _HowItWorksStep(
+                        number: '1',
+                        icon: Icons.ads_click_outlined,
+                        text: 'Wähle ein Thema das dich beschäftigt',
+                      ),
+                      const SizedBox(height: 8),
+                      _HowItWorksStep(
+                        number: '2',
+                        icon: Icons.psychology_outlined,
+                        text: 'KI analysiert dein Profil und liefert passende Supplements',
+                      ),
+                      const SizedBox(height: 8),
+                      _HowItWorksStep(
+                        number: '3',
+                        icon: Icons.verified_outlined,
+                        text: 'Grün = belegt · Gelb = Hinweise · Rot = unbewiesen',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spaceL),
                 Text('Was beschäftigt dich?',
                     style: AppTextStyles.headlineMedium),
                 const SizedBox(height: AppConstants.spaceXS),
@@ -906,10 +947,25 @@ class _GoalTileGrid extends StatelessWidget {
             ),
           ),
         ),
+        // ── Basis-Supplementierung — breite Kachel (2 Tiles breit) ──────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppConstants.screenPaddingH,
+              AppConstants.spaceS,
+              AppConstants.screenPaddingH,
+              0,
+            ),
+            child: _BasisSupplementierungTile(
+              onTap: () => onSelect('Basis-Supplementierung'),
+            ),
+          ),
+        ),
+        // ── Problemfelder-Grid ───────────────────────────────────────────────
         SliverPadding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppConstants.screenPaddingH,
-            vertical: AppConstants.spaceS,
+            vertical: AppConstants.spaceM,
           ),
           sliver: SliverGrid.count(
             crossAxisCount: 2,
@@ -921,8 +977,168 @@ class _GoalTileGrid extends StatelessWidget {
             }).toList(),
           ),
         ),
-        // Etwas Abstand unten
         const SliverToBoxAdapter(child: SizedBox(height: AppConstants.spaceXL)),
+      ],
+    );
+  }
+}
+
+/// Breite Basis-Supplementierung Kachel — nimmt die Breite von 2 normalen Kacheln ein.
+class _BasisSupplementierungTile extends StatelessWidget {
+  final VoidCallback onTap;
+  const _BasisSupplementierungTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    // Höhe = eine Reihe normaler Tiles (gleicher childAspectRatio 1.35).
+    // Breite = volle verfügbare Breite (= 2 Tile-Spalten + Abstand).
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tileWidth = (constraints.maxWidth - AppConstants.spaceM) / 2;
+        final tileHeight = tileWidth / 1.35;
+
+        return SizedBox(
+          height: tileHeight,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withBlue(
+                      (AppColors.primary.blue + 40).clamp(0, 255),
+                    ),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(AppConstants.radiusL),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(AppConstants.radiusL),
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(AppConstants.radiusL),
+                  splashColor: Colors.white.withOpacity(0.1),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppConstants.spaceL,
+                      vertical: AppConstants.spaceM,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius:
+                                BorderRadius.circular(AppConstants.radiusM),
+                          ),
+                          child: const Icon(
+                            Icons.verified_outlined,
+                            size: 26,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: AppConstants.spaceM),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Basis-Supplementierung',
+                                style: AppTextStyles.labelLarge.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Personalisierte Basisempfehlung für dein Profil',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Colors.white.withOpacity(0.85),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: AppConstants.spaceS),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 16,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HowItWorksStep extends StatelessWidget {
+  final String number;
+  final IconData icon;
+  final String text;
+  const _HowItWorksStep({
+    required this.number,
+    required this.icon,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Icon(icon, size: 16, color: AppColors.primary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textPrimary,
+              height: 1.3,
+            ),
+          ),
+        ),
       ],
     );
   }

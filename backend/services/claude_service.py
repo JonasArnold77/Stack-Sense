@@ -8,9 +8,10 @@ import anthropic
 
 from config.settings import settings
 from models.profile import UserProfile
-from models.recommendation import RecommendationResponse, SupplementRecommendation, EvidenceLevel, InteractionSeverity, SupplementType, ProductLink
+from models.recommendation import RecommendationResponse, SupplementRecommendation, SecondaryBenefit, EvidenceLevel, InteractionSeverity, SupplementType, ProductLink
 from data.products import get_products
 from services.pubmed_service import PubMedService
+from services.vector_service import search_studies as vector_search
 
 logger = logging.getLogger(__name__)
 
@@ -166,10 +167,15 @@ SYSTEM_PROMPT = """Du bist StackSense, ein evidenzbasierter Supplement-Berater.
 DEINE AUFGABE:
 Analysiere das Nutzerprofil und erstelle personalisierte Supplement-Empfehlungen für das angegebene Ziel.
 
+⛔ HARDREGEL — KEIN TRAININGSWISSEN:
+Du darfst AUSSCHLIESSLICH Supplements empfehlen, die in der VERIFIZIERTEN SUPPLEMENT-DATENBANK oder den PUBMED-STUDIEN im Kontext explizit erwähnt werden.
+Wenn ein Supplement NICHT im bereitgestellten Kontext vorkommt, empfiehl es NICHT — auch wenn du aus deinem Training weißt dass es wirksam sein könnte.
+Erfinde keine Evidenz. Verwende KEIN Wissen aus deinem Training außer zur Formatierung der JSON-Antwort.
+Falls der Kontext für das angegebene Ziel zu wenig Supplements enthält, gib weniger als das Limit zurück — aber fülle nie mit Trainingswissen auf.
+
 DATENQUELLEN (Priorität absteigend):
-1. Die VERIFIZIERTE SUPPLEMENT-DATENBANK im Kontext — diese hat Vorrang vor deinem Trainingswissen
-2. Die PUBMED-STUDIEN im Kontext — aktuelle Forschung für dieses Ziel
-3. Dein allgemeines Trainingswissen als Ergänzung
+1. Die VERIFIZIERTE SUPPLEMENT-DATENBANK im Kontext — einzige erlaubte Grundlage für Empfehlungen
+2. Die PUBMED-STUDIEN im Kontext — bestätigen oder erhöhen die Priorität von DB-Einträgen
 
 WICHTIGE REGELN:
 1. Antworte AUSSCHLIESSLICH mit validem JSON — kein Text davor oder danach
@@ -180,15 +186,22 @@ WICHTIGE REGELN:
 3. Berücksichtige ALLE Profilparameter: Alter, Geschlecht, Erkrankungen, Medikamente, Jahreszeit, Sport
 4. Wechselwirkungen: Nutze AUSSCHLIESSLICH die Daten aus der Supplement-DB — erfinde keine
 5. Formuliere HWG-konform: keine Heilsversprechen, nur sachliche Informationen
-6. Sortiere: Grün → Gelb → Rot
+6. Sortiere nach Priorität: Grün → Gelb → Rot. Innerhalb derselben Farbe: die für dieses spezifische Ziel und Profil WICHTIGSTEN Supplements zuerst. Die ersten 3 in der Liste sind die absolut besten Empfehlungen — sie werden dem Nutzer als "Beste Wahl", "2. Wahl" und "3. Wahl" hervorgehoben angezeigt.
 7. ZEICHENLIMITS — unbedingt einhalten:
    - evidence_reason: max 100 Zeichen
+   - secondary_benefit.text: max 100 Zeichen (oder null)
    - dosage: max 40 Zeichen
    - intake_time: max 40 Zeichen
    - intake_hint: max 80 Zeichen (oder null)
    - drug_interaction: max 80 Zeichen (oder null)
 8. Generiere EXAKT so viele Supplements wie im LIMIT angegeben — nicht mehr, nicht weniger
 9. Überspringe alle Supplements deren IDs in BEREITS GEZEIGT aufgeführt sind
+
+ZWEISTUFIGE BEGRÜNDUNG — SEHR WICHTIG:
+- evidence_reason: NUR der Grund der direkt zum gewünschten ZIEL passt (z.B. bei Ziel "Sport": Regeneration, Kraftleistung, Ausdauer). KEINE anderen Effekte hier.
+- secondary_benefit: Falls das Supplement ZUSÄTZLICH für eine Erkrankung oder Eigenschaft aus dem Profil des Nutzers relevant ist (z.B. Zyklus, Hashimoto, Schwangerschaft, Diabetes), trage das hier ein — mit eigenem evidence_level und condition-Label.
+  → Beispiel: Nutzer hat Ziel "Energie", aber Profil-Erkrankung "Hashimoto": Magnesium evidence_reason erklärt Energie-Wirkung, secondary_benefit erklärt Schilddrüsen-Relevanz.
+  → Falls kein profilrelevanter Zusatznutzen existiert: secondary_benefit = null
 
 SUPPLEMENT-TYPEN:
 - "single": Enthält genau EINEN Wirkstoff (z.B. Vitamin D3, Magnesium, L-Glycin)
@@ -207,6 +220,11 @@ JSON-FORMAT (exakt einhalten):
       "enthaltene_wirkstoffe": [],
       "evidence_level": "green",
       "evidence_reason": "Starke RCT-Evidenz bei Defizit — im Winter bei 70% der Deutschen zu niedrig.",
+      "secondary_benefit": {
+        "text": "Bei Hashimoto: moduliert Immunantwort, reduziert TPO-Antikörper.",
+        "evidence_level": "green",
+        "condition": "Hashimoto"
+      },
       "dosage": "2.000–4.000 IE täglich",
       "intake_time": "Morgens",
       "intake_hint": "Mit fetthaltiger Mahlzeit — fettlöslich",
@@ -345,7 +363,21 @@ def _build_user_message(
     if profile.is_pregnant:
         lines.append("- Schwanger / stillend: ja")
 
-    lines.append(f"\nGEWÜNSCHTES ZIEL: {goal}")
+    if goal == "Basis-Supplementierung":
+        lines.append(
+            "\nGEWÜNSCHTES ZIEL: Basis-Supplementierung\n"
+            "Empfehle alle Supplements die für dieses Profil grundsätzlich sinnvoll sind — "
+            "unabhängig von einem spezifischen Ziel. Berücksichtige Mikronährstoff-Lücken "
+            "die für dieses Alter, Geschlecht, Jahreszeit und die genannten Erkrankungen "
+            "typisch sind. Beginne mit den wichtigsten Basis-Supplements (Vitamin D, Magnesium, "
+            "Omega-3 etc.) und sortiere nach klinischer Relevanz für dieses konkrete Profil.\n"
+            "WICHTIG für dieses Ziel:\n"
+            "- Schreibe in evidence_reason ALLE relevanten Gründe auf einmal — "
+            "Profil-Erkrankungen, Jahreszeit, Alter, Sport — alles in einem Satz.\n"
+            "- secondary_benefit = null bei ALLEN Supplements. Es gibt keine zweite Ebene."
+        )
+    else:
+        lines.append(f"\nGEWÜNSCHTES ZIEL: {goal}")
     lines.append(f"\nLIMIT: Generiere exakt {limit} Supplements.")
 
     if exclude_ids:
@@ -378,17 +410,26 @@ class ClaudeService:
             conditions=profile.conditions or [],
         )
 
-        # PubMed-Studien für das gewählte Ziel holen
+        # 1) Vektor-DB (pgvector, RDS) — schnell, vorberechnete Embeddings
+        query_text = f"{goal} supplement {profile.conditions or ''} {profile.medications or ''}"
+        vector_context = vector_search(query_text, supplement_names=[], top_k=8)
+        if vector_context:
+            logger.info("Vector-DB: Studien gefunden und in Kontext eingebettet.")
+
+        # 2) Live PubMed — als Ergänzung wenn Vector-DB noch dünn befüllt
+        pubmed_context = ""
         try:
-            pubmed_studies = await self.pubmed.get_goal_evidence(goal=goal, max_results=5)
+            pubmed_studies = await self.pubmed.get_goal_evidence(goal=goal, max_results=3)
             pubmed_context = _build_pubmed_context(pubmed_studies)
-            logger.info(f"PubMed: {len(pubmed_studies)} Studien geladen für '{goal}'")
+            logger.info(f"PubMed: {len(pubmed_studies)} Live-Studien geladen für '{goal}'")
         except Exception as e:
             logger.warning(f"PubMed nicht verfügbar: {e}")
-            pubmed_context = ""
+
+        # Kombinierter Kontext: lokale DB + Vector-DB + Live PubMed
+        combined_study_context = "\n\n".join(filter(None, [vector_context, pubmed_context]))
 
         user_message = _build_user_message(
-            profile, goal, db_context, pubmed_context,
+            profile, goal, db_context, combined_study_context,
             limit=limit, exclude_ids=exclude_ids or [],
         )
 
@@ -435,12 +476,26 @@ class ClaudeService:
             except ValueError:
                 supp_type = SupplementType.single
 
+            # secondary_benefit aus Claude-JSON parsen (optional)
+            raw_secondary = item.get("secondary_benefit")
+            secondary_benefit = None
+            if raw_secondary and isinstance(raw_secondary, dict):
+                try:
+                    secondary_benefit = SecondaryBenefit(
+                        text=raw_secondary.get("text", ""),
+                        evidence_level=EvidenceLevel(raw_secondary.get("evidence_level", "yellow")),
+                        condition=raw_secondary.get("condition", ""),
+                    )
+                except (ValueError, KeyError) as e:
+                    logger.warning(f"secondary_benefit Parse-Fehler für {supplement_id}: {e}")
+
             rec = SupplementRecommendation(
                 id=supplement_id,
                 name=item["name"],
                 substance_name=item.get("substance_name"),
                 evidence_level=EvidenceLevel(item["evidence_level"]),
                 evidence_reason=item["evidence_reason"],
+                secondary_benefit=secondary_benefit,
                 dosage=item["dosage"],
                 intake_time=item["intake_time"],
                 intake_hint=item.get("intake_hint"),

@@ -39,7 +39,7 @@ class AppConstants {
   static const Duration apiTimeout = Duration(seconds: 90);
 
   // --- Onboarding ---
-  static const int onboardingTotalSteps = 3;
+  static const int onboardingTotalSteps = 2;
 
   // --- Gamification ---
   static const int xpCheckin = 10;

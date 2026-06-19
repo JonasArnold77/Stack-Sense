@@ -99,6 +99,64 @@ class _PhaseGoalsScreenState extends ConsumerState<PhaseGoalsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Erklärungs-Banner
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4527A0).withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: const Color(0xFF4527A0).withOpacity(0.18)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.flag_outlined,
+                                size: 18, color: Color(0xFF4527A0)),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Was sind Phasenziele?',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF4527A0),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Phasenziele sind zeitlich begrenzte Programme — z.B. "Muskelaufbau für 8 Wochen". '
+                          'Du bekommst passende Supplements und verfolgst deinen Fortschritt.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF4527A0),
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: const [
+                            _PhaseStep(number: '1', text: 'Ziel wählen'),
+                            SizedBox(width: 6),
+                            Icon(Icons.arrow_forward,
+                                size: 12, color: Color(0xFF7E57C2)),
+                            SizedBox(width: 6),
+                            _PhaseStep(number: '2', text: 'Dauer festlegen'),
+                            SizedBox(width: 6),
+                            Icon(Icons.arrow_forward,
+                                size: 12, color: Color(0xFF7E57C2)),
+                            SizedBox(width: 6),
+                            _PhaseStep(number: '3', text: 'Supplements starten'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spaceL),
+
                   Text(
                     'Wähle deine aktuelle Lebensphase',
                     style: AppTextStyles.headlineSmall,
@@ -230,6 +288,42 @@ class _PhaseGoalsHeader extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Kachel
 // ---------------------------------------------------------------------------
+
+class _PhaseStep extends StatelessWidget {
+  final String number;
+  final String text;
+  const _PhaseStep({required this.number, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 18,
+          height: 18,
+          decoration: const BoxDecoration(
+            color: Color(0xFF4527A0),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(number,
+                style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white)),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(text,
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF4527A0))),
+      ],
+    );
+  }
+}
 
 class _GoalTile extends StatelessWidget {
   final PhaseGoalDefinition definition;

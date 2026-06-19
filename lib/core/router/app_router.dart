@@ -17,15 +17,30 @@ import '../../features/profile_recommendations/presentation/screens/profile_reco
 import '../../features/phase_goals/presentation/screens/phase_goals_screen.dart';
 import '../../features/phase_goals/presentation/screens/phase_goal_recommendations_screen.dart';
 import '../../features/phase_goals/presentation/screens/phase_goal_detail_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/confirm_email_screen.dart';
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/data/auth_provider.dart';
+import '../../features/onboarding/data/onboarding_provider.dart';
 
 /// Alle Route-Namen als Konstanten — nie Strings direkt verwenden.
 class AppRoutes {
   AppRoutes._();
 
+  // Auth
+  static const String login = '/login';
+  static const String register = '/register';
+  static const String confirmEmail = '/confirm-email';
+  static const String forgotPassword = '/forgot-password';
+
+  // Onboarding
   static const String welcome = '/';
   static const String onboardingStep1 = '/onboarding/step1';
   static const String onboardingStep2 = '/onboarding/step2';
   static const String onboardingStep3 = '/onboarding/step3';
+
+  // App
   static const String home = '/home';
   static const String heute = '/heute';
   static const String recommendations = '/recommendations';
@@ -39,13 +54,95 @@ class AppRoutes {
   static const String phaseGoalDetail = '/phase-goals/detail';
 }
 
-/// Riverpod Provider für den Router.
-/// Ermöglicht Redirect-Logik basierend auf Auth/Onboarding-Status.
+// Routen die ohne Login zugänglich sind
+const _publicRoutes = {
+  AppRoutes.login,
+  AppRoutes.register,
+  AppRoutes.confirmEmail,
+  AppRoutes.forgotPassword,
+  AppRoutes.welcome,
+  AppRoutes.onboardingStep1,
+  AppRoutes.onboardingStep2,
+  AppRoutes.onboardingStep3,
+};
+
+/// Riverpod Provider für den Router mit Auth-Redirect.
 final routerProvider = Provider<GoRouter>((ref) {
+  final authListenable = ValueNotifier<int>(0);
+
+  // Router neu evaluieren wenn sich Auth-Status ändert
+  ref.listen(authProvider, (_, __) {
+    authListenable.value++;
+  });
+
   return GoRouter(
-    initialLocation: AppRoutes.welcome,
+    initialLocation: AppRoutes.login,
     debugLogDiagnostics: true,
+    refreshListenable: authListenable,
+
+    // ---------------------------------------------------------------------------
+    // Auth-Redirect: nicht eingeloggte User zu Login schicken
+    // ---------------------------------------------------------------------------
+    redirect: (context, state) {
+      final authState = ref.read(authProvider);
+      final location = state.uri.path;
+      final isPublic = _publicRoutes.any((r) => location.startsWith(r));
+
+      // Noch nicht initialisiert — kurz warten
+      if (authState.status == AuthStatus.unknown) return null;
+
+      // Email-Bestätigung ausstehend
+      if (authState.status == AuthStatus.confirmingEmail) {
+        if (location != AppRoutes.confirmEmail) {
+          return AppRoutes.confirmEmail;
+        }
+        return null;
+      }
+
+      // Nicht eingeloggt → Login
+      if (authState.status == AuthStatus.unauthenticated && !isPublic) {
+        return AppRoutes.login;
+      }
+
+      // Eingeloggt und auf Login/Register → App
+      if (authState.isAuthenticated &&
+          (location == AppRoutes.login || location == AppRoutes.register)) {
+        // Onboarding abgeschlossen?
+        final onboardingDone =
+            ref.read(onboardingProvider).onboardingCompletedAt != null;
+        return onboardingDone ? AppRoutes.heute : AppRoutes.welcome;
+      }
+
+      return null;
+    },
+
     routes: [
+      // --- Auth ---
+      GoRoute(
+        path: AppRoutes.login,
+        name: 'login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.register,
+        name: 'register',
+        builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.confirmEmail,
+        name: 'confirmEmail',
+        builder: (context, state) {
+          final email = state.extra as String? ??
+              (ref.read(authProvider).email ?? '');
+          return ConfirmEmailScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        name: 'forgotPassword',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+
       // --- Onboarding ---
       GoRoute(
         path: AppRoutes.welcome,
@@ -68,7 +165,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OnboardingStep3Screen(),
       ),
 
-      // --- Profil-Empfehlungen (kein Shell/Bottom-Nav — wird gepusht) ---
+      // --- Profil-Empfehlungen (kein Shell/Bottom-Nav) ---
       GoRoute(
         path: AppRoutes.profileRecommendations,
         name: 'profileRecommendations',
@@ -79,7 +176,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // --- Phasenziele (kein Shell — werden gepusht) ---
+      // --- Phasenziele (kein Shell) ---
       GoRoute(
         path: AppRoutes.phaseGoals,
         name: 'phaseGoals',
@@ -145,7 +242,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
 
-    // Fehlerseite bei ungültigem Pfad
     errorBuilder: (context, state) => Scaffold(
       body: Center(
         child: Text('Seite nicht gefunden: ${state.error}'),

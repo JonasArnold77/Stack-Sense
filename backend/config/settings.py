@@ -12,5 +12,18 @@ class Settings(BaseSettings):
     claude_explain_model: str = "claude-sonnet-4-5"
     claude_max_tokens: int = 8192
 
+    # RDS / pgvector (optional — App startet auch ohne)
+    db_host: str = "stacksense-db.chym26e8iw2p.eu-central-1.rds.amazonaws.com"
+    db_user: str = "stacksense"
+    db_pass: str = ""
+    db_name: str = "postgres"
+    db_port: int = 5432
+
+    # AWS Cognito — User Pool für Auth
+    # Werte aus AWS Console: Cognito → User Pools → dein Pool
+    cognito_region: str = "eu-central-1"
+    cognito_user_pool_id: str = ""        # z.B. "eu-central-1_AbCdEfGhI"
+    cognito_client_id: str = ""           # App-Client-ID aus dem User Pool
+
 
 settings = Settings()

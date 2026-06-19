@@ -17,6 +17,8 @@ class EvidenceCard extends StatefulWidget {
   final bool isInStack;
   final VoidCallback? onAddToStack;
   final VoidCallback? onRemoveFromStack;
+  /// 1 = Gold, 2 = Silber, 3 = Bronze. null = kein Ranking-Badge.
+  final int? rank;
 
   const EvidenceCard({
     super.key,
@@ -24,6 +26,7 @@ class EvidenceCard extends StatefulWidget {
     this.isInStack = false,
     this.onAddToStack,
     this.onRemoveFromStack,
+    this.rank,
   });
 
   @override
@@ -115,6 +118,7 @@ class _EvidenceCardState extends State<EvidenceCard> {
   Widget build(BuildContext context) {
     final supplement = widget.supplement;
     final colors = _evidenceColors(supplement.evidenceLevel);
+    final rankStyle = widget.rank != null ? _rankStyle(widget.rank!) : null;
 
     return GestureDetector(
       onTap: () => showSupplementDetail(context, supplement),
@@ -123,16 +127,33 @@ class _EvidenceCardState extends State<EvidenceCard> {
       decoration: BoxDecoration(
         color: colors.background,
         borderRadius: BorderRadius.circular(AppConstants.radiusL),
-        border: Border.all(color: colors.border, width: 1.5),
+        border: Border.all(
+          color: rankStyle?.borderColor ?? colors.border,
+          width: rankStyle != null ? 2.5 : 1.5,
+        ),
+        boxShadow: rankStyle != null
+            ? [
+                BoxShadow(
+                  color: rankStyle.borderColor.withOpacity(0.4),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // --- Ranking-Streifen (nur Top 3) ---
+          if (rankStyle != null)
+            _RankStrip(rank: widget.rank!, style: rankStyle),
+
           // --- Header: Name + Badge ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               AppConstants.cardPadding,
-              AppConstants.cardPadding,
+              rankStyle != null ? AppConstants.spaceS : AppConstants.cardPadding,
               AppConstants.cardPadding,
               AppConstants.spaceS,
             ),
@@ -176,7 +197,7 @@ class _EvidenceCardState extends State<EvidenceCard> {
               ),
             ),
 
-          // --- Begründung ---
+          // --- Begründung (nur zielrelevant) ---
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppConstants.cardPadding),
             child: Text(
@@ -184,6 +205,12 @@ class _EvidenceCardState extends State<EvidenceCard> {
               style: AppTextStyles.bodySmall.copyWith(color: colors.textColor, height: 1.4),
             ),
           ),
+
+          // --- Sekundärer Nutzen (profilrelevant, aber nicht zielspezifisch) ---
+          if (supplement.secondaryBenefit != null) ...[
+            const SizedBox(height: AppConstants.spaceS),
+            _SecondaryBenefitBlock(benefit: supplement.secondaryBenefit!),
+          ],
 
           const SizedBox(height: AppConstants.spaceM),
 
@@ -402,7 +429,120 @@ class _EvidenceCardState extends State<EvidenceCard> {
           ),
         ],
       ),
-    ),  // GestureDetector
+    ),  // Container
+    );  // GestureDetector
+  }
+}
+
+// --- Ranking-Farben und Dekorations-Daten ---
+
+class _RankStyleData {
+  final Color borderColor;
+  final List<Color> gradientColors;
+  final String emoji;
+  final String label;
+  final List<String> sparkles;
+
+  const _RankStyleData({
+    required this.borderColor,
+    required this.gradientColors,
+    required this.emoji,
+    required this.label,
+    required this.sparkles,
+  });
+}
+
+_RankStyleData _rankStyle(int rank) {
+  switch (rank) {
+    case 1:
+      return const _RankStyleData(
+        borderColor: Color(0xFFFFB300),
+        gradientColors: [Color(0xFFFFD54F), Color(0xFFFF8F00)],
+        emoji: '🥇',
+        label: 'Beste Wahl',
+        sparkles: ['✦', '✦', '✦'],
+      );
+    case 2:
+      return const _RankStyleData(
+        borderColor: Color(0xFF90A4AE),
+        gradientColors: [Color(0xFFB0BEC5), Color(0xFF607D8B)],
+        emoji: '🥈',
+        label: '2. Wahl',
+        sparkles: ['✦', '✦'],
+      );
+    case 3:
+      return const _RankStyleData(
+        borderColor: Color(0xFFBF8C50),
+        gradientColors: [Color(0xFFCD9B60), Color(0xFF8D5524)],
+        emoji: '🥉',
+        label: '3. Wahl',
+        sparkles: ['✦'],
+      );
+    default:
+      return const _RankStyleData(
+        borderColor: Colors.transparent,
+        gradientColors: [Colors.transparent, Colors.transparent],
+        emoji: '',
+        label: '',
+        sparkles: [],
+      );
+  }
+}
+
+// --- Dekorativer Ranking-Streifen oben in der Karte ---
+
+class _RankStrip extends StatelessWidget {
+  final int rank;
+  final _RankStyleData style;
+
+  const _RankStrip({required this.rank, required this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(AppConstants.radiusL - 2),
+        topRight: Radius.circular(AppConstants.radiusL - 2),
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: style.gradientColors,
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+        ),
+        child: Row(
+          children: [
+            Text(style.emoji, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 8),
+            Text(
+              style.label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const Spacer(),
+            // Sternchen-Verzierungen
+            for (final s in style.sparkles)
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(
+                  s,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.75),
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -731,6 +871,105 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// --- Sekundärer Nutzen Block ---
+
+class _SecondaryBenefitBlock extends StatelessWidget {
+  final SecondaryBenefit benefit;
+  const _SecondaryBenefitBlock({required this.benefit});
+
+  @override
+  Widget build(BuildContext context) {
+    // Dezente teal/indigo Farbe — klar von der Evidenz-Ampelfarbe der Card getrennt
+    const bgColor = Color(0xFFE8EAF6);       // indigo-50
+    const borderColor = Color(0xFF9FA8DA);   // indigo-300
+    const accentColor = Color(0xFF3949AB);   // indigo-700
+
+    final badgeColor = switch (benefit.evidenceLevel) {
+      EvidenceLevel.green  => AppColors.evidenceGreenBadge,
+      EvidenceLevel.yellow => AppColors.evidenceYellowBadge,
+      EvidenceLevel.red    => AppColors.evidenceRedBadge,
+    };
+    final badgeLabel = switch (benefit.evidenceLevel) {
+      EvidenceLevel.green  => AppConstants.evidenceGreenLabel,
+      EvidenceLevel.yellow => AppConstants.evidenceYellowLabel,
+      EvidenceLevel.red    => AppConstants.evidenceRedLabel,
+    };
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppConstants.cardPadding),
+      padding: const EdgeInsets.all(AppConstants.spaceM),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppConstants.radiusM),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Überschrift — immer volle Breite, nie gequetscht
+          Row(
+            children: [
+              const Icon(Icons.person_outline, size: 14, color: accentColor),
+              const SizedBox(width: 5),
+              Text(
+                'Auch relevant für dich',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: accentColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          // Chips in eigener Zeile unter der Überschrift
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+                ),
+                child: Text(
+                  benefit.condition,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: accentColor,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+                ),
+                child: Text(
+                  badgeLabel,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: Colors.white,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Text
+          Text(
+            benefit.text,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: accentColor.withOpacity(0.85),
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

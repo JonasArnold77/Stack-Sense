@@ -5,11 +5,13 @@ import logging
 from models.profile import RecommendationRequest
 from models.recommendation import RecommendationResponse, ProductLink
 from services.claude_service import ClaudeService
+from services.pubmed_service import PubMedService
 
 router = APIRouter(prefix="/api/v1", tags=["Empfehlungen"])
 logger = logging.getLogger(__name__)
 
 claude_service = ClaudeService()
+pubmed_service = PubMedService()
 
 
 @router.post("/recommendations", response_model=RecommendationResponse)
@@ -131,6 +133,43 @@ async def check_duplicates(request: DuplicateCheckRequest) -> dict:
     except Exception as e:
         logger.error(f"Duplikat-Check Fehler: {e}", exc_info=True)
         return {"duplicates": [], "reasoning": "Prüfung nicht verfügbar."}
+
+
+class StudiesRequest(BaseModel):
+    supplement_name: str
+    substance_name: str | None = None
+    goal: str | None = None
+
+
+@router.post("/studies")
+async def get_studies(request: StudiesRequest) -> dict:
+    """
+    Gibt PubMed-Studien zurück die die Wirksamkeit eines Supplements belegen.
+    Wird on-demand geladen wenn der Nutzer auf 'Studien' tippt.
+    """
+    try:
+        query_name = request.substance_name or request.supplement_name
+        goal = request.goal or "health benefits"
+        studies = await pubmed_service.get_supplement_evidence(
+            supplement_name=query_name,
+            goal=goal,
+            max_results=5,
+        )
+        return {
+            "studies": [
+                {
+                    "pmid": s["pmid"],
+                    "title": s["title"],
+                    "abstract": s["abstract"],
+                    "year": s["year"],
+                    "url": f"https://pubmed.ncbi.nlm.nih.gov/{s['pmid']}/",
+                }
+                for s in studies
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Studies-Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Studien konnten nicht geladen werden")
 
 
 @router.get("/health")
