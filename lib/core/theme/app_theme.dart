@@ -18,6 +18,7 @@ class AppTheme {
         onSecondary: AppColors.textInverse,
         surface: AppColors.surface,
         onSurface: AppColors.textPrimary,
+        surfaceContainerHighest: AppColors.surfaceVariant,
         error: AppColors.error,
         onError: AppColors.textInverse,
       ),
@@ -37,6 +38,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.border),

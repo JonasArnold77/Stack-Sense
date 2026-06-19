@@ -33,7 +33,8 @@ class EvidenceCard extends StatefulWidget {
   State<EvidenceCard> createState() => _EvidenceCardState();
 }
 
-class _EvidenceCardState extends State<EvidenceCard> {
+class _EvidenceCardState extends State<EvidenceCard>
+    with SingleTickerProviderStateMixin {
   bool _expanded = false;
   String? _explanation;
   bool _loadingExplanation = false;
@@ -44,6 +45,35 @@ class _EvidenceCardState extends State<EvidenceCard> {
 
   // Produkt-Cache: null = noch nicht geladen, [] = geladen aber leer
   List<ProductLink>? _cachedLinks;
+
+  // "Zum Stack" Bounce-Animation
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _bounceAnim = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.88), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 0.88, end: 1.08), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.08, end: 1.0), weight: 30),
+    ]).animate(CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  void _handleAddToStack() {
+    _bounceController.forward(from: 0.0);
+    widget.onAddToStack?.call();
+  }
 
   Future<void> _toggleExplanation() async {
     if (_expanded) {
@@ -114,323 +144,367 @@ class _EvidenceCardState extends State<EvidenceCard> {
     );
   }
 
+  // Hilfsmethode: Einnahme-Infos Block
+  Widget _buildIntakeInfo(Supplement supplement) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppConstants.cardPadding),
+      padding: const EdgeInsets.all(AppConstants.spaceM),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(AppConstants.radiusM),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          _InfoRow(icon: Icons.scale_outlined, label: 'Dosierung', value: supplement.dosage),
+          const SizedBox(height: AppConstants.spaceS),
+          _InfoRow(icon: Icons.access_time_outlined, label: 'Einnahme', value: supplement.intakeTime),
+          if (supplement.intakeHint != null) ...[
+            const SizedBox(height: AppConstants.spaceS),
+            _InfoRow(icon: Icons.info_outline, label: 'Hinweis', value: supplement.intakeHint!),
+          ],
+          if (supplement.drugInteraction != null) ...[
+            const SizedBox(height: AppConstants.spaceS),
+            _InfoRow(
+              icon: Icons.warning_amber_outlined,
+              label: 'Wechselwirkung',
+              value: supplement.drugInteraction!,
+              valueColor: AppColors.warning,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Hilfsmethode: "Einfach erklärt" Sektion
+  Widget _buildExplanationSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: _toggleExplanation,
+          borderRadius: BorderRadius.circular(AppConstants.radiusM),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.cardPadding,
+              vertical: AppConstants.spaceS,
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.lightbulb_outline, size: 16, color: AppColors.primary),
+                const SizedBox(width: AppConstants.spaceS),
+                Text(
+                  'Einfach erklärt',
+                  style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary),
+                ),
+                const Spacer(),
+                AnimatedRotation(
+                  turns: _expanded ? 0.5 : 0,
+                  duration: AppConstants.animFast,
+                  child: const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.primary),
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox(width: double.infinity),
+          secondChild: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(
+              AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.spaceS,
+            ),
+            padding: const EdgeInsets.all(AppConstants.spaceM),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(AppConstants.radiusM),
+              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+            ),
+            child: _loadingExplanation
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppConstants.spaceS),
+                      child: SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      ),
+                    ),
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('🧒', style: TextStyle(fontSize: 20)),
+                      const SizedBox(width: AppConstants.spaceS),
+                      Expanded(
+                        child: Text(
+                          _explanation ?? '',
+                          style: AppTextStyles.bodySmall.copyWith(height: 1.5, color: AppColors.textPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+          crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: AppConstants.animNormal,
+        ),
+      ],
+    );
+  }
+
+  // Hilfsmethode: "In Lebensmitteln" Sektion
+  Widget _buildFoodSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: _toggleFoodSources,
+          borderRadius: BorderRadius.circular(AppConstants.radiusM),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.cardPadding,
+              vertical: AppConstants.spaceS,
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.eco_outlined, size: 16, color: Color(0xFF388E3C)),
+                const SizedBox(width: AppConstants.spaceS),
+                Text(
+                  'In Lebensmitteln',
+                  style: AppTextStyles.labelMedium.copyWith(color: const Color(0xFF388E3C)),
+                ),
+                const Spacer(),
+                AnimatedRotation(
+                  turns: _foodExpanded ? 0.5 : 0,
+                  duration: AppConstants.animFast,
+                  child: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF388E3C)),
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox(width: double.infinity),
+          secondChild: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(
+              AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.spaceS,
+            ),
+            padding: const EdgeInsets.all(AppConstants.spaceM),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(AppConstants.radiusM),
+              border: Border.all(color: const Color(0xFFA5D6A7)),
+            ),
+            child: _loadingFoodSources
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppConstants.spaceS),
+                      child: SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF388E3C)),
+                      ),
+                    ),
+                  )
+                : (_foodSources == null || _foodSources!.isEmpty)
+                    ? Text(
+                        'Keine Daten verfügbar.',
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _foodSources!.map((src) => _FoodSourceRow(source: src)).toList(),
+                      ),
+          ),
+          crossFadeState: _foodExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: AppConstants.animNormal,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final supplement = widget.supplement;
     final colors = _evidenceColors(supplement.evidenceLevel);
     final rankStyle = widget.rank != null ? _rankStyle(widget.rank!) : null;
 
+    final cardBoxShadow = rankStyle != null
+        ? <BoxShadow>[
+            BoxShadow(
+              color: rankStyle.borderColor.withOpacity(0.25),
+              blurRadius: 16,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
+            ),
+            ...AppColors.cardShadow,
+          ]
+        : AppColors.cardShadow;
+
     return GestureDetector(
       onTap: () => showSupplementDetail(context, supplement),
       child: Container(
-      margin: const EdgeInsets.only(bottom: AppConstants.spaceM),
-      decoration: BoxDecoration(
-        color: colors.background,
-        borderRadius: BorderRadius.circular(AppConstants.radiusL),
-        border: Border.all(
-          color: rankStyle?.borderColor ?? colors.border,
-          width: rankStyle != null ? 2.5 : 1.5,
+        margin: const EdgeInsets.only(bottom: AppConstants.spaceM),
+        decoration: BoxDecoration(
+          color: colors.background,
+          borderRadius: BorderRadius.circular(AppConstants.radiusL),
+          border: Border.all(
+            color: rankStyle?.borderColor ?? colors.border,
+            width: rankStyle != null ? 2 : 1.5,
+          ),
+          boxShadow: cardBoxShadow,
         ),
-        boxShadow: rankStyle != null
-            ? [
-                BoxShadow(
-                  color: rankStyle.borderColor.withOpacity(0.4),
-                  blurRadius: 12,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 3),
-                ),
-              ]
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- Ranking-Streifen (nur Top 3) ---
-          if (rankStyle != null)
-            _RankStrip(rank: widget.rank!, style: rankStyle),
-
-          // --- Header: Name + Badge ---
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppConstants.cardPadding,
-              rankStyle != null ? AppConstants.spaceS : AppConstants.cardPadding,
-              AppConstants.cardPadding,
-              AppConstants.spaceS,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(supplement.name, style: AppTextStyles.headlineSmall),
-                      if (supplement.substanceName != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: AppConstants.spaceXS),
-                          child: Text(supplement.substanceName!, style: AppTextStyles.bodySmall),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppConstants.spaceS),
-                Hero(
-                  tag: 'evidence_badge_${supplement.id}',
-                  child: _EvidenceBadge(level: supplement.evidenceLevel, colors: colors),
-                ),
-              ],
-            ),
-          ),
-
-          // --- Kategorie-Tags ---
-          if (supplement.categories.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.spaceS,
-              ),
-              child: Wrap(
-                spacing: AppConstants.spaceXS,
-                runSpacing: AppConstants.spaceXS,
-                children: supplement.categories
-                    .map((cat) => _CategoryTag(label: cat))
-                    .toList(),
-              ),
-            ),
-
-          // --- Begründung (nur zielrelevant) ---
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppConstants.cardPadding),
-            child: Text(
-              supplement.evidenceReason,
-              style: AppTextStyles.bodySmall.copyWith(color: colors.textColor, height: 1.4),
-            ),
-          ),
-
-          // --- Sekundärer Nutzen (profilrelevant, aber nicht zielspezifisch) ---
-          if (supplement.secondaryBenefit != null) ...[
-            const SizedBox(height: AppConstants.spaceS),
-            _SecondaryBenefitBlock(benefit: supplement.secondaryBenefit!),
-          ],
-
-          const SizedBox(height: AppConstants.spaceM),
-
-          // --- Einnahme-Infos ---
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: AppConstants.cardPadding),
-            padding: const EdgeInsets.all(AppConstants.spaceM),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppConstants.radiusM),
-            ),
-            child: Column(
-              children: [
-                _InfoRow(icon: Icons.scale_outlined, label: 'Dosierung', value: supplement.dosage),
-                const SizedBox(height: AppConstants.spaceS),
-                _InfoRow(icon: Icons.access_time_outlined, label: 'Einnahme', value: supplement.intakeTime),
-                if (supplement.intakeHint != null) ...[
-                  const SizedBox(height: AppConstants.spaceS),
-                  _InfoRow(icon: Icons.info_outline, label: 'Hinweis', value: supplement.intakeHint!),
-                ],
-                if (supplement.drugInteraction != null) ...[
-                  const SizedBox(height: AppConstants.spaceS),
-                  _InfoRow(
-                    icon: Icons.warning_amber_outlined,
-                    label: 'Wechselwirkung',
-                    value: supplement.drugInteraction!,
-                    valueColor: AppColors.warning,
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          // --- "Einfach erklärt" aufklappbar ---
-          const SizedBox(height: AppConstants.spaceS),
-          InkWell(
-            onTap: _toggleExplanation,
-            borderRadius: BorderRadius.circular(AppConstants.radiusM),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.cardPadding,
-                vertical: AppConstants.spaceS,
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lightbulb_outline, size: 16, color: AppColors.primary),
-                  const SizedBox(width: AppConstants.spaceS),
-                  Text(
-                    'Einfach erklärt',
-                    style: AppTextStyles.labelMedium.copyWith(color: AppColors.primary),
-                  ),
-                  const Spacer(),
-                  AnimatedRotation(
-                    turns: _expanded ? 0.5 : 0,
-                    duration: AppConstants.animFast,
-                    child: const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.primary),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox(width: double.infinity),
-            secondChild: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(
-                AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.spaceS,
-              ),
-              padding: const EdgeInsets.all(AppConstants.spaceM),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Farbiger Akzent-Streifen oben (zeigt Evidenzstufe) ---
+            Container(
+              height: 5,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.06),
-                borderRadius: BorderRadius.circular(AppConstants.radiusM),
-                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                color: colors.accentStripe,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(AppConstants.radiusL - 1),
+                  topRight: Radius.circular(AppConstants.radiusL - 1),
+                ),
               ),
-              child: _loadingExplanation
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(AppConstants.spaceS),
-                        child: SizedBox(
-                          height: 20, width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                        ),
-                      ),
-                    )
-                  : Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('🧒', style: TextStyle(fontSize: 20)),
-                        const SizedBox(width: AppConstants.spaceS),
-                        Expanded(
-                          child: Text(
-                            _explanation ?? '',
-                            style: AppTextStyles.bodySmall.copyWith(height: 1.5, color: AppColors.textPrimary),
-                          ),
-                        ),
-                      ],
-                    ),
             ),
-            crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            duration: AppConstants.animNormal,
-          ),
 
-          // --- "In Lebensmitteln" aufklappbar ---
-          InkWell(
-            onTap: _toggleFoodSources,
-            borderRadius: BorderRadius.circular(AppConstants.radiusM),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.cardPadding,
-                vertical: AppConstants.spaceS,
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.eco_outlined, size: 16, color: Color(0xFF388E3C)),
-                  const SizedBox(width: AppConstants.spaceS),
-                  Text(
-                    'In Lebensmitteln',
-                    style: AppTextStyles.labelMedium
-                        .copyWith(color: const Color(0xFF388E3C)),
-                  ),
-                  const Spacer(),
-                  AnimatedRotation(
-                    turns: _foodExpanded ? 0.5 : 0,
-                    duration: AppConstants.animFast,
-                    child: const Icon(Icons.keyboard_arrow_down,
-                        size: 20, color: Color(0xFF388E3C)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox(width: double.infinity),
-            secondChild: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(
+            // --- Ranking-Streifen (nur Top 3) ---
+            if (rankStyle != null)
+              _RankStrip(rank: widget.rank!, style: rankStyle),
+
+            // --- Header: Name + Badge ---
+            Padding(
+              padding: EdgeInsets.fromLTRB(
                 AppConstants.cardPadding,
-                0,
+                rankStyle != null ? AppConstants.spaceS : AppConstants.cardPadding,
                 AppConstants.cardPadding,
                 AppConstants.spaceS,
               ),
-              padding: const EdgeInsets.all(AppConstants.spaceM),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(AppConstants.radiusM),
-                border: Border.all(color: const Color(0xFFA5D6A7)),
-              ),
-              child: _loadingFoodSources
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(AppConstants.spaceS),
-                        child: SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Color(0xFF388E3C)),
-                        ),
-                      ),
-                    )
-                  : (_foodSources == null || _foodSources!.isEmpty)
-                      ? Text(
-                          'Keine Daten verfügbar.',
-                          style: AppTextStyles.bodySmall
-                              .copyWith(color: AppColors.textSecondary),
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: _foodSources!
-                              .map((src) => _FoodSourceRow(source: src))
-                              .toList(),
-                        ),
-            ),
-            crossFadeState: _foodExpanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: AppConstants.animNormal,
-          ),
-
-          const SizedBox(height: AppConstants.spaceS),
-
-          // --- Actions ---
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.cardPadding,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: widget.isInStack
-                      ? OutlinedButton.icon(
-                          onPressed: widget.onRemoveFromStack,
-                          icon: const Icon(Icons.check, size: 16),
-                          label: const Text('Im Stack'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.evidenceGreen,
-                            side: const BorderSide(color: AppColors.evidenceGreen),
-                            minimumSize: const Size(0, 44),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(supplement.name, style: AppTextStyles.headlineSmall),
+                        if (supplement.substanceName != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: AppConstants.spaceXS),
+                            child: Text(
+                              supplement.substanceName!,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
                           ),
-                        )
-                      : FilledButton.icon(
-                          onPressed: widget.onAddToStack,
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Zum Stack'),
-                          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-                        ),
-                ),
-                const SizedBox(width: AppConstants.spaceS),
-                IconButton.outlined(
-                  onPressed: _openProductSheet,
-                  icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-                  tooltip: 'Kaufoptionen laden',
-                  style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
-                ),
-              ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppConstants.spaceS),
+                  Hero(
+                    tag: 'evidence_badge_${supplement.id}',
+                    child: _EvidenceBadge(level: supplement.evidenceLevel, colors: colors),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // --- Kategorie-Tags ---
+            if (supplement.categories.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.spaceS,
+                ),
+                child: Wrap(
+                  spacing: AppConstants.spaceXS,
+                  runSpacing: AppConstants.spaceXS,
+                  children: supplement.categories.map((cat) => _CategoryTag(label: cat)).toList(),
+                ),
+              ),
+
+            // --- Begründung ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppConstants.cardPadding),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppConstants.spaceM),
+                decoration: BoxDecoration(
+                  color: colors.reasonBg,
+                  borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                ),
+                child: Text(
+                  supplement.evidenceReason,
+                  style: AppTextStyles.bodySmall.copyWith(color: colors.textColor, height: 1.4),
+                ),
+              ),
+            ),
+
+            // --- Sekundärer Nutzen ---
+            if (supplement.secondaryBenefit != null) ...[
+              const SizedBox(height: AppConstants.spaceS),
+              _SecondaryBenefitBlock(benefit: supplement.secondaryBenefit!),
+            ],
+
+            const SizedBox(height: AppConstants.spaceM),
+
+            // --- Einnahme-Infos ---
+            _buildIntakeInfo(supplement),
+
+            // --- Aufklappbare Sektionen ---
+            const SizedBox(height: AppConstants.spaceS),
+            _buildExplanationSection(),
+            _buildFoodSection(),
+
+            const SizedBox(height: AppConstants.spaceS),
+
+            // --- Actions ---
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.cardPadding,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: widget.isInStack
+                        ? OutlinedButton.icon(
+                            onPressed: widget.onRemoveFromStack,
+                            icon: const Icon(Icons.check_circle_outline, size: 16),
+                            label: const Text('Im Stack'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.evidenceGreen,
+                              side: const BorderSide(color: AppColors.evidenceGreen),
+                              minimumSize: const Size(0, 44),
+                              backgroundColor: AppColors.evidenceGreenLight,
+                            ),
+                          )
+                        : ScaleTransition(
+                            scale: _bounceAnim,
+                            child: FilledButton.icon(
+                              onPressed: _handleAddToStack,
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('Zum Stack'),
+                              style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: AppConstants.spaceS),
+                  IconButton.outlined(
+                    onPressed: _openProductSheet,
+                    icon: const Icon(Icons.shopping_bag_outlined, size: 20),
+                    tooltip: 'Kaufoptionen laden',
+                    style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),  // Container
-    );  // GestureDetector
+    );
   }
 }
 
@@ -1008,12 +1082,16 @@ class _EvidenceColors {
   final Color border;
   final Color badge;
   final Color textColor;
+  final Color accentStripe;
+  final Color reasonBg;
 
   const _EvidenceColors({
     required this.background,
     required this.border,
     required this.badge,
     required this.textColor,
+    required this.accentStripe,
+    required this.reasonBg,
   });
 }
 
@@ -1023,17 +1101,23 @@ _EvidenceColors _evidenceColors(EvidenceLevel level) => switch (level) {
           border: AppColors.evidenceGreen,
           badge: AppColors.evidenceGreenBadge,
           textColor: AppColors.evidenceGreen,
+          accentStripe: AppColors.evidenceGreenBadge,
+          reasonBg: AppColors.evidenceGreenLight,
         ),
       EvidenceLevel.yellow => const _EvidenceColors(
           background: AppColors.evidenceYellowLight,
           border: AppColors.evidenceYellow,
           badge: AppColors.evidenceYellowBadge,
           textColor: AppColors.evidenceYellow,
+          accentStripe: AppColors.evidenceYellowBadge,
+          reasonBg: AppColors.evidenceYellowLight,
         ),
       EvidenceLevel.red => const _EvidenceColors(
           background: AppColors.evidenceRedLight,
           border: AppColors.evidenceRed,
           badge: AppColors.evidenceRedBadge,
           textColor: AppColors.evidenceRed,
+          accentStripe: AppColors.evidenceRedBadge,
+          reasonBg: AppColors.evidenceRedLight,
         ),
     };

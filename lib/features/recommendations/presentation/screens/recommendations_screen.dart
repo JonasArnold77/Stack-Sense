@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../core/widgets/skeleton_loader.dart';
 import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../domain/models/supplement.dart';
 import '../../../stack/domain/models/stack_entry.dart' show StackEntry, IntakeSlot;
@@ -13,7 +14,7 @@ import '../../../stack/data/stack_provider.dart';
 import '../../../stack/domain/models/stack_entry.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
 
-const _pageSize = 5;
+const _pageSize = 10;
 
 /// Entdecken-Screen — Ziel auswählen → Claude liefert Empfehlungen (paginiert).
 /// Zeigt zwei Sektionen: "Einzelne Wirkstoffe" und "Kombipräparate".
@@ -83,10 +84,10 @@ class _RecommendationsScreenState
       if (mounted) {
         setState(() {
           _supplements.addAll(results);
-          // B-Komplex wird immer angehängt → echte Singles zählen für hasMore
-          final singleCount =
-              results.where((s) => s.supplementType == SupplementType.single).length;
-          _hasMore = singleCount >= _pageSize;
+          // Hat die API eine volle Seite geliefert? Dann gibt es wahrscheinlich mehr.
+          // Wir prüfen die Gesamtzahl (nicht nur Singles), damit ein Mix aus
+          // Single + Komplex die Pagination nicht vorzeitig abbricht.
+          _hasMore = results.length >= _pageSize;
           _isLoading = false;
         });
       }
@@ -117,9 +118,7 @@ class _RecommendationsScreenState
       if (mounted) {
         setState(() {
           _supplements.addAll(results);
-          final singleCount =
-              results.where((s) => s.supplementType == SupplementType.single).length;
-          _hasMore = singleCount >= _pageSize;
+          _hasMore = results.length >= _pageSize;
           _isLoadingMore = false;
         });
       }
@@ -820,20 +819,34 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(color: AppColors.primary),
-          const SizedBox(height: AppConstants.spaceL),
-          Text('Claude analysiert dein Profil...',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary)),
-          const SizedBox(height: AppConstants.spaceS),
-          Text('Dauert ~8 Sekunden',
-              style: AppTextStyles.caption),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Subtile Ladeinfo oben
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary.withOpacity(0.5),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Claude analysiert dein Profil…',
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.textTertiary),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Expanded(child: SkeletonCardList(count: 4)),
+      ],
     );
   }
 }
