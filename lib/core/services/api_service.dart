@@ -6,6 +6,7 @@ import '../constants/app_constants.dart';
 import '../services/url_config_service.dart';
 import '../../features/onboarding/domain/models/user_profile.dart';
 import '../../features/recommendations/domain/models/supplement.dart';
+import '../../features/community/domain/models/community_insight.dart';
 // ProductLink wird aus supplement.dart re-exportiert
 
 /// Verbindet die Flutter App mit dem FastAPI Backend.
@@ -296,6 +297,85 @@ class ApiService {
       debugPrint('Studies Fehler: $e');
       throw ApiException('Studien konnten nicht geladen werden.');
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Community Insights
+  // ---------------------------------------------------------------------------
+
+  /// Sendet Check-in-Daten anonym ans Backend für jeden Supplement im Stack.
+  /// Scheitert still — Community-Feature ist nicht kritisch.
+  Future<void> syncCheckin({
+    required String deviceId,
+    required String checkinDate,  // ISO "2025-06-20"
+    required int sleep,
+    required int energy,
+    required int focus,
+    required int mood,
+    required List<String> supplementNames,
+  }) async {
+    if (supplementNames.isEmpty) return;
+
+    final entries = supplementNames
+        .map((name) => {
+              'supplement_name': name,
+              'checkin_date': checkinDate,
+              'sleep_score': sleep,
+              'energy_score': energy,
+              'focus_score': focus,
+              'mood_score': mood,
+            })
+        .toList();
+
+    try {
+      await http
+          .post(
+            Uri.parse('$_baseUrl/checkin-sync'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: jsonEncode({'device_id': deviceId, 'entries': entries}),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      debugPrint('Check-in Sync fehlgeschlagen (ignoriert): $e');
+    }
+  }
+
+  /// Lädt aggregierte Community-Insights für eine Liste von Supplement-Namen.
+  /// Gibt leere Map zurück wenn Backend nicht erreichbar.
+  Future<Map<String, CommunityInsight>> getCommunityInsights(
+      List<String> supplementNames) async {
+    if (supplementNames.isEmpty) return {};
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/community-insights'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: jsonEncode(supplementNames),
+          )
+          .timeout(const Duration(seconds: 8));
+
+      debugPrint('📊 Community Insights: HTTP ${response.statusCode}');
+      debugPrint('📊 Body: ${response.body}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final map = data['insights'] as Map<String, dynamic>? ?? {};
+        debugPrint('📊 Insights gefunden: ${map.keys.toList()}');
+        return map.map((key, value) => MapEntry(
+              key,
+              CommunityInsight.fromJson(value as Map<String, dynamic>),
+            ));
+      }
+    } catch (e) {
+      debugPrint('Community Insights Fehler (ignoriert): $e');
+    }
+    return {};
   }
 
   /// Lädt natürliche Lebensmittelquellen für einen Nährstoff (lazy, on-demand).

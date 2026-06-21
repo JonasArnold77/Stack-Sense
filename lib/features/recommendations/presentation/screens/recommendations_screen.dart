@@ -13,6 +13,9 @@ import '../widgets/evidence_card.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/domain/models/stack_entry.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
+import '../../../community/domain/models/community_insight.dart';
+// ignore: unused_import — Provider für zukünftige direkte Nutzung
+import '../../../community/data/community_insights_provider.dart';
 
 const _pageSize = 10;
 
@@ -35,6 +38,8 @@ class _RecommendationsScreenState
   bool _hasMore = true;
   String? _error;
   SupplementType _typeFilter = SupplementType.single;
+  // Community Insights: key = supplement name (lowercase)
+  Map<String, CommunityInsight> _communityInsights = {};
 
   final ScrollController _scrollController = ScrollController();
 
@@ -91,6 +96,8 @@ class _RecommendationsScreenState
           _isLoading = false;
         });
       }
+      // Community Insights im Hintergrund nachladen (nicht-blockierend)
+      _loadCommunityInsights(results.map((s) => s.name).toList());
     } on ApiException catch (e) {
       if (mounted) {
         setState(() {
@@ -99,6 +106,20 @@ class _RecommendationsScreenState
         });
       }
     }
+  }
+
+  /// Lädt Community-Insights für die gegebenen Supplement-Namen.
+  /// Scheitert still — Banner fehlt einfach wenn keine Daten vorhanden.
+  Future<void> _loadCommunityInsights(List<String> names) async {
+    if (names.isEmpty) return;
+    try {
+      final insights = await ApiService.instance.getCommunityInsights(names);
+      if (mounted && insights.isNotEmpty) {
+        setState(() {
+          _communityInsights = {..._communityInsights, ...insights};
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadMore() async {
@@ -122,6 +143,7 @@ class _RecommendationsScreenState
           _isLoadingMore = false;
         });
       }
+      _loadCommunityInsights(results.map((s) => s.name).toList());
     } on ApiException catch (e) {
       if (mounted) {
         setState(() => _isLoadingMore = false);
@@ -353,6 +375,7 @@ class _RecommendationsScreenState
             supplement: supplement,
             isInStack: isInStack,
             rank: rank,
+            communityInsight: _communityInsights[supplement.name.toLowerCase()],
             onAddToStack: () => _handleAddToStack(supplement),
             onRemoveFromStack: () =>
                 ref.read(stackProvider.notifier).remove(supplement.id),

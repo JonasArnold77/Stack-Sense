@@ -62,4 +62,5 @@ class AppConstants {
   static const String keyLastCheckin = 'last_checkin_date';
   static const String keyCheckinHistory = 'checkin_history';
   static const String keyPhaseGoals = 'active_phase_goals';
+  static const String keyDeviceId  = 'device_id_anon';     // anonyme UUID für Community-Insights
 }

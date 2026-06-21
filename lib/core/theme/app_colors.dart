@@ -27,12 +27,12 @@ class AppColors {
   static const Color evidenceRedLight = Color(0xFFFEF2F2);
   static const Color evidenceRedBadge = Color(0xFFEF4444);
 
-  // --- Neutrals (leicht blau getönt für Frische) ---
-  static const Color background = Color(0xFFF4F6FB);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFEEF2F9);
-  static const Color border = Color(0xFFDDE3EF);
-  static const Color divider = Color(0xFFEEF2F9);
+  // --- Neutrals (blau getönt — Background klar sichtbar blau) ---
+  static const Color background = Color(0xFFDEEAF8);    // Klares Hellblau
+  static const Color surface = Color(0xFFF2F7FF);       // Cards / Dialoge (fast weiß, leicht blau)
+  static const Color surfaceVariant = Color(0xFFE4EEFA); // Chips, Inputs, Auswahl-Elemente
+  static const Color border = Color(0xFFC4D5EC);        // Blau getönter Rahmen
+  static const Color divider = Color(0xFFD3E3F4);
 
   // --- Text (Slate-Töne, moderner als reines Grau) ---
   static const Color textPrimary = Color(0xFF0F172A);    // Slate 900

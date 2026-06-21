@@ -9,6 +9,7 @@ import '../../../../core/router/app_router.dart';
 import '../../domain/models/checkin_entry.dart';
 import '../../data/checkin_provider.dart';
 import '../../../gamification/data/xp_provider.dart';
+import '../../../stack/data/stack_provider.dart';
 
 /// Täglicher Check-in — 4 Metriken mit Emoji-Skala 1–5.
 /// Nutzt Riverpod für Persistenz und Streak-Berechnung.
@@ -37,7 +38,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       focus: _focus,
       mood: _mood,
     );
-    await ref.read(checkinProvider.notifier).submit(entry);
+    // Stack-Namen mitgeben → anonym ans Backend senden für Community-Insights
+    final stackNames = ref.read(stackProvider).map((e) => e.name).toList();
+    await ref.read(checkinProvider.notifier).submit(entry, supplementNames: stackNames);
     await ref.read(xpProvider.notifier).addXp(AppConstants.xpCheckin);
     if (mounted) {
       setState(() {

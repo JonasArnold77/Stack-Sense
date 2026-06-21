@@ -53,7 +53,21 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
     // 2. Check-in-Verlauf über 21 Tage simulieren
     await ref.read(checkinProvider.notifier).simulateHistory(goalBoosts: boosts);
 
-    if (mounted) setState(() => _simLoading = false);
+    // 3. Simulierte Daten ans Backend senden → Community Insights befüllen
+    final stackNames = stack.map((e) => e.name).toList();
+    debugPrint('🔄 Sync: ${ref.read(checkinProvider).length} Einträge für ${stackNames.join(", ")}');
+    await ref.read(checkinProvider.notifier).syncAllToBackend(stackNames);
+    debugPrint('✅ Sync abgeschlossen');
+
+    if (mounted) {
+      setState(() => _simLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${stackNames.length} Supplement(s) synchronisiert — Empfehlungen neu laden'),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 
   Future<void> _resetSimulation() async {

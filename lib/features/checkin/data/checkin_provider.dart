@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/api_service.dart';
 import '../domain/models/checkin_entry.dart';
 
 /// Verwaltet alle Check-ins und Streak-Berechnung.
@@ -63,12 +64,82 @@ class CheckinNotifier extends StateNotifier<List<CheckinEntry>> {
   // --- Mutationen ---
 
   /// Check-in für heute speichern. Überschreibt bestehenden falls vorhanden.
-  Future<void> submit(CheckinEntry entry) async {
+  /// [supplementNames] — Namen der aktuell im Stack enthaltenen Supplements
+  ///                     werden anonym ans Backend gesendet für Community-Insights.
+  Future<void> submit(CheckinEntry entry, {List<String> supplementNames = const []}) async {
     final today = _today();
     // Alten heutigen Eintrag entfernen falls vorhanden
     final filtered = state.where((e) => e.dateOnly != today).toList();
     state = [...filtered, entry];
     await _saveToPrefs();
+
+    // Anonym ans Backend senden (nicht-blockierend, scheitert still)
+    _syncToBackend(entry, supplementNames);
+  }
+
+  /// Sendet Check-in-Daten mit anonymer Device-ID ans Backend.
+  Future<void> _syncToBackend(CheckinEntry entry, List<String> supplementNames) async {
+    if (supplementNames.isEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Anonyme Geräte-UUID — einmalig generiert und gespeichert
+      String? deviceId = prefs.getString(AppConstants.keyDeviceId);
+      if (deviceId == null) {
+        deviceId = _generateDeviceId();
+        await prefs.setString(AppConstants.keyDeviceId, deviceId);
+      }
+
+      final dateStr =
+          '${entry.date.year}-${entry.date.month.toString().padLeft(2, '0')}-${entry.date.day.toString().padLeft(2, '0')}';
+
+      await ApiService.instance.syncCheckin(
+        deviceId: deviceId,
+        checkinDate: dateStr,
+        sleep: entry.sleep,
+        energy: entry.energy,
+        focus: entry.focus,
+        mood: entry.mood,
+        supplementNames: supplementNames,
+      );
+    } catch (_) {
+      // Nicht-kritisch — Community-Feature darf still scheitern
+    }
+  }
+
+  String _generateDeviceId() {
+    const chars = 'abcdef0123456789';
+    final rng = Random.secure();
+    String segment(int len) =>
+        List.generate(len, (_) => chars[rng.nextInt(chars.length)]).join();
+    return '${segment(8)}-${segment(4)}-${segment(4)}-${segment(4)}-${segment(12)}';
+  }
+
+  /// Sendet alle lokalen Check-ins ans Backend — für Simulation und Nachsync.
+  Future<void> syncAllToBackend(List<String> supplementNames) async {
+    if (state.isEmpty || supplementNames.isEmpty) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String? deviceId = prefs.getString(AppConstants.keyDeviceId);
+      if (deviceId == null) {
+        deviceId = _generateDeviceId();
+        await prefs.setString(AppConstants.keyDeviceId, deviceId);
+      }
+      for (final entry in state) {
+        final dateStr =
+            '${entry.date.year}-${entry.date.month.toString().padLeft(2, '0')}-${entry.date.day.toString().padLeft(2, '0')}';
+        await ApiService.instance.syncCheckin(
+          deviceId: deviceId,
+          checkinDate: dateStr,
+          sleep: entry.sleep,
+          energy: entry.energy,
+          focus: entry.focus,
+          mood: entry.mood,
+          supplementNames: supplementNames,
+        );
+      }
+    } catch (_) {
+      // Nicht-kritisch
+    }
   }
 
   // --- Simulation ---

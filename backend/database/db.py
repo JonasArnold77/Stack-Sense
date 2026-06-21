@@ -94,3 +94,36 @@ def init_user_tables() -> None:
         logger.info("User-Tabellen bereit.")
     except Exception as e:
         logger.warning("User-Tabellen konnten nicht initialisiert werden: %s", e)
+
+
+def init_community_tables() -> None:
+    """
+    Erstellt die supplement_checkins-Tabelle für anonyme Community-Insights.
+    Speichert Check-in-Daten pro (anonymer Nutzer, Supplement, Tag).
+    Kein personenbezogenes Datum — nur device_id (UUID, lokal generiert).
+    """
+    create_sql = """
+    CREATE TABLE IF NOT EXISTS supplement_checkins (
+        id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        device_id       TEXT NOT NULL,            -- anonyme Geräte-UUID
+        supplement_name TEXT NOT NULL,            -- normalisierter Name (lowercase)
+        checkin_date    DATE NOT NULL,
+        sleep_score     SMALLINT CHECK (sleep_score BETWEEN 1 AND 5),
+        energy_score    SMALLINT CHECK (energy_score BETWEEN 1 AND 5),
+        focus_score     SMALLINT CHECK (focus_score BETWEEN 1 AND 5),
+        mood_score      SMALLINT CHECK (mood_score BETWEEN 1 AND 5),
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (device_id, supplement_name, checkin_date)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_sc_supplement ON supplement_checkins(supplement_name);
+    CREATE INDEX IF NOT EXISTS idx_sc_device     ON supplement_checkins(device_id);
+    CREATE INDEX IF NOT EXISTS idx_sc_date       ON supplement_checkins(checkin_date);
+    """
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(create_sql)
+        logger.info("Community-Tabellen bereit.")
+    except Exception as e:
+        logger.warning("Community-Tabellen konnten nicht initialisiert werden: %s", e)

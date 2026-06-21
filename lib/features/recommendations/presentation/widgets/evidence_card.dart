@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
 import '../../domain/models/supplement.dart';
 import '../screens/supplement_detail_screen.dart';
+import '../../../community/domain/models/community_insight.dart';
 
 /// Die Kern-Komponente der App — zeigt ein Supplement mit Evidenz-Ampel.
 /// Tap → öffnet SupplementDetailScreen mit slide-from-bottom Transition.
@@ -19,6 +20,8 @@ class EvidenceCard extends StatefulWidget {
   final VoidCallback? onRemoveFromStack;
   /// 1 = Gold, 2 = Silber, 3 = Bronze. null = kein Ranking-Badge.
   final int? rank;
+  /// Optionaler Community-Insight — wird als Banner am Ende der Card angezeigt.
+  final CommunityInsight? communityInsight;
 
   const EvidenceCard({
     super.key,
@@ -27,6 +30,7 @@ class EvidenceCard extends StatefulWidget {
     this.onAddToStack,
     this.onRemoveFromStack,
     this.rank,
+    this.communityInsight,
   });
 
   @override
@@ -359,17 +363,18 @@ class _EvidenceCardState extends State<EvidenceCard>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Farbiger Akzent-Streifen oben (zeigt Evidenzstufe) ---
-            Container(
-              height: 5,
-              decoration: BoxDecoration(
-                color: colors.accentStripe,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(AppConstants.radiusL - 1),
-                  topRight: Radius.circular(AppConstants.radiusL - 1),
+            // --- Farbiger Akzent-Streifen oben (nur bei normalen Karten, nicht Top-3) ---
+            if (rankStyle == null)
+              Container(
+                height: 5,
+                decoration: BoxDecoration(
+                  color: colors.accentStripe,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(AppConstants.radiusL - 1),
+                    topRight: Radius.circular(AppConstants.radiusL - 1),
+                  ),
                 ),
               ),
-            ),
 
             // --- Ranking-Streifen (nur Top 3) ---
             if (rankStyle != null)
@@ -422,7 +427,13 @@ class _EvidenceCardState extends State<EvidenceCard>
                 child: Wrap(
                   spacing: AppConstants.spaceXS,
                   runSpacing: AppConstants.spaceXS,
-                  children: supplement.categories.map((cat) => _CategoryTag(label: cat)).toList(),
+                  children: supplement.categories
+                      .map((cat) => _CategoryTag(
+                            label: cat,
+                            evidenceLevel: supplement.evidenceLevel,
+                            reason: supplement.evidenceReason,
+                          ))
+                      .toList(),
                 ),
               ),
 
@@ -460,6 +471,10 @@ class _EvidenceCardState extends State<EvidenceCard>
             _buildFoodSection(),
 
             const SizedBox(height: AppConstants.spaceS),
+
+            // --- Community Insight Banner ---
+            if (widget.communityInsight != null)
+              _CommunityInsightBanner(insight: widget.communityInsight!),
 
             // --- Actions ---
             Padding(
@@ -1048,31 +1063,306 @@ class _SecondaryBenefitBlock extends StatelessWidget {
   }
 }
 
-// --- Kategorie-Tag ---
+// --- Kategorie-Tag mit Sprechblasen-Tooltip ---
 
-class _CategoryTag extends StatelessWidget {
+/// Kurze Erklärungen pro Kategorie-Schlüsselwort (lowercase-Matching).
+const _kCategoryExplanations = <String, String>{
+  'schlaf': 'Fördert das Einschlafen und die Schlafqualität durch Einfluss auf Melatonin und das Nervensystem.',
+  'entspannung': 'Unterstützt das parasympathische Nervensystem und hilft, körperliche Anspannung zu lösen.',
+  'regeneration': 'Hilft dem Körper, sich nach körperlicher Belastung schneller zu erholen.',
+  'sport': 'Unterstützt Muskelaufbau, Ausdauer oder die Erholung bei regelmäßigem Training.',
+  'energie': 'Beteiligt an der zellulären Energieproduktion (ATP) in den Mitochondrien.',
+  'fokus': 'Kann kognitive Leistung, Konzentration und mentale Klarheit verbessern.',
+  'konzentration': 'Unterstützt die Aufmerksamkeit und kognitive Ausdauer über längere Zeiträume.',
+  'immunsystem': 'Stärkt die körpereigene Abwehr und kann die Häufigkeit von Infekten senken.',
+  'abwehr': 'Aktiviert Immunzellen und unterstützt die erste Abwehrlinie des Körpers.',
+  'verdauung': 'Verbessert die Darmflora und fördert eine gesunde Verdauungsfunktion.',
+  'darm': 'Unterstützt die Balance der Darmbakterien und die Darmschleimhaut.',
+  'gelenke': 'Schützt Gelenkknorpel und kann Entzündungsprozesse im Bewegungsapparat dämpfen.',
+  'knochen': 'Wichtig für die Mineralisation und den Erhalt der Knochendichte.',
+  'stress': 'Moduliert die Stressreaktion (HPA-Achse) und kann Cortisolspiegel senken.',
+  'stimmung': 'Beeinflusst Neurotransmitter wie Serotonin oder Dopamin, die die Stimmung regulieren.',
+  'schilddrüse': 'Essenziell für die Produktion der Schilddrüsenhormone T3 und T4.',
+  'hormon': 'Beteiligt an der Synthese oder Regulation körpereigener Hormone.',
+  'antioxidantien': 'Neutralisiert freie Radikale und schützt Zellen vor oxidativem Stress.',
+  'kreislauf': 'Unterstützt die Herzgesundheit und einen gesunden Blutdruck.',
+  'gehirn': 'Fördert die zerebrale Durchblutung und den Neurotransmitter-Stoffwechsel.',
+  'muskel': 'Unterstützt Muskelproteinsynthese und vermindert trainingsbedingten Muskelabbau.',
+  'entzündung': 'Hemmt entzündliche Signalwege (z.B. NF-kB) im Körper.',
+  'basis': 'Deckt grundlegende Mikronährstoffbedarfe ab, die über die Ernährung oft nicht erreicht werden.',
+  'vitamin': 'Wichtiger Mikronährstoff der an zahlreichen Stoffwechselprozessen beteiligt ist.',
+  'mineral': 'Essenzieller Mineralstoff der als Cofaktor in vielen enzymatischen Reaktionen wirkt.',
+};
+
+String _bubbleText(String label) {
+  final key = _kCategoryExplanations.keys.firstWhere(
+    (k) => label.toLowerCase().contains(k),
+    orElse: () => '',
+  );
+  if (key.isEmpty) {
+    return 'Dieses Supplement kann bei "$label" unterstützen — '
+        'basierend auf der aktuellen Studienlage.';
+  }
+  return _kCategoryExplanations[key]!;
+}
+
+class _CategoryTag extends StatefulWidget {
   final String label;
+  final EvidenceLevel evidenceLevel;
+  final String reason;
 
-  const _CategoryTag({required this.label});
+  const _CategoryTag({
+    required this.label,
+    required this.evidenceLevel,
+    required this.reason,
+  });
+
+  @override
+  State<_CategoryTag> createState() => _CategoryTagState();
+}
+
+class _CategoryTagState extends State<_CategoryTag>
+    with SingleTickerProviderStateMixin {
+  OverlayEntry? _overlay;
+  // LayerLink verknüpft Tag und Bubble — Bubble folgt dem Tag beim Scrollen
+  final _layerLink = LayerLink();
+  late AnimationController _animController;
+  late Animation<double> _scaleAnim;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scaleAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOutBack);
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    _hideBubble();
+    super.dispose();
+  }
+
+  void _showBubble() {
+    _overlay = OverlayEntry(
+      builder: (ctx) => _TagBubbleOverlay(
+        layerLink: _layerLink,
+        label: widget.label,
+        explanation: _bubbleText(widget.label),
+        evidenceLevel: widget.evidenceLevel,
+        scaleAnim: _scaleAnim,
+        fadeAnim: _fadeAnim,
+        onDismiss: _hideBubble,
+      ),
+    );
+    Overlay.of(context).insert(_overlay!);
+    _animController.forward(from: 0);
+  }
+
+  void _hideBubble() {
+    _overlay?.remove();
+    _overlay = null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withAlpha(12),
-        borderRadius: BorderRadius.circular(AppConstants.radiusRound),
-        border: Border.all(color: AppColors.primary.withAlpha(40)),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.labelSmall.copyWith(
-          color: AppColors.primary,
-          fontSize: 10,
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: GestureDetector(
+        onTap: _overlay == null ? _showBubble : _hideBubble,
+        child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withAlpha(12),
+          borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+          border: Border.all(color: AppColors.primary.withAlpha(40)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.label,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.primary,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.info_outline, size: 9, color: AppColors.primary.withAlpha(140)),
+          ],
         ),
       ),
+    ),   // GestureDetector
+  );     // CompositedTransformTarget
+  }
+}
+
+class _TagBubbleOverlay extends StatelessWidget {
+  final LayerLink layerLink;
+  final String label;
+  final String explanation;
+  final EvidenceLevel evidenceLevel;
+  final Animation<double> scaleAnim;
+  final Animation<double> fadeAnim;
+  final VoidCallback onDismiss;
+
+  const _TagBubbleOverlay({
+    required this.layerLink,
+    required this.label,
+    required this.explanation,
+    required this.evidenceLevel,
+    required this.scaleAnim,
+    required this.fadeAnim,
+    required this.onDismiss,
+  });
+
+  Color get _evidenceColor => switch (evidenceLevel) {
+        EvidenceLevel.green => AppColors.evidenceGreen,
+        EvidenceLevel.yellow => AppColors.evidenceYellow,
+        EvidenceLevel.red => AppColors.evidenceRed,
+      };
+
+  String get _evidenceLabel => switch (evidenceLevel) {
+        EvidenceLevel.green => 'Evidenzbasiert',
+        EvidenceLevel.yellow => 'Hinweise vorhanden',
+        EvidenceLevel.red => 'Nicht belegt',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    const bubbleW = 240.0;
+    const pointerH = 9.0;
+    const pointerW = 14.0;
+    // Pfeil mittig unter der Bubble
+    const pointerX = (bubbleW - pointerW) / 2;
+
+    return Stack(
+      children: [
+        // Transparenter Tap-Catcher zum Schließen
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: onDismiss,
+            behavior: HitTestBehavior.translucent,
+            child: const SizedBox.expand(),
+          ),
+        ),
+        // CompositedTransformFollower folgt dem Tag live beim Scrollen
+        CompositedTransformFollower(
+          link: layerLink,
+          showWhenUnlinked: false,       // versteckt wenn Tag außerhalb des Screens
+          targetAnchor: Alignment.bottomCenter,  // Anhängepunkt: Mitte-Unten des Tags
+          followerAnchor: Alignment.topCenter,   // Bubble startet oben-mittig
+          offset: const Offset(0, 4),            // 4px Abstand unter dem Tag
+          child: FadeTransition(
+            opacity: fadeAnim,
+            child: ScaleTransition(
+              scale: scaleAnim,
+              alignment: Alignment.topCenter,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Pfeil zeigt nach oben — zum Tag hin
+                  Padding(
+                    padding: const EdgeInsets.only(left: pointerX),
+                    child: CustomPaint(
+                      size: const Size(pointerW, pointerH),
+                      painter: _BubblePointerPainter(color: AppColors.primaryDark),
+                    ),
+                  ),
+                  Material(
+                    elevation: 12,
+                    shadowColor: Colors.black.withOpacity(0.22),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                    color: Colors.transparent,
+                    child: Container(
+                      width: bubbleW,
+                      padding: const EdgeInsets.all(AppConstants.spaceM),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryDark,
+                        borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  label,
+                                  style: AppTextStyles.labelLarge.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppConstants.spaceS),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _evidenceColor.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+                                  border: Border.all(color: _evidenceColor.withOpacity(0.5)),
+                                ),
+                                child: Text(
+                                  _evidenceLabel,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: _evidenceColor,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppConstants.spaceS),
+                          Text(
+                            explanation,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: Colors.white.withOpacity(0.82),
+                              height: 1.45,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
+}
+
+class _BubblePointerPainter extends CustomPainter {
+  final Color color;
+  const _BubblePointerPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    // Aufwärts-Pfeil: Spitze oben, breite Basis unten
+    final path = Path()
+      ..moveTo(size.width / 2, 0)       // Spitze oben (zeigt zum Tag)
+      ..lineTo(size.width, size.height)  // unten rechts
+      ..lineTo(0, size.height)           // unten links
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_BubblePointerPainter old) => old.color != color;
 }
 
 // --- Farb-Mapping ---
@@ -1095,8 +1385,9 @@ class _EvidenceColors {
   });
 }
 
-_EvidenceColors _evidenceColors(EvidenceLevel level) => switch (level) {
-      EvidenceLevel.green => const _EvidenceColors(
+_EvidenceColors _evidenceColors(EvidenceLevel level) {
+  return switch (level) {
+    EvidenceLevel.green => const _EvidenceColors(
           background: AppColors.evidenceGreenLight,
           border: AppColors.evidenceGreen,
           badge: AppColors.evidenceGreenBadge,
@@ -1104,7 +1395,7 @@ _EvidenceColors _evidenceColors(EvidenceLevel level) => switch (level) {
           accentStripe: AppColors.evidenceGreenBadge,
           reasonBg: AppColors.evidenceGreenLight,
         ),
-      EvidenceLevel.yellow => const _EvidenceColors(
+    EvidenceLevel.yellow => const _EvidenceColors(
           background: AppColors.evidenceYellowLight,
           border: AppColors.evidenceYellow,
           badge: AppColors.evidenceYellowBadge,
@@ -1112,7 +1403,7 @@ _EvidenceColors _evidenceColors(EvidenceLevel level) => switch (level) {
           accentStripe: AppColors.evidenceYellowBadge,
           reasonBg: AppColors.evidenceYellowLight,
         ),
-      EvidenceLevel.red => const _EvidenceColors(
+    EvidenceLevel.red => const _EvidenceColors(
           background: AppColors.evidenceRedLight,
           border: AppColors.evidenceRed,
           badge: AppColors.evidenceRedBadge,
@@ -1120,4 +1411,74 @@ _EvidenceColors _evidenceColors(EvidenceLevel level) => switch (level) {
           accentStripe: AppColors.evidenceRedBadge,
           reasonBg: AppColors.evidenceRedLight,
         ),
-    };
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Community Insight Banner
+// ---------------------------------------------------------------------------
+
+/// Zeigt aggregierte Community-Daten am unteren Ende einer EvidenceCard:
+/// "👥 Bei 23 Nutzern hat sich der Schlaf durch Melatonin deutlich verbessert"
+class _CommunityInsightBanner extends StatelessWidget {
+  final CommunityInsight insight;
+  const _CommunityInsightBanner({required this.insight});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.cardPadding, 0, AppConstants.cardPadding, 0,
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.spaceM,
+          vertical: AppConstants.spaceS + 2,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(AppConstants.radiusM),
+          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.star_outline_rounded,
+              size: 15,
+              color: AppColors.primary.withOpacity(0.8),
+            ),
+            const SizedBox(width: AppConstants.spaceS),
+            Expanded(
+              child: Text(
+                insight.label,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                  fontSize: 11.5,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppConstants.spaceS),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+              ),
+              child: Text(
+                '${insight.improvementPercent}%',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

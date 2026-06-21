@@ -19,6 +19,7 @@ class AppTheme {
         surface: AppColors.surface,
         onSurface: AppColors.textPrimary,
         surfaceContainerHighest: AppColors.surfaceVariant,
+        surfaceContainerLow: AppColors.background,
         error: AppColors.error,
         onError: AppColors.textInverse,
       ),
