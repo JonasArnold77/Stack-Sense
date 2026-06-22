@@ -1,6 +1,9 @@
+import asyncio
+import hashlib
 import json
 import logging
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -14,6 +17,46 @@ from services.pubmed_service import PubMedService
 from services.vector_service import search_studies as vector_search
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Einfacher In-Memory Cache für Empfehlungen
+# Key = hash(goal + profil-relevante Felder), TTL = 6h
+# ---------------------------------------------------------------------------
+_recommendation_cache: dict[str, tuple[float, RecommendationResponse]] = {}
+_CACHE_TTL = 6 * 3600  # 6 Stunden
+
+
+def _cache_key(goal: str, profile: UserProfile, limit: int, exclude_ids: list[str]) -> str:
+    """Erzeugt einen stabilen Cache-Key aus den relevanten Anfrage-Parametern."""
+    relevant = {
+        "goal": goal,
+        "age": profile.age,
+        "sex": profile.gender,
+        "conditions": sorted(profile.conditions or []),
+        "medications": sorted(profile.medications or []),
+        "sport": profile.sport_level,
+        "limit": limit,
+        "exclude": sorted(exclude_ids),
+    }
+    raw = json.dumps(relevant, ensure_ascii=False, sort_keys=True)
+    return hashlib.md5(raw.encode()).hexdigest()
+
+
+def _cache_get(key: str) -> RecommendationResponse | None:
+    entry = _recommendation_cache.get(key)
+    if entry and (time.time() - entry[0]) < _CACHE_TTL:
+        return entry[1]
+    if entry:
+        del _recommendation_cache[key]   # abgelaufen → entfernen
+    return None
+
+
+def _cache_set(key: str, value: RecommendationResponse) -> None:
+    # Max 50 Einträge im Cache (LRU-light)
+    if len(_recommendation_cache) >= 50:
+        oldest = min(_recommendation_cache, key=lambda k: _recommendation_cache[k][0])
+        del _recommendation_cache[oldest]
+    _recommendation_cache[key] = (time.time(), value)
 
 # --- Supplement-Wissensdatenbank einmalig laden ---
 _DB_PATH = Path(__file__).parent.parent / "data" / "supplement_knowledge.json"
@@ -186,7 +229,7 @@ WICHTIGE REGELN:
 3. Berücksichtige ALLE Profilparameter: Alter, Geschlecht, Erkrankungen, Medikamente, Jahreszeit, Sport
 4. Wechselwirkungen: Nutze AUSSCHLIESSLICH die Daten aus der Supplement-DB — erfinde keine
 5. Formuliere HWG-konform: keine Heilsversprechen, nur sachliche Informationen
-6. Sortiere nach Priorität: Grün → Gelb → Rot. Innerhalb derselben Farbe: die für dieses spezifische Ziel und Profil WICHTIGSTEN Supplements zuerst. Die ersten 3 in der Liste sind die absolut besten Empfehlungen — sie werden dem Nutzer als "Beste Wahl", "2. Wahl" und "3. Wahl" hervorgehoben angezeigt.
+6. Sortiere STRIKT nach relevance_score absteigend — das Supplement mit dem höchsten relevance_score kommt zuerst in der Liste. WICHTIG: Reihenfolge und Score müssen übereinstimmen: Platz 1 = höchster Score, Platz 2 = zweithöchster usw. Grüne Supplements erhalten tendenziell höhere Scores als gelbe oder rote, da starke Evidenz die Zielpassung erhöht. Die ersten 3 in der Liste sind die absolut besten Empfehlungen — sie werden dem Nutzer als "Beste Wahl", "2. Wahl" und "3. Wahl" hervorgehoben angezeigt.
 7. ZEICHENLIMITS — unbedingt einhalten:
    - evidence_reason: max 100 Zeichen
    - secondary_benefit.text: max 100 Zeichen (oder null)
@@ -194,6 +237,8 @@ WICHTIGE REGELN:
    - intake_time: max 40 Zeichen
    - intake_hint: max 80 Zeichen (oder null)
    - drug_interaction: max 80 Zeichen (oder null)
+   - food_coverage_score: Ganzzahl 1–10 (siehe ERNÄHRUNGSABDECKUNG weiter unten)
+   - relevance_score: Ganzzahl 0–100 (siehe PASSGENAUIGKEIT weiter unten)
 8. Generiere EXAKT so viele Supplements wie im LIMIT angegeben — nicht mehr, nicht weniger
 9. Überspringe alle Supplements deren IDs in BEREITS GEZEIGT aufgeführt sind
 
@@ -229,10 +274,44 @@ JSON-FORMAT (exakt einhalten):
       "intake_time": "Morgens",
       "intake_hint": "Mit fetthaltiger Mahlzeit — fettlöslich",
       "drug_interaction": null,
+      "food_coverage_score": 2,
+      "relevance_score": 91,
       "categories": ["Immunsystem", "Energie", "Stimmung"]
     }
   ]
 }
+
+ERNÄHRUNGSABDECKUNG (food_coverage_score):
+- Ganzzahl 1–10: Wie realistisch lässt sich der Tagesbedarf durch Lebensmittel decken?
+- Bewerte NUR danach ob die benötigte Dosis durch Essen erreichbar ist — nicht danach ob es ein "klassisches" Lebensmittel ist
+- WICHTIG: Wenn das Supplement selbst ein Lebensmittel oder Lebensmittelextrakt ist (z.B. Pilze, Wurzeln, Gewürze), und die wirksame Tagesdosis durch normale Portionen dieses Lebensmittels erreichbar ist, dann HOCH bewerten (6–9) — auch wenn es kein Supermarkt-Standardprodukt ist
+- 1–2 = Kaum möglich (z.B. Vitamin D, Melatonin, Q10 — kein Lebensmittel liefert ausreichend)
+- 3–4 = Schwer (z.B. Omega-3 EPA/DHA — nur durch täglich fetten Fisch in großen Mengen)
+- 5–6 = Bedingt möglich (z.B. Magnesium — mit gezielter Ernährung aus Nüssen/Hülsenfrüchten; Lion's Mane — frischer Pilz deckt Dosis, aber Verfügbarkeit begrenzt)
+- 7–8 = Gut möglich (z.B. Vitamin C — durch täglich Obst/Gemüse; Curcuma — durch regelmäßiges Kochen)
+- 9–10 = Sehr leicht (z.B. Kalium, Biotin — in vielen alltäglichen Lebensmitteln reichlich vorhanden)
+
+PASSGENAUIGKEIT (relevance_score):
+- Ganzzahl 0–100: Wie gut erfüllt dieses Supplement den ausgewählten Zweck?
+- Der Score ist die EINZIGE Grundlage für die Sortierung — höchster Score = erste Position. Vergib keine gleichen Scores für verschiedene Positionen.
+
+Scoreberechnung je nach Kontext:
+
+Bei PROBLEMFELDERN und PHASENZIELEN:
+- 85% des Scores: Wie direkt und stark wirkt das Supplement auf genau dieses Ziel? (unabhängig vom Profil)
+- 15% des Scores: Evidenzstärke (grün = Bonus, rot = Abzug) — Profil nur bei Kontraindikationen relevant (senkt Score wenn Profil eine Einschränkung zeigt, z.B. Ashwagandha bei Hashimoto)
+
+Bei BASIS-SUPPLEMENTIERUNG:
+- 50% des Scores: Wie gut passt das Supplement zum individuellen Profil? (Alter, Geschlecht, Jahreszeit, Erkrankungen bestimmen hier den Grundbedarf)
+- 35% des Scores: Stärke der wissenschaftlichen Evidenz für den allgemeinen Nutzen
+- 15% des Scores: Breite des Nutzens (wirkt auf mehrere relevante Bereiche des Profils)
+
+Skala (gilt für alle Kontexte):
+- 90–100 = Erstlinien-Supplement für genau diesen Zweck, starke Evidenz (z.B. Melatonin bei Schlaf, Kreatin bei Sport, Folat bei Schwangerschaft)
+- 70–89 = Sehr wichtig für den Zweck, gute Evidenz (z.B. Magnesium bei Schlaf, B12 bei Energie)
+- 50–69 = Unterstützend, moderate Evidenz oder indirekter Wirkmechanismus
+- 30–49 = Schwacher Zweckbezug, als Ergänzung sinnvoll
+- 0–29 = Kaum Bezug — nur listen wenn Limit sonst nicht erfüllbar
 
 KATEGORIEN-REGELN:
 - Wähle 1–3 passende Kategorien aus dieser Liste:
@@ -404,26 +483,40 @@ class ClaudeService:
     ) -> RecommendationResponse:
         logger.info(f"Empfehlungsanfrage: Ziel='{goal}', Alter={profile.age}")
 
-        # --- Kontext aufbauen: DB + PubMed ---
+        # --- Cache prüfen ---
+        cache_key = _cache_key(goal, profile, limit, exclude_ids or [])
+        cached = _cache_get(cache_key)
+        if cached:
+            logger.info(f"Cache-Hit für '{goal}' (limit={limit}) — Claude-Aufruf übersprungen")
+            return cached
+
+        # --- Kontext aufbauen: DB + PubMed + Vector parallel ---
         db_context = _build_db_context(
             medications=profile.medications or [],
             conditions=profile.conditions or [],
         )
 
-        # 1) Vektor-DB (pgvector, RDS) — schnell, vorberechnete Embeddings
         query_text = f"{goal} supplement {profile.conditions or ''} {profile.medications or ''}"
-        vector_context = vector_search(query_text, supplement_names=[], top_k=8)
-        if vector_context:
-            logger.info("Vector-DB: Studien gefunden und in Kontext eingebettet.")
 
-        # 2) Live PubMed — als Ergänzung wenn Vector-DB noch dünn befüllt
-        pubmed_context = ""
-        try:
-            pubmed_studies = await self.pubmed.get_goal_evidence(goal=goal, max_results=3)
-            pubmed_context = _build_pubmed_context(pubmed_studies)
-            logger.info(f"PubMed: {len(pubmed_studies)} Live-Studien geladen für '{goal}'")
-        except Exception as e:
-            logger.warning(f"PubMed nicht verfügbar: {e}")
+        async def _fetch_pubmed() -> str:
+            try:
+                studies = await self.pubmed.get_goal_evidence(goal=goal, max_results=3)
+                logger.info(f"PubMed: {len(studies)} Live-Studien geladen für '{goal}'")
+                return _build_pubmed_context(studies)
+            except Exception as e:
+                logger.warning(f"PubMed nicht verfügbar: {e}")
+                return ""
+
+        async def _fetch_vector() -> str:
+            ctx = vector_search(query_text, supplement_names=[], top_k=8)
+            if ctx:
+                logger.info("Vector-DB: Studien gefunden und eingebettet.")
+            return ctx or ""
+
+        # PubMed + Vector-DB gleichzeitig abfragen
+        pubmed_context, vector_context = await asyncio.gather(
+            _fetch_pubmed(), _fetch_vector()
+        )
 
         # Kombinierter Kontext: lokale DB + Vector-DB + Live PubMed
         combined_study_context = "\n\n".join(filter(None, [vector_context, pubmed_context]))
@@ -506,71 +599,29 @@ class ClaudeService:
                 categories=item.get("categories", []),
                 supplement_type=supp_type,
                 enthaltene_wirkstoffe=item.get("enthaltene_wirkstoffe", []),
+                food_coverage_score=max(1, min(10, int(item.get("food_coverage_score", 5)))),
+                relevance_score=max(0, min(100, int(item.get("relevance_score", 75)))),
             )
             recommendations.append(rec)
 
-        # B-Komplex anhängen — außer er ist bereits in exclude_ids (wurde schon gezeigt)
-        if _BKOMPLEX.id not in (exclude_ids or []):
-            recommendations.append(_BKOMPLEX)
+        result = RecommendationResponse(goal=goal, recommendations=recommendations)
+        _cache_set(cache_key, result)
+        return result
 
-        logger.info(f"Claude lieferte {len(recommendations)} Empfehlungen + Gruppen-Platzhalter (mit DB+PubMed Kontext)")
-        return RecommendationResponse(goal=goal, recommendations=recommendations)
-
-    async def get_simple_explanation(
-        self, supplement_name: str, substance_name: str | None
-    ) -> str:
-        name = f"{supplement_name} ({substance_name})" if substance_name else supplement_name
-        logger.info(f"Sonnet-Erklärung für: {name}")
-
-        message = self.client.messages.create(
-            model=settings.claude_explain_model,
-            max_tokens=256,
-            system=EXPLAIN_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": f"Erkläre mir {name} wie ich 5 Jahre alt bin."}],
-        )
-        return message.content[0].text.strip()
-
-    async def get_food_sources(
-        self, supplement_name: str, substance_name: str | None
-    ) -> list[dict]:
-        name = f"{supplement_name} ({substance_name})" if substance_name else supplement_name
-        logger.info(f"Lebensmittelquellen für: {name}")
-
-        message = self.client.messages.create(
-            model=settings.claude_explain_model,
-            max_tokens=512,
-            system=FOOD_SOURCES_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": f"Nährstoff: {name}"}],
-        )
-
-        raw = _extract_json(message.content[0].text.strip())
-        try:
-            data = json.loads(raw)
-            return data.get("sources", [])
-        except (json.JSONDecodeError, KeyError) as e:
-            logger.error(f"Food-Sources JSON Fehler: {e}\nRaw: {raw}")
-            return []
-
-    async def check_duplicates(
+    async def check_duplicate_in_stack(
         self,
-        new_supplement: dict,
-        stack: list[dict],
+        new_supplement: "SupplementInfo",
+        stack: "list[SupplementInfo]",
     ) -> dict:
-        """
-        Prüft semantisch ob das neue Supplement Wirkstoffe enthält die bereits im Stack sind.
-        Gibt { "duplicates": [ids...], "reasoning": "..." } zurück.
-        Nutzt Haiku — schnell und günstig für diese einfache Klassifikation.
-        """
         if not stack:
             return {"duplicates": [], "reasoning": "Stack ist leer."}
 
-        def _fmt(s: dict) -> str:
-            parts = [f"Name: {s['name']}"]
-            if s.get("substance_name"):
-                parts.append(f"Wirkstoff: {s['substance_name']}")
-            if s.get("enthaltene_wirkstoffe"):
-                parts.append(f"Enthält: {', '.join(s['enthaltene_wirkstoffe'])}")
-            return " | ".join(parts)
+        def _fmt(e: dict) -> str:
+            wirkstoffe = ", ".join(e.get("enthaltene_wirkstoffe", []))
+            return (
+                f"Name={e['name']} | Wirkstoff={e.get('substance_name', '-')} "
+                f"| Enthält: {wirkstoffe or '-'}"
+            )
 
         stack_lines = "\n".join(
             f"- ID={e['id']} | {_fmt(e)}" for e in stack
@@ -630,4 +681,25 @@ class ClaudeService:
             ]
         except (json.JSONDecodeError, KeyError) as e:
             logger.error(f"Produkt-JSON Fehler: {e}\nRaw: {raw}")
+            return []
+
+    async def get_food_sources(
+        self, supplement_name: str, substance_name: str | None
+    ) -> list[dict]:
+        name = f"{supplement_name} ({substance_name})" if substance_name else supplement_name
+        logger.info(f"Food-Sources für: {name}")
+
+        message = self.client.messages.create(
+            model=settings.claude_model,
+            max_tokens=512,
+            system=FOOD_SOURCES_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": f"Supplement: {name}"}],
+        )
+
+        raw = _extract_json(message.content[0].text.strip())
+        try:
+            data = json.loads(raw)
+            return data.get("sources", [])
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.error(f"Food-Sources JSON Fehler: {e}\nRaw: {raw}")
             return []

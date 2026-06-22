@@ -360,9 +360,11 @@ class _EvidenceCardState extends State<EvidenceCard>
           ),
           boxShadow: cardBoxShadow,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             // --- Farbiger Akzent-Streifen oben (nur bei normalen Karten, nicht Top-3) ---
             if (rankStyle == null)
               Container(
@@ -395,7 +397,20 @@ class _EvidenceCardState extends State<EvidenceCard>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(supplement.name, style: AppTextStyles.headlineSmall),
+                        // Name + Badge in einer Zeile
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(supplement.name, style: AppTextStyles.headlineSmall),
+                            ),
+                            const SizedBox(width: AppConstants.spaceS),
+                            Hero(
+                              tag: 'evidence_badge_${supplement.id}',
+                              child: _EvidenceBadge(level: supplement.evidenceLevel, colors: colors),
+                            ),
+                          ],
+                        ),
                         if (supplement.substanceName != null)
                           Padding(
                             padding: const EdgeInsets.only(top: AppConstants.spaceXS),
@@ -409,14 +424,13 @@ class _EvidenceCardState extends State<EvidenceCard>
                       ],
                     ),
                   ),
-                  const SizedBox(width: AppConstants.spaceS),
-                  Hero(
-                    tag: 'evidence_badge_${supplement.id}',
-                    child: _EvidenceBadge(level: supplement.evidenceLevel, colors: colors),
-                  ),
+                  // Ring wird als Positioned über die Karte gelegt
                 ],
               ),
             ),
+
+            // --- Relevanz-Balken ---
+            _RelevanceBar(score: supplement.relevanceScore),
 
             // --- Kategorie-Tags ---
             if (supplement.categories.isNotEmpty)
@@ -472,6 +486,11 @@ class _EvidenceCardState extends State<EvidenceCard>
 
             const SizedBox(height: AppConstants.spaceS),
 
+            // --- Ernährungs-Score ---
+            _FoodCoverageBar(score: supplement.foodCoverageScore),
+
+            const SizedBox(height: AppConstants.spaceXS),
+
             // --- Community Insight Banner ---
             if (widget.communityInsight != null)
               _CommunityInsightBanner(insight: widget.communityInsight!),
@@ -516,6 +535,9 @@ class _EvidenceCardState extends State<EvidenceCard>
                 ],
               ),
             ),
+              ],
+            ),
+
           ],
         ),
       ),
@@ -1478,6 +1500,139 @@ class _CommunityInsightBanner extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+
+// ─── Relevanz-Balken ──────────────────────────────────────────────────────────
+
+class _RelevanceBar extends StatelessWidget {
+  final int score; // 0–100
+
+  const _RelevanceBar({required this.score});
+
+  Color _color() {
+    if (score >= 75) return AppColors.evidenceGreen;
+    if (score >= 50) return AppColors.evidenceYellow;
+    return AppColors.evidenceRed;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _color();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.spaceS,
+      ),
+      child: Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          // Balken
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppConstants.radiusM),
+            child: LinearProgressIndicator(
+              value: score / 100,
+              minHeight: 34,
+              backgroundColor: color.withOpacity(0.13),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+          // Score innerhalb des Balkens
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Text(
+              '$score %',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                shadows: [
+                  Shadow(color: color.withOpacity(0.5), blurRadius: 6),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+// ─── Ernährungs-Abdeckungs-Balken ────────────────────────────────────────────
+
+class _FoodCoverageBar extends StatelessWidget {
+  final int score; // 1–10
+
+  const _FoodCoverageBar({required this.score});
+
+  Color _barColor() {
+    if (score <= 3) return const Color(0xFFE53935);
+    if (score <= 6) return const Color(0xFFFB8C00);
+    return const Color(0xFF43A047);
+  }
+
+  String _label() {
+    if (score <= 3) return 'Kaum durch Ernährung abdeckbar';
+    if (score <= 6) return 'Bedingt durch Ernährung abdeckbar';
+    return 'Gut durch Ernährung abdeckbar';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _barColor();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.cardPadding, 0, AppConstants.cardPadding, 0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.eco_outlined, size: 13, color: color),
+              const SizedBox(width: 4),
+              Text(
+                'Ernährungsabdeckung',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textTertiary,
+                  fontSize: 11,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${score}/10',
+                style: AppTextStyles.caption.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+            child: LinearProgressIndicator(
+              value: score / 10,
+              minHeight: 5,
+              backgroundColor: color.withOpacity(0.15),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            _label(),
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textTertiary,
+              fontSize: 10,
+            ),
+          ),
+        ],
       ),
     );
   }

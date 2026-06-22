@@ -130,9 +130,9 @@ class _PhaseGoalRecommendationsScreenState
     final def = goal.definition;
     final accent = def?.accentColor ?? AppColors.primary;
     final existingStack = ref.watch(stackProvider);
-    // Nach Evidenz-Level sortieren: Grün → Gelb → Rot
+    // Nach Relevanz-Score sortieren: höchster Score zuerst
     final sortedSupplements = [..._supplements]
-      ..sort((a, b) => a.evidenceLevel.index.compareTo(b.evidenceLevel.index));
+      ..sort((a, b) => b.relevanceScore.compareTo(a.relevanceScore));
 
     return Scaffold(
       backgroundColor: AppColors.background,

@@ -319,11 +319,11 @@ class _RecommendationsScreenState
       );
     }
 
-    // Nach aktivem Typ-Filter filtern + nach Evidenz-Level sortieren (Grün → Gelb → Rot)
+    // Nach aktivem Typ-Filter filtern + nach Relevanz-Score sortieren (höchster Score zuerst)
     final filtered = _supplements
         .where((s) => s.supplementType == _typeFilter)
         .toList()
-      ..sort((a, b) => a.evidenceLevel.index.compareTo(b.evidenceLevel.index));
+      ..sort((a, b) => b.relevanceScore.compareTo(a.relevanceScore));
 
     if (filtered.isEmpty) {
       return Center(

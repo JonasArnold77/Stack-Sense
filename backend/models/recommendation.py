@@ -53,6 +53,8 @@ class SupplementRecommendation(BaseModel):
     categories: list[str] = []
     supplement_type: SupplementType = SupplementType.single
     enthaltene_wirkstoffe: list[str] = []  # Nur für Kombipräparate befüllt
+    food_coverage_score: int = 5           # 1–10: wie gut durch Ernährung abdeckbar
+    relevance_score: int = 75              # 0–100: Passgenauigkeit für aktuelles Ziel/Kontext
 
 
 class RecommendationResponse(BaseModel):

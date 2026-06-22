@@ -184,6 +184,8 @@ class ApiService {
       supplementType: _parseSupplementType(json['supplement_type'] as String?),
       enthalteneWirkstoffe: enthalteneWirkstoffe,
       secondaryBenefit: secondaryBenefit,
+      foodCoverageScore: (json['food_coverage_score'] as num?)?.toInt() ?? 5,
+      relevanceScore: (json['relevance_score'] as num?)?.toInt() ?? 75,
     );
   }
 

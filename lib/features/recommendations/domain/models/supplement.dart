@@ -123,6 +123,10 @@ class Supplement {
   /// Sekundärer Nutzen aus dem Nutzerprofil — nicht zielrelevant, aber profilrelevant.
   /// Null wenn kein zusätzlicher Profilbezug gefunden wurde.
   final SecondaryBenefit? secondaryBenefit;
+  /// Wie gut lässt sich der Bedarf durch Ernährung decken? 1 (kaum) – 10 (sehr leicht)
+  final int foodCoverageScore;
+  /// Passgenauigkeit für das aktuelle Ziel/Kontext: 0–100
+  final int relevanceScore;
 
   const Supplement({
     required this.id,
@@ -140,5 +144,7 @@ class Supplement {
     this.supplementType = SupplementType.single,
     this.enthalteneWirkstoffe = const [],
     this.secondaryBenefit,
+    this.foodCoverageScore = 5,
+    this.relevanceScore = 75,
   });
 }
