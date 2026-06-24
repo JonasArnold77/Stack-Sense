@@ -43,6 +43,28 @@
         "Knochen & Gelenke",
         "Stimmung",
         "Energie"
+      ],
+      "food_sources": [
+        {
+          "food": "Hering",
+          "note": "100g ≈ 1.100 IE"
+        },
+        {
+          "food": "Lachs",
+          "note": "100g ≈ 600 IE"
+        },
+        {
+          "food": "Makrele",
+          "note": "100g ≈ 400 IE"
+        },
+        {
+          "food": "Eigelb",
+          "note": "2 Stück ≈ 80 IE"
+        },
+        {
+          "food": "Champignons (UV-bestrahlt)",
+          "note": "100g ≈ 150 IE"
+        }
       ]
     },
     "magnesium": {
@@ -92,6 +114,28 @@
         "Stress",
         "Sport & Erholung",
         "Herzgesundheit"
+      ],
+      "food_sources": [
+        {
+          "food": "Kürbiskerne",
+          "note": "30g ≈ 160 mg"
+        },
+        {
+          "food": "Dunkle Schokolade (85%)",
+          "note": "30g ≈ 65 mg"
+        },
+        {
+          "food": "Spinat (gekocht)",
+          "note": "200g ≈ 150 mg"
+        },
+        {
+          "food": "Mandeln",
+          "note": "30g ≈ 80 mg"
+        },
+        {
+          "food": "Schwarze Bohnen",
+          "note": "100g ≈ 70 mg"
+        }
       ]
     },
     "omega-3": {
@@ -130,6 +174,28 @@
         "Entzündung",
         "Fokus",
         "Stimmung"
+      ],
+      "food_sources": [
+        {
+          "food": "Makrele",
+          "note": "100g ≈ 4,1 g EPA+DHA"
+        },
+        {
+          "food": "Lachs (wild)",
+          "note": "100g ≈ 2,2 g EPA+DHA"
+        },
+        {
+          "food": "Hering",
+          "note": "100g ≈ 1,7 g EPA+DHA"
+        },
+        {
+          "food": "Sardinen",
+          "note": "100g ≈ 1,4 g EPA+DHA"
+        },
+        {
+          "food": "Leinsamen",
+          "note": "Nur ALA, kein EPA/DHA"
+        }
       ]
     },
     "zink": {
@@ -171,6 +237,28 @@
         "Immunsystem",
         "Hormonbalance",
         "Entzündung"
+      ],
+      "food_sources": [
+        {
+          "food": "Austern",
+          "note": "6 Stück ≈ 32 mg"
+        },
+        {
+          "food": "Rinderhackfleisch",
+          "note": "100g ≈ 4,8 mg"
+        },
+        {
+          "food": "Kürbiskerne",
+          "note": "30g ≈ 2,5 mg"
+        },
+        {
+          "food": "Linsen (gekocht)",
+          "note": "200g ≈ 2,5 mg"
+        },
+        {
+          "food": "Cashews",
+          "note": "30g ≈ 1,6 mg"
+        }
       ]
     },
     "vitamin-c": {
@@ -212,6 +300,28 @@
         "Immunsystem",
         "Entzündung",
         "Energie"
+      ],
+      "food_sources": [
+        {
+          "food": "Acerola",
+          "note": "10g ≈ 170 mg"
+        },
+        {
+          "food": "Paprika (rot)",
+          "note": "100g ≈ 140 mg"
+        },
+        {
+          "food": "Brokkoli (roh)",
+          "note": "100g ≈ 90 mg"
+        },
+        {
+          "food": "Sanddorn",
+          "note": "30g ≈ 110 mg"
+        },
+        {
+          "food": "Kiwi",
+          "note": "1 Stück ≈ 70 mg"
+        }
       ]
     },
     "vitamin-b12": {
@@ -251,6 +361,28 @@
         "Energie",
         "Fokus",
         "Stimmung"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderleber",
+          "note": "100g ≈ 70 µg"
+        },
+        {
+          "food": "Makrele",
+          "note": "100g ≈ 9 µg"
+        },
+        {
+          "food": "Lachs",
+          "note": "100g ≈ 4 µg"
+        },
+        {
+          "food": "Ei",
+          "note": "2 Stück ≈ 1,5 µg"
+        },
+        {
+          "food": "Gouda",
+          "note": "50g ≈ 0,9 µg"
+        }
       ]
     },
     "eisen": {
@@ -297,6 +429,28 @@
       "categories": [
         "Energie",
         "Hormonbalance"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderleber",
+          "note": "100g ≈ 7 mg"
+        },
+        {
+          "food": "Kürbiskerne",
+          "note": "30g ≈ 2,5 mg"
+        },
+        {
+          "food": "Linsen (gekocht)",
+          "note": "200g ≈ 6 mg"
+        },
+        {
+          "food": "Spinat (roh)",
+          "note": "100g ≈ 3,5 mg"
+        },
+        {
+          "food": "Quinoa (gekocht)",
+          "note": "200g ≈ 3 mg"
+        }
       ]
     },
     "selen": {
@@ -331,6 +485,28 @@
         "Schilddrüse",
         "Immunsystem",
         "Entzündung"
+      ],
+      "food_sources": [
+        {
+          "food": "Paranüsse",
+          "note": "2 Nüsse ≈ 180 µg"
+        },
+        {
+          "food": "Thunfisch",
+          "note": "100g ≈ 85 µg"
+        },
+        {
+          "food": "Sardinen",
+          "note": "100g ≈ 53 µg"
+        },
+        {
+          "food": "Rindfleisch",
+          "note": "100g ≈ 30 µg"
+        },
+        {
+          "food": "Vollkornbrot",
+          "note": "2 Scheiben ≈ 15 µg"
+        }
       ]
     },
     "ashwagandha": {
@@ -379,6 +555,16 @@
         "Energie",
         "Hormonbalance",
         "Sport & Erholung"
+      ],
+      "food_sources": [
+        {
+          "food": "Ashwagandha-Wurzel",
+          "note": "Nur als Extrakt/Tee erhältlich"
+        },
+        {
+          "food": "Kein übliches Lebensmittel",
+          "note": "Bedarf nicht durch Ernährung deckbar"
+        }
       ]
     },
     "melatonin": {
@@ -424,6 +610,24 @@
       "intake_notes": "30–60 Minuten vor Schlafzeit. 0,5–1mg ausreichend für die meisten Menschen.",
       "categories": [
         "Schlaf"
+      ],
+      "food_sources": [
+        {
+          "food": "Sauerkirschen",
+          "note": "Natürliche Quelle, geringe Menge"
+        },
+        {
+          "food": "Pistazien",
+          "note": "30g ≈ 0,2 mg — beste Quelle"
+        },
+        {
+          "food": "Walnüsse",
+          "note": "Sehr geringe Menge"
+        },
+        {
+          "food": "Tomaten",
+          "note": "Sehr geringe Menge"
+        }
       ]
     },
     "kreatin": {
@@ -455,6 +659,28 @@
         "Sport & Erholung",
         "Fokus",
         "Energie"
+      ],
+      "food_sources": [
+        {
+          "food": "Rindersteak",
+          "note": "100g ≈ 0,4 g"
+        },
+        {
+          "food": "Thunfisch",
+          "note": "100g ≈ 0,4 g"
+        },
+        {
+          "food": "Lachs",
+          "note": "100g ≈ 0,45 g"
+        },
+        {
+          "food": "Hühnerbrust",
+          "note": "100g ≈ 0,4 g"
+        },
+        {
+          "food": "Pflanzl. Quellen",
+          "note": "Kaum vorhanden — Supp. nötig"
+        }
       ]
     },
     "coq10": {
@@ -492,6 +718,28 @@
         "Herzgesundheit",
         "Energie",
         "Sport & Erholung"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderleber",
+          "note": "100g ≈ 3,9 mg"
+        },
+        {
+          "food": "Makrele",
+          "note": "100g ≈ 4,3 mg"
+        },
+        {
+          "food": "Hühnerbrust",
+          "note": "100g ≈ 1,4 mg"
+        },
+        {
+          "food": "Brokkoli",
+          "note": "100g ≈ 0,6 mg"
+        },
+        {
+          "food": "Sesam",
+          "note": "30g ≈ 0,5 mg"
+        }
       ]
     },
     "probiotika": {
@@ -526,6 +774,28 @@
       "categories": [
         "Verdauung",
         "Immunsystem"
+      ],
+      "food_sources": [
+        {
+          "food": "Joghurt (lebende Kulturen)",
+          "note": "200g — täglich essen"
+        },
+        {
+          "food": "Kefir",
+          "note": "200ml — sehr divers"
+        },
+        {
+          "food": "Sauerkraut (unpasteurisiert)",
+          "note": "50g täglich"
+        },
+        {
+          "food": "Kimchi",
+          "note": "50g täglich"
+        },
+        {
+          "food": "Miso",
+          "note": "1 EL in Suppe"
+        }
       ]
     },
     "curcumin": {
@@ -567,6 +837,20 @@
       "categories": [
         "Entzündung",
         "Knochen & Gelenke"
+      ],
+      "food_sources": [
+        {
+          "food": "Kurkuma (Gewürz)",
+          "note": "1 TL ≈ 200 mg Curcumin"
+        },
+        {
+          "food": "Curry-Gerichte",
+          "note": "Mit schwarzem Pfeffer → +2000% Aufnahme"
+        },
+        {
+          "food": "Goldene Milch",
+          "note": "1 TL Kurkuma in Milch"
+        }
       ]
     },
     "nac": {
@@ -601,6 +885,24 @@
         "Entzündung",
         "Immunsystem",
         "Stimmung"
+      ],
+      "food_sources": [
+        {
+          "food": "Hühnerbrust",
+          "note": "100g ≈ hoher Cysteingehalt"
+        },
+        {
+          "food": "Rindfleisch",
+          "note": "100g — gute Quelle"
+        },
+        {
+          "food": "Eier",
+          "note": "2 Stück — moderate Quelle"
+        },
+        {
+          "food": "Sonnenblumenkerne",
+          "note": "30g — pflanzliche Quelle"
+        }
       ]
     },
     "vitamin-k2": {
@@ -629,6 +931,24 @@
       "categories": [
         "Knochen & Gelenke",
         "Herzgesundheit"
+      ],
+      "food_sources": [
+        {
+          "food": "Natto (Sojaferment)",
+          "note": "50g ≈ 500 µg MK-7"
+        },
+        {
+          "food": "Gouda",
+          "note": "50g ≈ 20 µg MK-4"
+        },
+        {
+          "food": "Butter (Weidehaltung)",
+          "note": "10g ≈ 5 µg"
+        },
+        {
+          "food": "Hühnerleber",
+          "note": "100g ≈ 15 µg"
+        }
       ]
     },
     "l-theanin": {
@@ -661,6 +981,20 @@
         "Fokus",
         "Stress",
         "Schlaf"
+      ],
+      "food_sources": [
+        {
+          "food": "Grüner Tee",
+          "note": "1 Tasse ≈ 25 mg"
+        },
+        {
+          "food": "Matcha",
+          "note": "2g Pulver ≈ 40 mg"
+        },
+        {
+          "food": "Schwarztee",
+          "note": "1 Tasse ≈ 15 mg"
+        }
       ]
     },
     "b-vitamine-komplex": {
@@ -701,6 +1035,28 @@
         "Fokus",
         "Stimmung",
         "Stress"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderleber",
+          "note": "Alle B-Vitamine in einer Mahlzeit"
+        },
+        {
+          "food": "Eier",
+          "note": "B2, B7, B12"
+        },
+        {
+          "food": "Hülsenfrüchte",
+          "note": "B1, B9, B6"
+        },
+        {
+          "food": "Vollkornprodukte",
+          "note": "B1, B3, B6"
+        },
+        {
+          "food": "Grünes Blattgemüse",
+          "note": "B9 (Folsäure)"
+        }
       ]
     },
     "zink-magnesium-b6": {
@@ -721,6 +1077,24 @@
         "Sport & Erholung",
         "Schlaf",
         "Hormonbalance"
+      ],
+      "food_sources": [
+        {
+          "food": "Kürbiskerne",
+          "note": "Zink + Magnesium"
+        },
+        {
+          "food": "Rindfleisch",
+          "note": "Zink + B6"
+        },
+        {
+          "food": "Spinat",
+          "note": "Magnesium + B6"
+        },
+        {
+          "food": "Vollkorn",
+          "note": "Magnesium + B6"
+        }
       ]
     },
     "vitamin-a": {
@@ -773,6 +1147,28 @@
       "categories": [
         "Immunsystem",
         "Schilddrüse"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderleber",
+          "note": "100g ≈ 10.000 µg Retinol"
+        },
+        {
+          "food": "Karotten",
+          "note": "100g ≈ 835 µg Beta-Carotin"
+        },
+        {
+          "food": "Süßkartoffel",
+          "note": "100g ≈ 960 µg Beta-Carotin"
+        },
+        {
+          "food": "Spinat",
+          "note": "100g ≈ 525 µg Beta-Carotin"
+        },
+        {
+          "food": "Butter",
+          "note": "10g ≈ 75 µg Retinol"
+        }
       ]
     },
     "vitamin-e": {
@@ -820,6 +1216,28 @@
         "Entzündung",
         "Sport & Erholung",
         "Stimmung"
+      ],
+      "food_sources": [
+        {
+          "food": "Weizenkeimöl",
+          "note": "1 EL ≈ 20 mg"
+        },
+        {
+          "food": "Mandeln",
+          "note": "30g ≈ 7,5 mg"
+        },
+        {
+          "food": "Sonnenblumenkerne",
+          "note": "30g ≈ 10 mg"
+        },
+        {
+          "food": "Haselnüsse",
+          "note": "30g ≈ 4,5 mg"
+        },
+        {
+          "food": "Spinat",
+          "note": "100g ≈ 2 mg"
+        }
       ]
     },
     "vitamin-k1": {
@@ -866,6 +1284,24 @@
       "categories": [
         "Knochen & Gelenke",
         "Herzgesundheit"
+      ],
+      "food_sources": [
+        {
+          "food": "Grünkohl",
+          "note": "100g ≈ 700 µg"
+        },
+        {
+          "food": "Spinat",
+          "note": "100g ≈ 500 µg"
+        },
+        {
+          "food": "Brokkoli",
+          "note": "100g ≈ 140 µg"
+        },
+        {
+          "food": "Kopfsalat",
+          "note": "100g ≈ 100 µg"
+        }
       ]
     },
     "folsaeure": {
@@ -915,6 +1351,28 @@
         "Hormonbalance",
         "Stimmung",
         "Herzgesundheit"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderleber",
+          "note": "100g ≈ 590 µg"
+        },
+        {
+          "food": "Edamame",
+          "note": "100g ≈ 310 µg"
+        },
+        {
+          "food": "Spinat (roh)",
+          "note": "100g ≈ 194 µg"
+        },
+        {
+          "food": "Spargel",
+          "note": "5 Stangen ≈ 130 µg"
+        },
+        {
+          "food": "Kidneybohnen",
+          "note": "100g ≈ 130 µg"
+        }
       ]
     },
     "vitamin-b6": {
@@ -959,6 +1417,28 @@
         "Stress",
         "Energie",
         "Fokus"
+      ],
+      "food_sources": [
+        {
+          "food": "Thunfisch",
+          "note": "100g ≈ 1 mg"
+        },
+        {
+          "food": "Hühnerbrust",
+          "note": "100g ≈ 0,9 mg"
+        },
+        {
+          "food": "Kartoffel (gebacken)",
+          "note": "1 mittel ≈ 0,6 mg"
+        },
+        {
+          "food": "Banane",
+          "note": "1 Stück ≈ 0,4 mg"
+        },
+        {
+          "food": "Pistazien",
+          "note": "30g ≈ 0,4 mg"
+        }
       ]
     },
     "biotin": {
@@ -999,6 +1479,28 @@
         "Stimmung",
         "Entzündung",
         "Immunsystem"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderleber",
+          "note": "100g ≈ 100 µg"
+        },
+        {
+          "food": "Eier (Eigelb)",
+          "note": "2 Stück ≈ 20 µg"
+        },
+        {
+          "food": "Lachs",
+          "note": "100g ≈ 5 µg"
+        },
+        {
+          "food": "Mandeln",
+          "note": "30g ≈ 4,5 µg"
+        },
+        {
+          "food": "Süßkartoffel",
+          "note": "100g ≈ 4 µg"
+        }
       ]
     },
     "calcium": {
@@ -1051,6 +1553,28 @@
       "categories": [
         "Knochen & Gelenke",
         "Herzgesundheit"
+      ],
+      "food_sources": [
+        {
+          "food": "Parmesan",
+          "note": "30g ≈ 330 mg"
+        },
+        {
+          "food": "Joghurt (natur)",
+          "note": "200g ≈ 240 mg"
+        },
+        {
+          "food": "Milch",
+          "note": "200ml ≈ 240 mg"
+        },
+        {
+          "food": "Grünkohl",
+          "note": "100g ≈ 150 mg"
+        },
+        {
+          "food": "Sesam",
+          "note": "1 EL ≈ 90 mg"
+        }
       ]
     },
     "kalium": {
@@ -1115,6 +1639,28 @@
         "Herzgesundheit",
         "Blutdruckregulation",
         "Schlaf"
+      ],
+      "food_sources": [
+        {
+          "food": "Avocado",
+          "note": "1 mittel ≈ 700 mg"
+        },
+        {
+          "food": "Süßkartoffel",
+          "note": "1 mittel ≈ 500 mg"
+        },
+        {
+          "food": "Banane",
+          "note": "1 Stück ≈ 420 mg"
+        },
+        {
+          "food": "Kidneybohnen",
+          "note": "100g ≈ 400 mg"
+        },
+        {
+          "food": "Spinat (gekocht)",
+          "note": "200g ≈ 830 mg"
+        }
       ]
     },
     "iodine": {
@@ -1165,6 +1711,24 @@
       "categories": [
         "Schilddrüse",
         "Hormonbalance"
+      ],
+      "food_sources": [
+        {
+          "food": "Algen (Nori)",
+          "note": "2g ≈ 50–200 µg"
+        },
+        {
+          "food": "Kabeljau",
+          "note": "100g ≈ 100 µg"
+        },
+        {
+          "food": "Joghurt",
+          "note": "200g ≈ 75 µg"
+        },
+        {
+          "food": "Jodsalz",
+          "note": "3g ≈ 75 µg"
+        }
       ]
     },
     "chromium": {
@@ -1204,6 +1768,24 @@
       "intake_notes": "Typische Dosis: 50–200 µg/Tag in Studien. Mindestens 2–3 Monate Supplementation erforderlich für messbare Effekte. Mit Mahlzeiten einnehmen.",
       "categories": [
         "Hormonbalance"
+      ],
+      "food_sources": [
+        {
+          "food": "Brokkoli",
+          "note": "100g ≈ 11 µg"
+        },
+        {
+          "food": "Vollkornbrot",
+          "note": "2 Scheiben ≈ 5 µg"
+        },
+        {
+          "food": "Rindfleisch",
+          "note": "100g ≈ 2 µg"
+        },
+        {
+          "food": "Traubensaft",
+          "note": "200ml ≈ 8 µg"
+        }
       ]
     },
     "mangan": {
@@ -1245,6 +1827,24 @@
       "categories": [
         "Knochen & Gelenke",
         "Entzündung"
+      ],
+      "food_sources": [
+        {
+          "food": "Haselnüsse",
+          "note": "30g ≈ 1,7 mg"
+        },
+        {
+          "food": "Vollkornreis",
+          "note": "100g ≈ 1,2 mg"
+        },
+        {
+          "food": "Ananas",
+          "note": "100g ≈ 0,9 mg"
+        },
+        {
+          "food": "Blattgemüse",
+          "note": "100g ≈ 0,5 mg"
+        }
       ]
     },
     "l-glutamin": {
@@ -1282,6 +1882,24 @@
         "Sport & Erholung",
         "Immunsystem",
         "Verdauung"
+      ],
+      "food_sources": [
+        {
+          "food": "Rindfleisch",
+          "note": "100g ≈ 4 g"
+        },
+        {
+          "food": "Hühnerbrust",
+          "note": "100g ≈ 3,7 g"
+        },
+        {
+          "food": "Eier",
+          "note": "2 Stück ≈ 0,8 g"
+        },
+        {
+          "food": "Weizenkleie",
+          "note": "30g ≈ 1 g"
+        }
       ]
     },
     "l-arginin": {
@@ -1329,6 +1947,28 @@
         "Sport & Erholung",
         "Herzgesundheit",
         "Entzündung"
+      ],
+      "food_sources": [
+        {
+          "food": "Kürbiskerne",
+          "note": "30g ≈ 2 g"
+        },
+        {
+          "food": "Rindfleisch",
+          "note": "100g ≈ 2 g"
+        },
+        {
+          "food": "Hühnerbrust",
+          "note": "100g ≈ 2 g"
+        },
+        {
+          "food": "Erdnüsse",
+          "note": "30g ≈ 1,7 g"
+        },
+        {
+          "food": "Sojabohnen",
+          "note": "100g ≈ 3,2 g"
+        }
       ]
     },
     "l-carnitin": {
@@ -1367,6 +2007,24 @@
         "Sport & Erholung",
         "Herzgesundheit",
         "Energie"
+      ],
+      "food_sources": [
+        {
+          "food": "Lammfleisch",
+          "note": "100g ≈ 160 mg"
+        },
+        {
+          "food": "Rindfleisch",
+          "note": "100g ≈ 95 mg"
+        },
+        {
+          "food": "Schweinefleisch",
+          "note": "100g ≈ 28 mg"
+        },
+        {
+          "food": "Hühnerbrust",
+          "note": "100g ≈ 7 mg"
+        }
       ]
     },
     "taurin": {
@@ -1401,6 +2059,24 @@
         "Sport & Erholung",
         "Herzgesundheit",
         "Fokus"
+      ],
+      "food_sources": [
+        {
+          "food": "Muscheln",
+          "note": "100g ≈ 827 mg"
+        },
+        {
+          "food": "Thunfisch",
+          "note": "100g ≈ 285 mg"
+        },
+        {
+          "food": "Oktopus",
+          "note": "100g ≈ 870 mg"
+        },
+        {
+          "food": "Rindersteak",
+          "note": "100g ≈ 50 mg"
+        }
       ]
     },
     "bcaa": {
@@ -1443,6 +2119,28 @@
         "Sport & Erholung",
         "Muskelaufbau",
         "Energie"
+      ],
+      "food_sources": [
+        {
+          "food": "Hühnerbrust",
+          "note": "100g ≈ 6,6 g BCAAs"
+        },
+        {
+          "food": "Rindfleisch",
+          "note": "100g ≈ 6,2 g BCAAs"
+        },
+        {
+          "food": "Eier",
+          "note": "2 Stück ≈ 3 g BCAAs"
+        },
+        {
+          "food": "Thunfisch",
+          "note": "100g ≈ 6 g BCAAs"
+        },
+        {
+          "food": "Griechischer Joghurt",
+          "note": "200g ≈ 4 g BCAAs"
+        }
       ]
     },
     "glycin": {
@@ -1487,6 +2185,24 @@
         "Sport & Erholung",
         "Knochen & Gelenke",
         "Entzündung"
+      ],
+      "food_sources": [
+        {
+          "food": "Knochenbrühe",
+          "note": "240ml ≈ 1–4 g"
+        },
+        {
+          "food": "Hühnerhaut",
+          "note": "Kollagenreiche Quelle"
+        },
+        {
+          "food": "Gelatine",
+          "note": "10g ≈ 2,5 g Glycin"
+        },
+        {
+          "food": "Rindermark",
+          "note": "Sehr kollagenreich"
+        }
       ]
     },
     "rhodiola-rosea": {
@@ -1529,6 +2245,16 @@
         "Stress",
         "Energie",
         "Fokus"
+      ],
+      "food_sources": [
+        {
+          "food": "Nur als Extrakt",
+          "note": "Nicht durch Lebensmittel deckbar"
+        },
+        {
+          "food": "Rosenwurz-Tee",
+          "note": "Sehr geringe Wirkstoffmenge"
+        }
       ]
     },
     "maca-lepidium-meyenii": {
@@ -1563,6 +2289,16 @@
         "Sport & Erholung",
         "Hormonbalance",
         "Immunsystem"
+      ],
+      "food_sources": [
+        {
+          "food": "Maca-Pulver",
+          "note": "1 TL in Smoothie oder Müsli"
+        },
+        {
+          "food": "Maca-Wurzel (getrocknet)",
+          "note": "Spezialmarkt nötig"
+        }
       ]
     },
     "ginseng": {
@@ -1618,6 +2354,16 @@
         "Fokus",
         "Herzgesundheit",
         "Stress"
+      ],
+      "food_sources": [
+        {
+          "food": "Ginseng-Tee",
+          "note": "1 Tasse — geringe Dosierung"
+        },
+        {
+          "food": "Nur als Extrakt wirksam",
+          "note": "Dosierung aus Tee zu niedrig"
+        }
       ]
     },
     "lions-mane": {
@@ -1644,6 +2390,20 @@
         "Fokus",
         "Stimmung",
         "Stress"
+      ],
+      "food_sources": [
+        {
+          "food": "Frischer Lion's Mane Pilz",
+          "note": "100g deckt Tagesdosis"
+        },
+        {
+          "food": "Getrockneter Pilz",
+          "note": "15g = 100g frisch"
+        },
+        {
+          "food": "Pilz-Spezialmarkt",
+          "note": "Asiatische Supermärkte"
+        }
       ]
     },
     "reishi": {
@@ -1688,6 +2448,20 @@
         "Stress",
         "Schlaf",
         "Immunsystem"
+      ],
+      "food_sources": [
+        {
+          "food": "Reishi-Pilz (getrocknet)",
+          "note": "Zu bitter zum Essen — Tee/Extrakt"
+        },
+        {
+          "food": "Reishi-Tee",
+          "note": "2g Pulver — low dosage"
+        },
+        {
+          "food": "Nur als Extrakt wirksam",
+          "note": "Standardisierter Extrakt nötig"
+        }
       ]
     },
     "beta-alanin": {
@@ -1716,6 +2490,24 @@
         "Sport & Erholung",
         "Energie",
         "Fokus"
+      ],
+      "food_sources": [
+        {
+          "food": "Thunfisch",
+          "note": "100g ≈ 1,1 g"
+        },
+        {
+          "food": "Hühnerbrust",
+          "note": "100g ≈ 0,9 g"
+        },
+        {
+          "food": "Rindfleisch",
+          "note": "100g ≈ 0,8 g"
+        },
+        {
+          "food": "Schweinefleisch",
+          "note": "100g ≈ 0,6 g"
+        }
       ]
     },
     "citrullin-malat": {
@@ -1756,6 +2548,20 @@
         "Sport & Erholung",
         "Herzgesundheit",
         "Energie"
+      ],
+      "food_sources": [
+        {
+          "food": "Wassermelone",
+          "note": "200g ≈ 1,5 g L-Citrullin"
+        },
+        {
+          "food": "Gurke",
+          "note": "Geringe Menge"
+        },
+        {
+          "food": "Kürbis",
+          "note": "Geringe Menge"
+        }
       ]
     },
     "hmb": {
@@ -1791,6 +2597,20 @@
       "categories": [
         "Sport & Erholung",
         "Knochen & Gelenke"
+      ],
+      "food_sources": [
+        {
+          "food": "Grapefruit",
+          "note": "Geringe natürliche Vorstufe"
+        },
+        {
+          "food": "Alfalfa",
+          "note": "Spurenmenge"
+        },
+        {
+          "food": "Kaum durch Lebensmittel deckbar",
+          "note": "Supplement nötig"
+        }
       ]
     },
     "alpha-liponsaeure": {
@@ -1837,6 +2657,24 @@
         "Entzündung",
         "Energie",
         "Herzgesundheit"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderleber",
+          "note": "Geringste Menge — viel nötig"
+        },
+        {
+          "food": "Spinat",
+          "note": "Spurenmengen"
+        },
+        {
+          "food": "Brokkoli",
+          "note": "Spurenmengen"
+        },
+        {
+          "food": "Kaum durch Lebensmittel deckbar",
+          "note": "Supplement für Wirkdosis nötig"
+        }
       ]
     },
     "resveratrol": {
@@ -1878,6 +2716,24 @@
         "Herzgesundheit",
         "Entzündung",
         "Knochen & Gelenke"
+      ],
+      "food_sources": [
+        {
+          "food": "Rotwein",
+          "note": "1 Glas ≈ 0,3–2 mg"
+        },
+        {
+          "food": "Rote Trauben",
+          "note": "100g ≈ 0,5 mg"
+        },
+        {
+          "food": "Blaubeeren",
+          "note": "100g ≈ 0,1 mg"
+        },
+        {
+          "food": "Erdnüsse",
+          "note": "30g ≈ 0,08 mg"
+        }
       ]
     },
     "spirulina": {
@@ -1919,6 +2775,16 @@
         "Entzündung",
         "Immunsystem",
         "Energie"
+      ],
+      "food_sources": [
+        {
+          "food": "Spirulina-Pulver",
+          "note": "1 TL in Smoothie"
+        },
+        {
+          "food": "Spirulina-Presslinge",
+          "note": "Direktes Lebensmittel"
+        }
       ]
     },
     "chlorella": {
@@ -1960,6 +2826,16 @@
         "Stimmung",
         "Sport & Erholung",
         "Immunsystem"
+      ],
+      "food_sources": [
+        {
+          "food": "Chlorella-Pulver",
+          "note": "1 TL in Smoothie"
+        },
+        {
+          "food": "Chlorella-Tabletten",
+          "note": "Direktes Lebensmittel"
+        }
       ]
     },
     "hyaluronsaeure": {
@@ -1983,7 +2859,21 @@
         "Topical: Hochgewichtige Hyaluronsäure (MW >100 kDa für Oberflächenhydration)"
       ],
       "intake_notes": "Oral: 20-200 mg täglich mit Wasser. Topisch: Direkt auf Haut auftragen. Beste Effekte nach 4-8 Wochen kontinuierlicher Anwendung.",
-      "categories": []
+      "categories": [],
+      "food_sources": [
+        {
+          "food": "Knochenbrühe",
+          "note": "Vorstufen durch Kollagen"
+        },
+        {
+          "food": "Hühnerhaut",
+          "note": "Vorstufen vorhanden"
+        },
+        {
+          "food": "Kaum direkt aufnehmbar",
+          "note": "Supplement für Wirkung nötig"
+        }
+      ]
     },
     "collagen": {
       "id": "collagen",
@@ -2017,6 +2907,24 @@
       "categories": [
         "Knochen & Gelenke",
         "Sport & Erholung"
+      ],
+      "food_sources": [
+        {
+          "food": "Knochenbrühe",
+          "note": "Täglich 240ml"
+        },
+        {
+          "food": "Gelatine",
+          "note": "10g in Dessert/Suppe"
+        },
+        {
+          "food": "Hühnerhaut",
+          "note": "Kollagenreichste Quelle"
+        },
+        {
+          "food": "Fischsuppe mit Gräten",
+          "note": "Gute marine Quelle"
+        }
       ]
     },
     "glucosamin": {
@@ -2057,6 +2965,20 @@
       "categories": [
         "Knochen & Gelenke",
         "Entzündung"
+      ],
+      "food_sources": [
+        {
+          "food": "Krabbenpanzer-Brühe",
+          "note": "Nur in Schalen vorhanden"
+        },
+        {
+          "food": "Hühnerknorpel",
+          "note": "In Brühe kochen"
+        },
+        {
+          "food": "Kaum durch Lebensmittel deckbar",
+          "note": "Supplement nötig"
+        }
       ]
     },
     "msm": {
@@ -2085,6 +3007,24 @@
         "Sport & Erholung",
         "Entzündung",
         "Herzgesundheit"
+      ],
+      "food_sources": [
+        {
+          "food": "Brokkoli",
+          "note": "Spurenmengen"
+        },
+        {
+          "food": "Zwiebeln",
+          "note": "Spurenmengen"
+        },
+        {
+          "food": "Rohe Milch",
+          "note": "Spurenmengen"
+        },
+        {
+          "food": "Kaum durch Lebensmittel deckbar",
+          "note": "Supplement nötig"
+        }
       ]
     },
     "mariendistel": {
@@ -2126,6 +3066,16 @@
       "categories": [
         "Verdauung",
         "Entzündung"
+      ],
+      "food_sources": [
+        {
+          "food": "Mariendistel-Tee",
+          "note": "Geringe Wirkstoffdosis"
+        },
+        {
+          "food": "Nur als Extrakt wirksam",
+          "note": "Standardisierter Silymarin-Extrakt"
+        }
       ]
     },
     "weissdorn": {
@@ -2171,6 +3121,16 @@
       "categories": [
         "Herzgesundheit",
         "Blutdruck"
+      ],
+      "food_sources": [
+        {
+          "food": "Weissdorn-Beeren",
+          "note": "Als Marmelade oder Tee"
+        },
+        {
+          "food": "Weissdorn-Tee",
+          "note": "Geringe Wirkstoffdosis"
+        }
       ]
     },
     "ingwer-extrakt": {
@@ -2218,6 +3178,20 @@
         "Verdauung",
         "Entzündung",
         "Knochen & Gelenke"
+      ],
+      "food_sources": [
+        {
+          "food": "Frischer Ingwer",
+          "note": "2 cm Stück täglich — gute Dosis"
+        },
+        {
+          "food": "Ingwertee",
+          "note": "2 TL frisch gerieben"
+        },
+        {
+          "food": "Ingwer im Essen",
+          "note": "Täglich kochen"
+        }
       ]
     },
     "gruentee-extrakt": {
@@ -2266,6 +3240,20 @@
         "Fokus",
         "Entzündung",
         "Herzgesundheit"
+      ],
+      "food_sources": [
+        {
+          "food": "Grüner Tee",
+          "note": "3–4 Tassen ≈ 300 mg EGCG"
+        },
+        {
+          "food": "Matcha",
+          "note": "2g Pulver ≈ 200 mg EGCG"
+        },
+        {
+          "food": "Sencha",
+          "note": "Hoher Polyphenolgehalt"
+        }
       ]
     },
     "traubenkernextrakt": {
@@ -2308,6 +3296,20 @@
         "Entzündung",
         "Herzgesundheit",
         "Knochen & Gelenke"
+      ],
+      "food_sources": [
+        {
+          "food": "Rote Trauben mit Kern",
+          "note": "OPC in Kernen — kaum essbar"
+        },
+        {
+          "food": "Rotwein",
+          "note": "Geringer OPC-Anteil"
+        },
+        {
+          "food": "Kaum durch Lebensmittel deckbar",
+          "note": "Supplement nötig"
+        }
       ]
     },
     "berberin": {
@@ -2356,6 +3358,20 @@
         "Verdauung",
         "Herzgesundheit",
         "Entzündung"
+      ],
+      "food_sources": [
+        {
+          "food": "Berberitze (Beeren)",
+          "note": "Spurenmengen"
+        },
+        {
+          "food": "Goldsiegel-Tee",
+          "note": "Geringe Konzentration"
+        },
+        {
+          "food": "Nur als Extrakt wirksam",
+          "note": "Wirkdosis nur per Supplement"
+        }
       ]
     },
     "quercetin": {
@@ -2403,6 +3419,28 @@
         "Entzündung",
         "Herzgesundheit",
         "Sport & Erholung"
+      ],
+      "food_sources": [
+        {
+          "food": "Kapern",
+          "note": "10g ≈ 45 mg"
+        },
+        {
+          "food": "Rote Zwiebeln",
+          "note": "100g ≈ 32 mg"
+        },
+        {
+          "food": "Äpfel (mit Schale)",
+          "note": "1 Stück ≈ 13 mg"
+        },
+        {
+          "food": "Brokkoli",
+          "note": "100g ≈ 10 mg"
+        },
+        {
+          "food": "Heidelbeeren",
+          "note": "100g ≈ 8 mg"
+        }
       ]
     },
     "lutein": {
@@ -2442,6 +3480,28 @@
       "categories": [
         "Herzgesundheit",
         "Fokus"
+      ],
+      "food_sources": [
+        {
+          "food": "Grünkohl",
+          "note": "100g ≈ 15 mg"
+        },
+        {
+          "food": "Spinat",
+          "note": "100g ≈ 12 mg"
+        },
+        {
+          "food": "Eigelb",
+          "note": "Beste Bioverfügbarkeit"
+        },
+        {
+          "food": "Erbsen",
+          "note": "100g ≈ 2 mg"
+        },
+        {
+          "food": "Mais",
+          "note": "100g ≈ 1,5 mg"
+        }
       ]
     },
     "zeaxanthin": {
@@ -2483,6 +3543,24 @@
       "categories": [
         "Herzgesundheit",
         "Fokus"
+      ],
+      "food_sources": [
+        {
+          "food": "Eigelb",
+          "note": "Beste Bioverfügbarkeit"
+        },
+        {
+          "food": "Mais (gelb)",
+          "note": "100g ≈ 0,5 mg"
+        },
+        {
+          "food": "Paprika (orange)",
+          "note": "100g ≈ 0,4 mg"
+        },
+        {
+          "food": "Grünkohl",
+          "note": "100g ≈ 2 mg"
+        }
       ]
     },
     "astaxanthin": {
@@ -2512,6 +3590,24 @@
       "categories": [
         "Entzündung",
         "Hormonbalance"
+      ],
+      "food_sources": [
+        {
+          "food": "Wildfangslachs",
+          "note": "100g ≈ 4–5 mg"
+        },
+        {
+          "food": "Garnelen",
+          "note": "100g ≈ 1–4 mg"
+        },
+        {
+          "food": "Forelle",
+          "note": "100g ≈ 1–5 mg"
+        },
+        {
+          "food": "Hummer",
+          "note": "100g ≈ 1–2 mg"
+        }
       ]
     },
     "lycopin": {
@@ -2550,6 +3646,24 @@
       "categories": [
         "Herzgesundheit",
         "Entzündung"
+      ],
+      "food_sources": [
+        {
+          "food": "Tomatenmark",
+          "note": "2 EL ≈ 30 mg"
+        },
+        {
+          "food": "Gekochte Tomaten",
+          "note": "200g ≈ 20 mg"
+        },
+        {
+          "food": "Wassermelone",
+          "note": "200g ≈ 9 mg"
+        },
+        {
+          "food": "Grapefruit (rosa)",
+          "note": "1/2 ≈ 2 mg"
+        }
       ]
     },
     "5-htp": {
@@ -2601,6 +3715,24 @@
         "Schlaf",
         "Stimmung",
         "Fokus"
+      ],
+      "food_sources": [
+        {
+          "food": "Griffonia-Bohnen",
+          "note": "Einzige Quelle, kein Supermarkt"
+        },
+        {
+          "food": "Hühnerfleisch",
+          "note": "Tryptophan als Vorstufe"
+        },
+        {
+          "food": "Eier",
+          "note": "Tryptophan als Vorstufe"
+        },
+        {
+          "food": "Kaum direkt deckbar",
+          "note": "Supplement nötig für 5-HTP"
+        }
       ]
     },
     "gaba": {
@@ -2646,6 +3778,24 @@
         "Schlaf",
         "Stress",
         "Stimmung"
+      ],
+      "food_sources": [
+        {
+          "food": "Fermentierter Tee",
+          "note": "GABA-Tee — geringe Menge"
+        },
+        {
+          "food": "Kimchi",
+          "note": "Fermentation erzeugt GABA"
+        },
+        {
+          "food": "Gekeimter Reis",
+          "note": "Erhöhter GABA-Gehalt"
+        },
+        {
+          "food": "Kaum deckbar",
+          "note": "Blut-Hirn-Schranke limitiert Aufnahme"
+        }
       ]
     },
     "phosphatidylserine": {
@@ -2685,6 +3835,24 @@
       "categories": [
         "Fokus",
         "Hormonbalance"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderhirn",
+          "note": "Kaum erhältlich"
+        },
+        {
+          "food": "Thunfisch",
+          "note": "100g ≈ 194 mg"
+        },
+        {
+          "food": "Makrele",
+          "note": "100g ≈ 480 mg"
+        },
+        {
+          "food": "Sojabohnen",
+          "note": "100g ≈ 107 mg"
+        }
       ]
     },
     "alpha-gpc": {
@@ -2725,6 +3893,24 @@
       "categories": [
         "Fokus",
         "Energie"
+      ],
+      "food_sources": [
+        {
+          "food": "Rinderleber",
+          "note": "Cholin-Vorstufe"
+        },
+        {
+          "food": "Eier (Eigelb)",
+          "note": "2 Stück ≈ 250 mg Cholin"
+        },
+        {
+          "food": "Lachs",
+          "note": "100g ≈ 75 mg Cholin"
+        },
+        {
+          "food": "Für Alpha-GPC selbst",
+          "note": "Supplement nötig"
+        }
       ]
     },
     "zink-carnosin": {
@@ -2774,6 +3960,16 @@
       "categories": [
         "Verdauung",
         "Immunsystem"
+      ],
+      "food_sources": [
+        {
+          "food": "Fleisch + Zinkquellen",
+          "note": "Kombination, kein einzelnes Lebensmittel"
+        },
+        {
+          "food": "Kaum durch Lebensmittel deckbar",
+          "note": "Supplement nötig"
+        }
       ]
     },
     "magnesium-l-threonat": {
@@ -2826,6 +4022,20 @@
         "Stimmung",
         "Stress",
         "Schlaf"
+      ],
+      "food_sources": [
+        {
+          "food": "Magnesiumquellen (allgemein)",
+          "note": "Nur Standardmagnesium verfügbar"
+        },
+        {
+          "food": "L-Threonat-Form",
+          "note": "Kein Lebensmittel enthält diese Form"
+        },
+        {
+          "food": "Nicht durch Ernährung deckbar",
+          "note": "Supplement nötig"
+        }
       ]
     }
   }

@@ -61,7 +61,7 @@ class _PhaseGoalRecommendationsScreenState
       final results = await ApiService.instance.getRecommendations(
         profile: profile,
         goal: def.name, // z.B. "Marathon-Vorbereitung"
-        limit: 6,
+        limit: 4,
       );
       if (mounted) setState(() => _supplements = results);
     } catch (e) {

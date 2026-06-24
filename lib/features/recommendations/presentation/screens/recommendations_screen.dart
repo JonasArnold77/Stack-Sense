@@ -17,7 +17,7 @@ import '../../../community/domain/models/community_insight.dart';
 // ignore: unused_import — Provider für zukünftige direkte Nutzung
 import '../../../community/data/community_insights_provider.dart';
 
-const _pageSize = 10;
+const _pageSize = 4;
 
 /// Entdecken-Screen — Ziel auswählen → Claude liefert Empfehlungen (paginiert).
 /// Zeigt zwei Sektionen: "Einzelne Wirkstoffe" und "Kombipräparate".

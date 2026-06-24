@@ -474,7 +474,7 @@ def _build_user_message(
 
 class ClaudeService:
     def __init__(self):
-        self.client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        self.client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
         self.pubmed = PubMedService()
 
     async def get_recommendations(
@@ -498,35 +498,18 @@ class ClaudeService:
 
         query_text = f"{goal} supplement {profile.conditions or ''} {profile.medications or ''}"
 
-        async def _fetch_pubmed() -> str:
-            try:
-                studies = await self.pubmed.get_goal_evidence(goal=goal, max_results=3)
-                logger.info(f"PubMed: {len(studies)} Live-Studien geladen für '{goal}'")
-                return _build_pubmed_context(studies)
-            except Exception as e:
-                logger.warning(f"PubMed nicht verfügbar: {e}")
-                return ""
-
-        async def _fetch_vector() -> str:
-            ctx = vector_search(query_text, supplement_names=[], top_k=8)
-            if ctx:
-                logger.info("Vector-DB: Studien gefunden und eingebettet.")
-            return ctx or ""
-
-        # PubMed + Vector-DB gleichzeitig abfragen
-        pubmed_context, vector_context = await asyncio.gather(
-            _fetch_pubmed(), _fetch_vector()
-        )
-
-        # Kombinierter Kontext: lokale DB + Vector-DB + Live PubMed
-        combined_study_context = "\n\n".join(filter(None, [vector_context, pubmed_context]))
+        # Nur Vector-DB — kein PubMed live fetch (zu langsam, Daten bereits in Vector-DB)
+        vector_context = vector_search(query_text, supplement_names=[], top_k=8) or ""
+        if vector_context:
+            logger.info("Vector-DB: Kontext geladen.")
+        combined_study_context = vector_context
 
         user_message = _build_user_message(
             profile, goal, db_context, combined_study_context,
             limit=limit, exclude_ids=exclude_ids or [],
         )
 
-        message = self.client.messages.create(
+        message = await self.client.messages.create(
             model=settings.claude_model,
             max_tokens=settings.claude_max_tokens,
             system=SYSTEM_PROMPT,
@@ -633,7 +616,7 @@ class ClaudeService:
             "Welche Stack-Einträge enthalten denselben Wirkstoff wie das neue Supplement?"
         )
 
-        message = self.client.messages.create(
+        message = await self.client.messages.create(
             model=settings.claude_model,
             max_tokens=256,
             system=DUPLICATE_CHECK_PROMPT,
@@ -660,7 +643,7 @@ class ClaudeService:
             f"Finde passende Kaufoptionen bei Sunday Natural."
         )
 
-        message = self.client.messages.create(
+        message = await self.client.messages.create(
             model=settings.claude_model,
             max_tokens=512,
             system=PRODUCTS_SYSTEM_PROMPT,
@@ -689,7 +672,7 @@ class ClaudeService:
         name = f"{supplement_name} ({substance_name})" if substance_name else supplement_name
         logger.info(f"Food-Sources für: {name}")
 
-        message = self.client.messages.create(
+        message = await self.client.messages.create(
             model=settings.claude_model,
             max_tokens=512,
             system=FOOD_SOURCES_SYSTEM_PROMPT,

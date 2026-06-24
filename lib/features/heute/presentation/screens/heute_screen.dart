@@ -114,6 +114,11 @@ class HeuteScreen extends ConsumerWidget {
             ),
           ),
 
+          // ---- Daily Insights (horizontal scrollbar) ----
+          const SliverToBoxAdapter(
+            child: _DailyInsightsPanel(),
+          ),
+
           // ---- Content ----
           SliverPadding(
             padding: const EdgeInsets.all(AppConstants.screenPaddingH),
@@ -881,8 +886,6 @@ class _TemporaryBadgeSmall extends StatelessWidget {
   final DateTime endDate;
   const _TemporaryBadgeSmall({required this.endDate});
 
-  static const _accent = Color(0xFF5C35CC);
-
   String get _formatted =>
       '${endDate.day.toString().padLeft(2, '0')}.${endDate.month.toString().padLeft(2, '0')}.${endDate.year}';
 
@@ -891,12 +894,12 @@ class _TemporaryBadgeSmall extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.flag_outlined, size: 9, color: _accent),
+        const Icon(Icons.flag_outlined, size: 9, color: AppColors.accent),
         const SizedBox(width: 3),
         Text(
           'Temporär · bis $_formatted',
           style: AppTextStyles.caption.copyWith(
-            color: _accent,
+            color: AppColors.accent,
             fontWeight: FontWeight.w600,
             fontSize: 9,
           ),
@@ -915,9 +918,6 @@ class _PhaseGoalsCard extends ConsumerWidget {
 
   const _PhaseGoalsCard({required this.onTap});
 
-  static const _purple = Color(0xFF5C35CC);
-  static const _purpleLight = Color(0xFF7B5CE8);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeGoals = ref.watch(phaseGoalsProvider);
@@ -927,15 +927,19 @@ class _PhaseGoalsCard extends ConsumerWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF3D1FAB), Color(0xFF5C35CC), Color(0xFF7B5CE8)],
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primaryDark,
+              AppColors.primary,
+              AppColors.primaryLight,
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(AppConstants.radiusL),
           boxShadow: [
             BoxShadow(
-              color: _purple.withOpacity(0.35),
+              color: AppColors.primary.withOpacity(0.30),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
@@ -1104,7 +1108,7 @@ class _DiscoverCard extends StatelessWidget {
           border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: AppColors.accent.withOpacity(0.15),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1120,8 +1124,8 @@ class _DiscoverCard extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.primary,
                     AppColors.accent,
+                    AppColors.primaryLight,
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -1285,7 +1289,6 @@ class _ProfileRecommendationsBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Pulsierendes Icon
             Container(
               width: 48,
               height: 48,
@@ -1317,6 +1320,356 @@ class _ProfileRecommendationsBanner extends StatelessWidget {
                     style: AppTextStyles.bodySmall
                         .copyWith(color: AppColors.textSecondary),
                     maxLines: 2,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppConstants.spaceS),
+            const Icon(Icons.chevron_right,
+                color: AppColors.textTertiary, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Daily Insights Panel — horizontal scrollable, rotates daily
+// ---------------------------------------------------------------------------
+
+class _InsightCardData {
+  final String category;
+  final IconData icon;
+  final String title;
+  final String text;
+  final List<Color> gradient;
+
+  const _InsightCardData({
+    required this.category,
+    required this.icon,
+    required this.title,
+    required this.text,
+    required this.gradient,
+  });
+}
+
+class _DailyInsightsPanel extends StatelessWidget {
+  const _DailyInsightsPanel();
+
+  // Index rotiert täglich
+  static int get _dayIndex {
+    final now = DateTime.now();
+    return now.difference(DateTime(now.year)).inDays;
+  }
+
+  static const List<_InsightCardData> _supplements = [
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'Magnesium Bisglycinat',
+      text: 'Die am besten bioverfügbare Magnesiumform. Unterstützt Muskelentspannung, Schlafqualität und Stressresistenz – ideal abends einzunehmen.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'Vitamin D3 + K2',
+      text: 'D3 reguliert Kalziumaufnahme und stärkt das Immunsystem. K2 sorgt dafür, dass Kalzium in die Knochen gelangt – nicht in Arterien.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'Omega-3 (EPA/DHA)',
+      text: 'Starke Evidenz für Herz-Kreislauf-Gesundheit, Entzündungshemmung und kognitive Funktion. Am besten mit einer fetthaltigen Mahlzeit.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'Ashwagandha (KSM-66)',
+      text: 'Adaptogen mit solider Studienlage: reduziert Cortisol messbar, verbessert Stressresilienz und unterstützt erholsamen Schlaf.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'Zink Bisglycinat',
+      text: 'Essenziell für Immunfunktion, Hormonbalance und Wundheilung. Bioverfügbarkeit von Bisglycinat deutlich höher als Zinkoxid.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'Kreatin Monohydrat',
+      text: 'Das am besten erforschte Supplement im Sport. Steigert Kraft, Ausdauer und kognitive Leistung – auch ohne Training sinnvoll.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'Coenzym Q10',
+      text: 'Kraftwerk der Mitochondrien. Besonders relevant ab 40 und bei Statin-Einnahme, da diese CoQ10 im Körper reduzieren.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'Vitamin B12 (Methylcobalamin)',
+      text: 'Lebensnotwendig für Nerven und Blutbildung. Methylcobalamin wird direkt verwertet – ideal für Veganer und ältere Erwachsene.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'L-Theanin',
+      text: 'Aminosäure aus grünem Tee. Fördert entspannte Wachheit, reduziert Koffein-Nervosität und verbessert Fokus ohne Sedierung.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+    _InsightCardData(
+      category: 'Supplement des Tages',
+      icon: Icons.science_outlined,
+      title: 'Selen',
+      text: 'Antioxidans und Schilddrüsenhormon-Kofaktor. Für Hashimoto-Patienten besonders relevant – senkt TPO-Antikörper nachweislich.',
+      gradient: [AppColors.primaryDark, AppColors.primary],
+    ),
+  ];
+
+  static const List<_InsightCardData> _trends = [
+    _InsightCardData(
+      category: 'Trend des Monats',
+      icon: Icons.trending_up_outlined,
+      title: 'Berberine als Metformin-Alternative',
+      text: 'Pflanzlicher Wirkstoff zeigt in Studien ähnliche Effekte auf Blutzucker und Insulinsensitivität wie das verschreibungspflichtige Metformin.',
+      gradient: [AppColors.accent, AppColors.primaryLight],
+    ),
+    _InsightCardData(
+      category: 'Trend des Monats',
+      icon: Icons.trending_up_outlined,
+      title: 'Magnesium Threonate für Gehirn',
+      text: 'Als einzige Magnesiumform passiert Threonate die Blut-Hirn-Schranke effizient. Erste Studien zeigen positive Effekte auf Gedächtnis.',
+      gradient: [AppColors.accent, AppColors.primaryLight],
+    ),
+    _InsightCardData(
+      category: 'Trend des Monats',
+      icon: Icons.trending_up_outlined,
+      title: 'NMN & Longevity-Forschung',
+      text: 'NAD+-Vorläufer wie NMN rücken in den Fokus der Alterungsforschung. Erste Humanstudien laufen – bisher nur Tierdaten mit starken Effekten.',
+      gradient: [AppColors.accent, AppColors.primaryLight],
+    ),
+    _InsightCardData(
+      category: 'Trend des Monats',
+      icon: Icons.trending_up_outlined,
+      title: 'Zyklussynchrones Supplementieren',
+      text: 'Frauen passen ihren Stack an Zyklusphasen an: Eisen + B6 in der Follikelphase, Magnesium + Zink in der Lutealphase für optimale Wirkung.',
+      gradient: [AppColors.accent, AppColors.primaryLight],
+    ),
+    _InsightCardData(
+      category: 'Trend des Monats',
+      icon: Icons.trending_up_outlined,
+      title: 'Rhodiola Rosea gegen Burnout',
+      text: 'Adaptogen mit wachsender Evidenz bei mentaler Erschöpfung. Europäische Zulassung (EMA) bereits vorhanden – erhöht Stresstoleranz messbar.',
+      gradient: [AppColors.accent, AppColors.primaryLight],
+    ),
+    _InsightCardData(
+      category: 'Trend des Monats',
+      icon: Icons.trending_up_outlined,
+      title: 'Spermidine & Autophagie',
+      text: 'Natürlich in Weizenkeimen und Käse. Aktiviert Autophagie – den Selbstreinigungsprozess der Zellen. Vielversprechend für Longevity.',
+      gradient: [AppColors.accent, AppColors.primaryLight],
+    ),
+    _InsightCardData(
+      category: 'Trend des Monats',
+      icon: Icons.trending_up_outlined,
+      title: 'Kollagen-Peptide für Gelenke',
+      text: 'Hydrolysiertes Kollagen zeigt in kontrollierten Studien Reduktion von Gelenkschmerzen bei Sportlern nach 12 Wochen regelmäßiger Einnahme.',
+      gradient: [AppColors.accent, AppColors.primaryLight],
+    ),
+  ];
+
+  static const List<_InsightCardData> _superfoods = [
+    _InsightCardData(
+      category: 'Superfood',
+      icon: Icons.eco_outlined,
+      title: 'Blaubeeren',
+      text: 'Höchste Antioxidantienkonzentration unter allen Früchten. Flavonoide schützen Nervenzellen und verbessern Gedächtnisleistung nachweislich.',
+      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
+    ),
+    _InsightCardData(
+      category: 'Superfood',
+      icon: Icons.eco_outlined,
+      title: 'Lachs & Hering',
+      text: 'Beste natürliche Omega-3-Quelle. 100g Hering liefern 2g EPA/DHA – die Menge vieler Supplement-Kapseln. Zudem reich an Vitamin D.',
+      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
+    ),
+    _InsightCardData(
+      category: 'Superfood',
+      icon: Icons.eco_outlined,
+      title: 'Spinat & Mangold',
+      text: 'Reich an Magnesium, Folat und Nitrat. Nitrat verbessert die Sauerstoffeffizienz in Muskeln – messbar in Ausdauerleistung.',
+      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
+    ),
+    _InsightCardData(
+      category: 'Superfood',
+      icon: Icons.eco_outlined,
+      title: 'Eier',
+      text: 'Vollständiges Aminosäureprofil, Cholin für Gehirngesundheit, Lutein für Augen. Eines der nährstoffdichtesten Lebensmittel überhaupt.',
+      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
+    ),
+    _InsightCardData(
+      category: 'Superfood',
+      icon: Icons.eco_outlined,
+      title: 'Kurkuma + Pfeffer',
+      text: 'Curcumin allein wird kaum aufgenommen. Piperin aus schwarzem Pfeffer erhöht die Bioverfügbarkeit um bis zu 2000% – immer gemeinsam verwenden.',
+      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
+    ),
+    _InsightCardData(
+      category: 'Superfood',
+      icon: Icons.eco_outlined,
+      title: 'Nüsse & Samen',
+      text: 'Walnüsse liefern pflanzliche Omega-3 (ALA), Kürbiskerne sind reich an Zink, Paranüsse bieten die höste natürliche Selendosis.',
+      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
+    ),
+    _InsightCardData(
+      category: 'Superfood',
+      icon: Icons.eco_outlined,
+      title: 'Fermentierte Lebensmittel',
+      text: 'Joghurt, Kefir und Kimchi liefern lebende Bakterienkulturen. Regelmäßiger Konsum erhöht die Mikrobiom-Diversität messbar.',
+      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
+    ),
+    _InsightCardData(
+      category: 'Superfood',
+      icon: Icons.eco_outlined,
+      title: 'Brokkoli & Kreuzblütler',
+      text: 'Sulforaphan aktiviert körpereigene Entgiftungsenzyme und hat starke antikarzinogene Eigenschaften – am wirksamsten roh oder leicht gedämpft.',
+      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final idx = _dayIndex;
+    final cards = [
+      _supplements[idx % _supplements.length],
+      _trends[idx % _trends.length],
+      _superfoods[idx % _superfoods.length],
+    ];
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.78;
+
+    return SizedBox(
+      height: 178,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.only(
+          left: AppConstants.screenPaddingH,
+          right: AppConstants.screenPaddingH,
+          top: AppConstants.spaceM,
+          bottom: AppConstants.spaceM,
+        ),
+        itemCount: cards.length,
+        itemBuilder: (context, i) => Padding(
+          padding: EdgeInsets.only(
+              right: i < cards.length - 1 ? AppConstants.spaceM : 0),
+          child: _InsightCard(data: cards[i], width: cardWidth),
+        ),
+      ),
+    );
+  }
+}
+
+class _InsightCard extends StatelessWidget {
+  final _InsightCardData data;
+  final double width;
+
+  const _InsightCard({required this.data, required this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: data.gradient,
+        ),
+        borderRadius: BorderRadius.circular(AppConstants.radiusL),
+        boxShadow: [
+          BoxShadow(
+            color: data.gradient.first.withOpacity(0.30),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppConstants.radiusL),
+        child: Stack(
+          children: [
+            // Dekorativer Kreis
+            Positioned(
+              top: -24,
+              right: -24,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.07),
+                ),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.spaceM),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Kategorie-Badge
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(data.icon,
+                          size: 13, color: Colors.white.withOpacity(0.80)),
+                      const SizedBox(width: 5),
+                      Text(
+                        data.category,
+                        style: AppTextStyles.caption.copyWith(
+                          color: Colors.white.withOpacity(0.80),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Großer Titel
+                  Text(
+                    data.title,
+                    style: AppTextStyles.headlineSmall.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      height: 1.15,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  // Beschreibung
+                  Expanded(
+                    child: Text(
+                      data.text,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.white.withOpacity(0.82),
+                        height: 1.4,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

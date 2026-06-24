@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import logging
+import json
+import os
 
 from models.profile import RecommendationRequest
 from models.recommendation import RecommendationResponse, ProductLink
@@ -13,14 +15,25 @@ logger = logging.getLogger(__name__)
 claude_service = ClaudeService()
 pubmed_service = PubMedService()
 
+# Statische Supplement-DB einmal laden (food_sources vorberechnet, kein Claude-Call)
+_SUPPLEMENT_DB: dict = {}
+try:
+    _router_dir = os.path.dirname(os.path.abspath(__file__))
+    _db_path = os.path.normpath(os.path.join(_router_dir, "..", "data", "supplement_knowledge.json"))
+    with open(_db_path, "r", encoding="utf-8") as _f:
+        _SUPPLEMENT_DB = json.load(_f).get("supplements", {})
+    logger.info(f"Supplement-DB geladen: {len(_SUPPLEMENT_DB)} Eintraege ({_db_path})")
+except Exception as _e:
+    logger.warning(f"Supplement-DB nicht ladbar: {_e}")
+
 
 @router.post("/recommendations", response_model=RecommendationResponse)
 async def get_recommendations(request: RecommendationRequest) -> RecommendationResponse:
     """
-    Gibt personalisierte Supplement-Empfehlungen zurück.
+    Gibt personalisierte Supplement-Empfehlungen zurueck.
 
-    Nimmt Nutzerprofil + gewähltes Ziel entgegen,
-    gibt Grün/Gelb/Rot-Empfehlungen von Claude zurück.
+    Nimmt Nutzerprofil + gewaehltes Ziel entgegen,
+    gibt Gruen/Gelb/Rot-Empfehlungen von Claude zurueck.
     """
     try:
         result = await claude_service.get_recommendations(
@@ -45,8 +58,8 @@ class ExplainRequest(BaseModel):
 @router.post("/explain")
 async def explain_supplement(request: ExplainRequest) -> dict:
     """
-    Gibt eine einfache Laienerklärung für ein Supplement zurück.
-    Wird on-demand geladen wenn der Nutzer auf 'Einfach erklärt' tippt.
+    Gibt eine einfache Laienerklarung fuer ein Supplement zurueck.
+    Wird on-demand geladen wenn der Nutzer auf "Einfach erklaert" tippt.
     """
     try:
         explanation = await claude_service.get_simple_explanation(
@@ -56,7 +69,7 @@ async def explain_supplement(request: ExplainRequest) -> dict:
         return {"explanation": explanation}
     except Exception as e:
         logger.error(f"Explain-Fehler: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Erklärung konnte nicht generiert werden")
+        raise HTTPException(status_code=500, detail="Erklaerung konnte nicht generiert werden")
 
 
 class ProductsRequest(BaseModel):
@@ -68,7 +81,7 @@ class ProductsRequest(BaseModel):
 @router.post("/products")
 async def get_products(request: ProductsRequest) -> dict:
     """
-    Gibt on-demand KI-generierte Kaufoptionen für ein Supplement zurück.
+    Gibt on-demand KI-generierte Kaufoptionen fuer ein Supplement zurueck.
     Wird lazy geladen wenn der Nutzer auf den Kauf-Button tippt.
     """
     try:
@@ -91,9 +104,29 @@ class FoodSourcesRequest(BaseModel):
 @router.post("/food-sources")
 async def get_food_sources(request: FoodSourcesRequest) -> dict:
     """
-    Gibt natürliche Lebensmittelquellen für einen Nährstoff zurück.
-    Wird lazy geladen wenn der Nutzer auf 'In Lebensmitteln' tippt.
+    Gibt natuerliche Lebensmittelquellen fuer einen Naehrstoff zurueck.
+    Primaer aus supplement_knowledge.json (statisch, O(1)).
+    Fallback auf Claude nur bei unbekannten Supplements.
     """
+    # Supplement-ID ableiten: "Vitamin D3" -> "vitamin-d3"
+    supp_id = request.supplement_name.lower().strip().replace(" ", "-").replace("_", "-")
+
+    # 1. Statische DB-Suche
+    entry = _SUPPLEMENT_DB.get(supp_id)
+    if entry and entry.get("food_sources"):
+        logger.info(f"food-sources: DB-Treffer fuer '{supp_id}'")
+        return {"sources": entry["food_sources"]}
+
+    # 2. Substance-Name versuchen
+    if request.substance_name:
+        substance_id = request.substance_name.lower().strip().replace(" ", "-")
+        entry = _SUPPLEMENT_DB.get(substance_id)
+        if entry and entry.get("food_sources"):
+            logger.info(f"food-sources: DB-Treffer via Substance fuer '{substance_id}'")
+            return {"sources": entry["food_sources"]}
+
+    # 3. Fallback Claude (nur fuer unbekannte Supplements)
+    logger.info(f"food-sources: Kein DB-Treffer fuer '{supp_id}' -- Claude-Fallback")
     try:
         sources = await claude_service.get_food_sources(
             supplement_name=request.supplement_name,
@@ -120,9 +153,9 @@ class DuplicateCheckRequest(BaseModel):
 @router.post("/check-duplicates")
 async def check_duplicates(request: DuplicateCheckRequest) -> dict:
     """
-    Prüft semantisch ob das neue Supplement Wirkstoffe enthält
-    die bereits im Stack vorhanden sind — via Claude Haiku.
-    Gibt { "duplicates": [ids], "reasoning": "..." } zurück.
+    Prueft semantisch ob das neue Supplement Wirkstoffe enthaelt
+    die bereits im Stack vorhanden sind -- via Claude Haiku.
+    Gibt { "duplicates": [ids], "reasoning": "..." } zurueck.
     """
     try:
         result = await claude_service.check_duplicates(
@@ -132,7 +165,7 @@ async def check_duplicates(request: DuplicateCheckRequest) -> dict:
         return result
     except Exception as e:
         logger.error(f"Duplikat-Check Fehler: {e}", exc_info=True)
-        return {"duplicates": [], "reasoning": "Prüfung nicht verfügbar."}
+        return {"duplicates": [], "reasoning": "Pruefung nicht verfuegbar."}
 
 
 class StudiesRequest(BaseModel):
@@ -144,8 +177,8 @@ class StudiesRequest(BaseModel):
 @router.post("/studies")
 async def get_studies(request: StudiesRequest) -> dict:
     """
-    Gibt PubMed-Studien zurück die die Wirksamkeit eines Supplements belegen.
-    Wird on-demand geladen wenn der Nutzer auf 'Studien' tippt.
+    Gibt PubMed-Studien zurueck die die Wirksamkeit eines Supplements belegen.
+    Wird on-demand geladen wenn der Nutzer auf "Studien" tippt.
     """
     try:
         query_name = request.substance_name or request.supplement_name
@@ -174,5 +207,5 @@ async def get_studies(request: StudiesRequest) -> dict:
 
 @router.get("/health")
 async def health():
-    """Einfacher Health-Check — prüft ob der Server läuft."""
+    """Einfacher Health-Check -- prueft ob der Server laeuft."""
     return {"status": "ok", "service": "StackSense Backend"}
