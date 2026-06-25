@@ -33,7 +33,8 @@ class AppTheme {
         iconTheme: IconThemeData(color: AppColors.textPrimary),
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
+          statusBarIconBrightness: Brightness.light, // weiße Icons auf dunklem Header
+          statusBarBrightness: Brightness.dark,
         ),
       ),
       cardTheme: CardThemeData(

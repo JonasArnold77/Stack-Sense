@@ -66,33 +66,66 @@ class HeuteScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: AppColors.primaryGradient,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF2D60CE), // primaryLight
+                    Color(0xFF0A2060), // primaryDark
+                  ],
+                ),
               ),
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + AppConstants.spaceL,
                 left: AppConstants.screenPaddingH,
                 right: AppConstants.screenPaddingH,
-                bottom: AppConstants.spaceXL,
+                bottom: AppConstants.spaceXL + 8,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // StackSense Logo-Zeile
+                  Row(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.science_outlined,
+                            size: 16, color: Colors.white),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'StackSense',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: Colors.white.withOpacity(0.85),
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppConstants.spaceM),
                   Text(
                     dateStr,
                     style: AppTextStyles.caption.copyWith(
-                      color: Colors.white.withOpacity(0.65),
+                      color: Colors.white.withOpacity(0.60),
                       letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     greetingText,
                     style: AppTextStyles.displayMedium.copyWith(
                       color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
                     ),
                   ),
-                  const SizedBox(height: AppConstants.spaceS),
+                  const SizedBox(height: AppConstants.spaceM),
                   // Schnell-Stats Zeile
                   Row(
                     children: [

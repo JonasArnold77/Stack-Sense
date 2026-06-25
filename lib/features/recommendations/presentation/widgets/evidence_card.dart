@@ -352,10 +352,19 @@ class _EvidenceCardState extends State<EvidenceCard>
       child: Container(
         margin: const EdgeInsets.only(bottom: AppConstants.spaceM),
         decoration: BoxDecoration(
-          color: colors.background,
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            stops: const [0.0, 0.96, 1.0],
+            colors: [
+              Colors.white,
+              Colors.white,
+              colors.border.withOpacity(0.20),
+            ],
+          ),
           borderRadius: BorderRadius.circular(AppConstants.radiusL),
           border: Border.all(
-            color: rankStyle?.borderColor ?? colors.border,
+            color: rankStyle?.borderColor ?? colors.border.withOpacity(0.45),
             width: rankStyle != null ? 2 : 1.5,
           ),
           boxShadow: cardBoxShadow,
@@ -458,7 +467,7 @@ class _EvidenceCardState extends State<EvidenceCard>
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppConstants.spaceM),
                 decoration: BoxDecoration(
-                  color: colors.reasonBg,
+                  color: colors.border.withOpacity(0.07),
                   borderRadius: BorderRadius.circular(AppConstants.radiusM),
                 ),
                 child: Text(
@@ -1410,16 +1419,16 @@ class _EvidenceColors {
 _EvidenceColors _evidenceColors(EvidenceLevel level) {
   return switch (level) {
     EvidenceLevel.green => const _EvidenceColors(
-          background: AppColors.evidenceGreenLight,
-          border: AppColors.evidenceGreen,
+          background: AppColors.evidenceGreenLight, // unused – gradient stattdessen
+          border: AppColors.evidenceGreenBadge,
           badge: AppColors.evidenceGreenBadge,
           textColor: AppColors.evidenceGreen,
           accentStripe: AppColors.evidenceGreenBadge,
-          reasonBg: AppColors.evidenceGreenLight,
+          reasonBg: AppColors.evidenceGreenLight,   // unused – border.withOpacity stattdessen
         ),
     EvidenceLevel.yellow => const _EvidenceColors(
           background: AppColors.evidenceYellowLight,
-          border: AppColors.evidenceYellow,
+          border: AppColors.evidenceYellowBadge,
           badge: AppColors.evidenceYellowBadge,
           textColor: AppColors.evidenceYellow,
           accentStripe: AppColors.evidenceYellowBadge,
@@ -1427,7 +1436,7 @@ _EvidenceColors _evidenceColors(EvidenceLevel level) {
         ),
     EvidenceLevel.red => const _EvidenceColors(
           background: AppColors.evidenceRedLight,
-          border: AppColors.evidenceRed,
+          border: AppColors.evidenceRedBadge,
           badge: AppColors.evidenceRedBadge,
           textColor: AppColors.evidenceRed,
           accentStripe: AppColors.evidenceRedBadge,
