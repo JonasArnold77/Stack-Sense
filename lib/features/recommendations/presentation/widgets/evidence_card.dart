@@ -40,6 +40,7 @@ class EvidenceCard extends StatefulWidget {
 class _EvidenceCardState extends State<EvidenceCard>
     with SingleTickerProviderStateMixin {
   bool _expanded = false;
+  bool _reasonExpanded = false;
   String? _explanation;
   bool _loadingExplanation = false;
 
@@ -460,20 +461,82 @@ class _EvidenceCardState extends State<EvidenceCard>
                 ),
               ),
 
-            // --- Begründung ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppConstants.cardPadding),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppConstants.spaceM),
-                decoration: BoxDecoration(
-                  color: colors.border.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(AppConstants.radiusM),
+            // --- Pitch (immer sichtbar) ---
+            // Pitch — wächst mit dem Text mit
+            if (supplement.pitch.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.spaceS,
                 ),
                 child: Text(
-                  supplement.evidenceReason,
-                  style: AppTextStyles.bodySmall.copyWith(color: colors.textColor, height: 1.4),
+                  supplement.pitch,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textPrimary,
+                    height: 1.55,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
+              ),
+
+            // --- Evidenz-Dropdown ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppConstants.cardPadding),
+              child: Column(
+                children: [
+                  // Dropdown-Button
+                  GestureDetector(
+                    onTap: () => setState(() => _reasonExpanded = !_reasonExpanded),
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.biotech_outlined,
+                          size: 13,
+                          color: colors.textColor,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Warum empfohlen?',
+                          style: AppTextStyles.caption.copyWith(
+                            color: colors.textColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        AnimatedRotation(
+                          turns: _reasonExpanded ? 0.5 : 0.0,
+                          duration: AppConstants.animFast,
+                          child: Icon(Icons.keyboard_arrow_down,
+                              size: 16, color: colors.textColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Aufklappbarer Inhalt
+                  AnimatedCrossFade(
+                    firstChild: const SizedBox(width: double.infinity, height: 0),
+                    secondChild: Padding(
+                      padding: const EdgeInsets.only(top: AppConstants.spaceS),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppConstants.spaceM),
+                        decoration: BoxDecoration(
+                          color: colors.border.withOpacity(0.07),
+                          borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                        ),
+                        child: Text(
+                          supplement.evidenceReason,
+                          style: AppTextStyles.bodySmall.copyWith(
+                              color: colors.textColor, height: 1.4),
+                        ),
+                      ),
+                    ),
+                    crossFadeState: _reasonExpanded
+                        ? CrossFadeState.showSecond
+                        : CrossFadeState.showFirst,
+                    duration: AppConstants.animFast,
+                  ),
+                ],
               ),
             ),
 

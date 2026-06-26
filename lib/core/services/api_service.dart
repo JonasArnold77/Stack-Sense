@@ -173,6 +173,7 @@ class ApiService {
       name: json['name'] as String,
       substanceName: json['substance_name'] as String?,
       evidenceLevel: _parseEvidenceLevel(json['evidence_level'] as String),
+      pitch: (json['pitch'] as String?) ?? '',
       evidenceReason: json['evidence_reason'] as String,
       dosage: json['dosage'] as String,
       intakeTime: json['intake_time'] as String,

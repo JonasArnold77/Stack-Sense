@@ -956,135 +956,144 @@ class _PhaseGoalsCard extends ConsumerWidget {
     final activeGoals = ref.watch(phaseGoalsProvider);
     final hasActive = activeGoals.isNotEmpty;
 
+    // Navy/Royal-Blau Gradient für Phasenziele
+    const goalGradientStart = Color(0xFF0D2580);
+    const goalGradientEnd   = Color(0xFF1967D2);
+    const goalChipBg        = Color(0xFFE8F0FE);
+    const goalChipText      = Color(0xFF1A56CC);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.primaryDark,
-              AppColors.primary,
-              AppColors.primaryLight,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppConstants.radiusL),
+          border: Border.all(color: const Color(0xFFBBD6F7)),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.30),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+              color: const Color(0xFF1967D2).withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Dekorative Kreise im Hintergrund
-            Positioned(
-              top: -20,
-              right: -20,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.07),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: -30,
-              right: 60,
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
-                ),
-              ),
-            ),
-            // Content
-            Padding(
+            // Header — Grün-Teal
+            Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(AppConstants.spaceL),
-              child: Column(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [goalGradientStart, goalGradientEnd],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(AppConstants.radiusL),
+                  topRight: Radius.circular(AppConstants.radiusL),
+                ),
+              ),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(AppConstants.radiusM),
-                        ),
-                        child: const Icon(Icons.flag_rounded,
-                            color: Colors.white, size: 26),
-                      ),
-                      const Spacer(),
-                      if (hasActive)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                              horizontal: 9, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withOpacity(0.20),
                             borderRadius: BorderRadius.circular(AppConstants.radiusRound),
                           ),
                           child: Text(
-                            '${activeGoals.length} aktiv',
+                            hasActive ? '🎯 Aktiv' : '🎯 Ziele',
                             style: AppTextStyles.caption.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: AppConstants.spaceM),
-                  Text(
-                    'Phasenziele',
-                    style: AppTextStyles.headlineMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                        const SizedBox(height: 10),
+                        Text(
+                          'Phasenziele',
+                          style: AppTextStyles.headlineMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          hasActive
+                              ? 'Du verfolgst gerade ein Ziel'
+                              : 'Zeitlich gebundene Ziele mit\npassenden Supplement-Empfehlungen',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white.withOpacity(0.85),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(width: AppConstants.spaceM),
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(AppConstants.radiusL),
+                    ),
+                    child: const Icon(Icons.flag_rounded,
+                        color: Colors.white, size: 34),
+                  ),
+                ],
+              ),
+            ),
+
+            // Unterer Bereich
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.spaceM),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Temporäre Supplement-Stacks für besondere Lebensphasen',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: Colors.white.withOpacity(0.80),
-                      height: 1.4,
+                    hasActive ? 'Aktives Ziel:' : 'Beliebte Ziele:',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: AppConstants.spaceM),
-                  // Beispiel-Chips
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      _PhaseChip(label: '🏃 Marathon'),
-                      _PhaseChip(label: '📚 Prüfungsphase'),
-                      _PhaseChip(label: '✈️ Reise'),
-                      _PhaseChip(label: '💪 Muskelaufbau'),
-                    ],
-                  ),
-                  const SizedBox(height: AppConstants.spaceM),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      Text(
-                        hasActive
-                            ? 'Ziele verwalten'
-                            : 'Erstes Ziel starten',
-                        style: AppTextStyles.labelMedium.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                      if (hasActive) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: goalChipBg,
+                            borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+                          ),
+                          child: Text(
+                            activeGoals.first.definition?.name ?? '',
+                            style: AppTextStyles.caption.copyWith(
+                              color: goalChipText,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
+                      ] else ...[
+                        _GoalChip(label: '🏃 Marathon', bg: goalChipBg, fg: goalChipText),
+                        const SizedBox(width: 8),
+                        _GoalChip(label: '🤧 Erkältung', bg: goalChipBg, fg: goalChipText),
+                        const SizedBox(width: 8),
+                        _GoalChip(label: '📚 Prüfungsphase', bg: goalChipBg, fg: goalChipText),
+                      ],
+                      const Spacer(),
                       const Icon(Icons.arrow_forward_rounded,
-                          color: Colors.white, size: 18),
+                          color: Color(0xFF1967D2), size: 20),
                     ],
                   ),
                 ],
@@ -1097,23 +1106,24 @@ class _PhaseGoalsCard extends ConsumerWidget {
   }
 }
 
-class _PhaseChip extends StatelessWidget {
+class _GoalChip extends StatelessWidget {
   final String label;
-  const _PhaseChip({required this.label});
+  final Color? bg;
+  final Color? fg;
+  const _GoalChip({required this.label, this.bg, this.fg});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: bg ?? AppColors.accentLight,
         borderRadius: BorderRadius.circular(AppConstants.radiusRound),
-        border: Border.all(color: Colors.white.withOpacity(0.25)),
       ),
       child: Text(
         label,
         style: AppTextStyles.caption.copyWith(
-          color: Colors.white,
+          color: fg ?? AppColors.primary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -1138,10 +1148,10 @@ class _DiscoverCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppConstants.radiusL),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: const Color(0xFFB5D8F7)),
           boxShadow: [
             BoxShadow(
-              color: AppColors.accent.withOpacity(0.15),
+              color: const Color(0xFF1477D4).withOpacity(0.15),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -1154,11 +1164,11 @@ class _DiscoverCard extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(AppConstants.spaceL),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.accent,
-                    AppColors.primaryLight,
+                    Color(0xFF1477D4),
+                    Color(0xFF3B97F5),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -1232,7 +1242,7 @@ class _DiscoverCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Jedes Supplement bewertet nach Studienlage:',
+                    'Bewertung nach Studienlage — sofort sichtbar:',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -1259,7 +1269,7 @@ class _DiscoverCard extends StatelessWidget {
                       ),
                       const Spacer(),
                       const Icon(Icons.arrow_forward_rounded,
-                          color: AppColors.accent, size: 20),
+                          color: Color(0xFF1477D4), size: 20),
                     ],
                   ),
                 ],
@@ -1372,17 +1382,17 @@ class _ProfileRecommendationsBanner extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _InsightCardData {
-  final String category;
-  final IconData icon;
+  final String tag;
   final String title;
   final String text;
+  final IconData icon;
   final List<Color> gradient;
 
   const _InsightCardData({
-    required this.category,
-    required this.icon,
+    required this.tag,
     required this.title,
     required this.text,
+    required this.icon,
     required this.gradient,
   });
 }
@@ -1390,199 +1400,48 @@ class _InsightCardData {
 class _DailyInsightsPanel extends StatelessWidget {
   const _DailyInsightsPanel();
 
-  // Index rotiert täglich
-  static int get _dayIndex {
+  static const _supplements = <_InsightCardData>[
+    _InsightCardData(tag: 'Supplement', title: 'Magnesium Bisglycinat', text: 'Besonders gut bioverfügbar — unterstützt Schlaf, Muskeln und das Nervensystem.', icon: Icons.nights_stay_outlined, gradient: [Color(0xFF5E35B1), Color(0xFF3949AB)]),
+    _InsightCardData(tag: 'Supplement', title: 'Vitamin D3 + K2', text: 'D3 für Knochen und Immunsystem, K2 sorgt dafür dass Calcium dorthin gelangt wo es hingehört.', icon: Icons.wb_sunny_outlined, gradient: [Color(0xFFE65100), Color(0xFFF57C00)]),
+    _InsightCardData(tag: 'Supplement', title: 'Omega-3 EPA/DHA', text: 'Essentielle Fettsäuren für Gehirn, Herz und Entzündungsregulation — kaum durch Ernährung abdeckbar.', icon: Icons.water_drop_outlined, gradient: [Color(0xFF0277BD), Color(0xFF0288D1)]),
+    _InsightCardData(tag: 'Supplement', title: 'Ashwagandha KSM-66', text: 'Adaptogen aus der ayurvedischen Medizin — Studien zeigen Hinweise auf Cortisol-Modulation bei Stress.', icon: Icons.spa_outlined, gradient: [Color(0xFF2E7D32), Color(0xFF388E3C)]),
+    _InsightCardData(tag: 'Supplement', title: 'Zink Bisglycinat', text: 'Wichtig für Immunsystem, Hormonhaushalt und Wundheilung — häufig unterdosiert in der westlichen Ernährung.', icon: Icons.shield_outlined, gradient: [Color(0xFF00695C), Color(0xFF00897B)]),
+    _InsightCardData(tag: 'Supplement', title: 'L-Theanin', text: 'Aminosäure aus grünem Tee — fördert entspannte Wachheit und verstärkt die Fokus-Wirkung von Koffein.', icon: Icons.psychology_outlined, gradient: [Color(0xFF558B2F), Color(0xFF689F38)]),
+    _InsightCardData(tag: 'Supplement', title: 'Kreatin Monohydrat', text: 'Einer der bestuntersuchten Supplements überhaupt — steigert Kraft, Ausdauer und kognitive Leistung.', icon: Icons.fitness_center_outlined, gradient: [Color(0xFF6A1B9A), Color(0xFF7B1FA2)]),
+    _InsightCardData(tag: 'Supplement', title: 'Coenzym Q10', text: 'Kraftwerk der Mitochondrien. Besonders relevant ab 40 und bei Statin-Einnahme, die Q10 reduziert.', icon: Icons.bolt_outlined, gradient: [Color(0xFFC62828), Color(0xFFD32F2F)]),
+    _InsightCardData(tag: 'Supplement', title: 'B12 Methylcobalamin', text: 'Die bioverfügbarste Form von B12 — essenziell für Nerven, Blutbildung und Energiestoffwechsel.', icon: Icons.electric_bolt_outlined, gradient: [Color(0xFF1565C0), Color(0xFF1976D2)]),
+    _InsightCardData(tag: 'Supplement', title: 'Folsäure (Methylfolat)', text: 'Aktive Form der Folsäure — besonders wichtig in der Schwangerschaft und bei MTHFR-Genvariante.', icon: Icons.favorite_outline, gradient: [Color(0xFFAD1457), Color(0xFFC2185B)]),
+  ];
+
+  static const _trends = <_InsightCardData>[
+    _InsightCardData(tag: 'Trend', title: 'Longevity-Stack 2025', text: 'NMN, Resveratrol und Spermidine gelten als vielversprechend für Zellerneuerung — Evidenz noch begrenzt.', icon: Icons.trending_up_outlined, gradient: [Color(0xFF00838F), Color(0xFF00ACC1)]),
+    _InsightCardData(tag: 'Trend', title: 'Adaptogene im Fokus', text: 'Rhodiola, Ashwagandha und Lion\'s Mane gewinnen als stressreduzierende Naturmittel stark an Beliebtheit.', icon: Icons.eco_outlined, gradient: [Color(0xFF37474F), Color(0xFF455A64)]),
+    _InsightCardData(tag: 'Trend', title: 'Zirkadianer Rhythmus', text: 'Einnahmezeit macht den Unterschied — Forschung zeigt dass Timing die Wirkung vieler Supplements beeinflusst.', icon: Icons.schedule_outlined, gradient: [Color(0xFF4527A0), Color(0xFF512DA8)]),
+    _InsightCardData(tag: 'Trend', title: 'Mikrobiom & Probiotika', text: 'Darmgesundheit als Grundlage — Probiotika mit definierten Stämmen zeigen Wirkung auf Immunsystem und Stimmung.', icon: Icons.biotech_outlined, gradient: [Color(0xFF1B5E20), Color(0xFF2E7D32)]),
+    _InsightCardData(tag: 'Trend', title: 'Magnesium-Renaissance', text: 'Über 300 Enzymreaktionen benötigen Magnesium — L-Threonat gilt als beste Form für die Blut-Hirn-Schranke.', icon: Icons.auto_awesome_outlined, gradient: [Color(0xFF0D47A1), Color(0xFF1565C0)]),
+    _InsightCardData(tag: 'Trend', title: 'Personalisierung durch KI', text: 'Apps wie StackSense kombinieren Blutbild, Profil und Studiendaten für individuell passende Empfehlungen.', icon: Icons.smart_toy_outlined, gradient: [Color(0xFF880E4F), Color(0xFFAD1457)]),
+    _InsightCardData(tag: 'Trend', title: 'Schlaf-Optimierung', text: 'Glycin, L-Theanin und Magnesium zeigen in Studien schlafverbessernde Effekte — ohne Abhängigkeitspotenzial.', icon: Icons.bedtime_outlined, gradient: [Color(0xFF1A237E), Color(0xFF283593)]),
+  ];
+
+  static const _superfoods = <_InsightCardData>[
+    _InsightCardData(tag: 'Lebensmittel', title: 'Sardinen', text: 'Reich an Omega-3, Vitamin D, B12 und Calcium — eines der nährstoffdichtesten Lebensmittel überhaupt.', icon: Icons.set_meal_outlined, gradient: [Color(0xFF006064), Color(0xFF00838F)]),
+    _InsightCardData(tag: 'Lebensmittel', title: 'Leber (Rind)', text: 'Natur\'s Multivitamin: extrem reich an B12, Eisen, Kupfer, Vitamin A und Folsäure — 1x pro Woche reicht.', icon: Icons.restaurant_outlined, gradient: [Color(0xFF8D1B1B), Color(0xFFB71C1C)]),
+    _InsightCardData(tag: 'Lebensmittel', title: 'Eier (Vollei)', text: 'Cholin für Gehirn, Lutein für Augen, hochwertiges Protein — Dotterphobien sind wissenschaftlich überholt.', icon: Icons.egg_outlined, gradient: [Color(0xFFF57F17), Color(0xFFF9A825)]),
+    _InsightCardData(tag: 'Lebensmittel', title: 'Blaubeeren', text: 'Anthocyane wirken antioxidativ und zeigen in Studien positive Effekte auf Gedächtnis und kognitive Funktion.', icon: Icons.grass_outlined, gradient: [Color(0xFF4527A0), Color(0xFF6A1B9A)]),
+    _InsightCardData(tag: 'Lebensmittel', title: 'Brokkoli', text: 'Sulforaphan aus Brokkoli aktiviert Entgiftungsenzyme — am stärksten in rohen oder leicht gedünsteten Sprossen.', icon: Icons.eco_outlined, gradient: [Color(0xFF2E7D32), Color(0xFF43A047)]),
+    _InsightCardData(tag: 'Lebensmittel', title: 'Walnüsse', text: 'Einzige Nuss mit relevanten Omega-3-Mengen (ALA) — plus Vitamin E und Polyphenole für Gefäßgesundheit.', icon: Icons.spa_outlined, gradient: [Color(0xFF4E342E), Color(0xFF6D4C41)]),
+    _InsightCardData(tag: 'Lebensmittel', title: 'Fermentierte Lebensmittel', text: 'Joghurt, Kefir, Kimchi und Sauerkraut liefern lebende Kulturen für ein diverses Mikrobiom.', icon: Icons.science_outlined, gradient: [Color(0xFF00695C), Color(0xFF00897B)]),
+    _InsightCardData(tag: 'Lebensmittel', title: 'Kurkuma + schwarzer Pfeffer', text: 'Curcumin allein schlecht bioverfügbar — Piperin aus Pfeffer erhöht die Aufnahme um bis zu 2000%.', icon: Icons.local_fire_department_outlined, gradient: [Color(0xFFE65100), Color(0xFFF57C00)]),
+  ];
+
+  int _dayIndex(BuildContext context) {
     final now = DateTime.now();
     return now.difference(DateTime(now.year)).inDays;
   }
 
-  static const List<_InsightCardData> _supplements = [
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'Magnesium Bisglycinat',
-      text: 'Die am besten bioverfügbare Magnesiumform. Unterstützt Muskelentspannung, Schlafqualität und Stressresistenz – ideal abends einzunehmen.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'Vitamin D3 + K2',
-      text: 'D3 reguliert Kalziumaufnahme und stärkt das Immunsystem. K2 sorgt dafür, dass Kalzium in die Knochen gelangt – nicht in Arterien.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'Omega-3 (EPA/DHA)',
-      text: 'Starke Evidenz für Herz-Kreislauf-Gesundheit, Entzündungshemmung und kognitive Funktion. Am besten mit einer fetthaltigen Mahlzeit.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'Ashwagandha (KSM-66)',
-      text: 'Adaptogen mit solider Studienlage: reduziert Cortisol messbar, verbessert Stressresilienz und unterstützt erholsamen Schlaf.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'Zink Bisglycinat',
-      text: 'Essenziell für Immunfunktion, Hormonbalance und Wundheilung. Bioverfügbarkeit von Bisglycinat deutlich höher als Zinkoxid.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'Kreatin Monohydrat',
-      text: 'Das am besten erforschte Supplement im Sport. Steigert Kraft, Ausdauer und kognitive Leistung – auch ohne Training sinnvoll.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'Coenzym Q10',
-      text: 'Kraftwerk der Mitochondrien. Besonders relevant ab 40 und bei Statin-Einnahme, da diese CoQ10 im Körper reduzieren.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'Vitamin B12 (Methylcobalamin)',
-      text: 'Lebensnotwendig für Nerven und Blutbildung. Methylcobalamin wird direkt verwertet – ideal für Veganer und ältere Erwachsene.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'L-Theanin',
-      text: 'Aminosäure aus grünem Tee. Fördert entspannte Wachheit, reduziert Koffein-Nervosität und verbessert Fokus ohne Sedierung.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-    _InsightCardData(
-      category: 'Supplement des Tages',
-      icon: Icons.science_outlined,
-      title: 'Selen',
-      text: 'Antioxidans und Schilddrüsenhormon-Kofaktor. Für Hashimoto-Patienten besonders relevant – senkt TPO-Antikörper nachweislich.',
-      gradient: [AppColors.primaryDark, AppColors.primary],
-    ),
-  ];
-
-  static const List<_InsightCardData> _trends = [
-    _InsightCardData(
-      category: 'Trend des Monats',
-      icon: Icons.trending_up_outlined,
-      title: 'Berberine als Metformin-Alternative',
-      text: 'Pflanzlicher Wirkstoff zeigt in Studien ähnliche Effekte auf Blutzucker und Insulinsensitivität wie das verschreibungspflichtige Metformin.',
-      gradient: [AppColors.accent, AppColors.primaryLight],
-    ),
-    _InsightCardData(
-      category: 'Trend des Monats',
-      icon: Icons.trending_up_outlined,
-      title: 'Magnesium Threonate für Gehirn',
-      text: 'Als einzige Magnesiumform passiert Threonate die Blut-Hirn-Schranke effizient. Erste Studien zeigen positive Effekte auf Gedächtnis.',
-      gradient: [AppColors.accent, AppColors.primaryLight],
-    ),
-    _InsightCardData(
-      category: 'Trend des Monats',
-      icon: Icons.trending_up_outlined,
-      title: 'NMN & Longevity-Forschung',
-      text: 'NAD+-Vorläufer wie NMN rücken in den Fokus der Alterungsforschung. Erste Humanstudien laufen – bisher nur Tierdaten mit starken Effekten.',
-      gradient: [AppColors.accent, AppColors.primaryLight],
-    ),
-    _InsightCardData(
-      category: 'Trend des Monats',
-      icon: Icons.trending_up_outlined,
-      title: 'Zyklussynchrones Supplementieren',
-      text: 'Frauen passen ihren Stack an Zyklusphasen an: Eisen + B6 in der Follikelphase, Magnesium + Zink in der Lutealphase für optimale Wirkung.',
-      gradient: [AppColors.accent, AppColors.primaryLight],
-    ),
-    _InsightCardData(
-      category: 'Trend des Monats',
-      icon: Icons.trending_up_outlined,
-      title: 'Rhodiola Rosea gegen Burnout',
-      text: 'Adaptogen mit wachsender Evidenz bei mentaler Erschöpfung. Europäische Zulassung (EMA) bereits vorhanden – erhöht Stresstoleranz messbar.',
-      gradient: [AppColors.accent, AppColors.primaryLight],
-    ),
-    _InsightCardData(
-      category: 'Trend des Monats',
-      icon: Icons.trending_up_outlined,
-      title: 'Spermidine & Autophagie',
-      text: 'Natürlich in Weizenkeimen und Käse. Aktiviert Autophagie – den Selbstreinigungsprozess der Zellen. Vielversprechend für Longevity.',
-      gradient: [AppColors.accent, AppColors.primaryLight],
-    ),
-    _InsightCardData(
-      category: 'Trend des Monats',
-      icon: Icons.trending_up_outlined,
-      title: 'Kollagen-Peptide für Gelenke',
-      text: 'Hydrolysiertes Kollagen zeigt in kontrollierten Studien Reduktion von Gelenkschmerzen bei Sportlern nach 12 Wochen regelmäßiger Einnahme.',
-      gradient: [AppColors.accent, AppColors.primaryLight],
-    ),
-  ];
-
-  static const List<_InsightCardData> _superfoods = [
-    _InsightCardData(
-      category: 'Superfood',
-      icon: Icons.eco_outlined,
-      title: 'Blaubeeren',
-      text: 'Höchste Antioxidantienkonzentration unter allen Früchten. Flavonoide schützen Nervenzellen und verbessern Gedächtnisleistung nachweislich.',
-      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
-    ),
-    _InsightCardData(
-      category: 'Superfood',
-      icon: Icons.eco_outlined,
-      title: 'Lachs & Hering',
-      text: 'Beste natürliche Omega-3-Quelle. 100g Hering liefern 2g EPA/DHA – die Menge vieler Supplement-Kapseln. Zudem reich an Vitamin D.',
-      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
-    ),
-    _InsightCardData(
-      category: 'Superfood',
-      icon: Icons.eco_outlined,
-      title: 'Spinat & Mangold',
-      text: 'Reich an Magnesium, Folat und Nitrat. Nitrat verbessert die Sauerstoffeffizienz in Muskeln – messbar in Ausdauerleistung.',
-      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
-    ),
-    _InsightCardData(
-      category: 'Superfood',
-      icon: Icons.eco_outlined,
-      title: 'Eier',
-      text: 'Vollständiges Aminosäureprofil, Cholin für Gehirngesundheit, Lutein für Augen. Eines der nährstoffdichtesten Lebensmittel überhaupt.',
-      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
-    ),
-    _InsightCardData(
-      category: 'Superfood',
-      icon: Icons.eco_outlined,
-      title: 'Kurkuma + Pfeffer',
-      text: 'Curcumin allein wird kaum aufgenommen. Piperin aus schwarzem Pfeffer erhöht die Bioverfügbarkeit um bis zu 2000% – immer gemeinsam verwenden.',
-      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
-    ),
-    _InsightCardData(
-      category: 'Superfood',
-      icon: Icons.eco_outlined,
-      title: 'Nüsse & Samen',
-      text: 'Walnüsse liefern pflanzliche Omega-3 (ALA), Kürbiskerne sind reich an Zink, Paranüsse bieten die höste natürliche Selendosis.',
-      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
-    ),
-    _InsightCardData(
-      category: 'Superfood',
-      icon: Icons.eco_outlined,
-      title: 'Fermentierte Lebensmittel',
-      text: 'Joghurt, Kefir und Kimchi liefern lebende Bakterienkulturen. Regelmäßiger Konsum erhöht die Mikrobiom-Diversität messbar.',
-      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
-    ),
-    _InsightCardData(
-      category: 'Superfood',
-      icon: Icons.eco_outlined,
-      title: 'Brokkoli & Kreuzblütler',
-      text: 'Sulforaphan aktiviert körpereigene Entgiftungsenzyme und hat starke antikarzinogene Eigenschaften – am wirksamsten roh oder leicht gedämpft.',
-      gradient: [Color(0xFF065F46), AppColors.evidenceGreen],
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final idx = _dayIndex;
+    final idx = _dayIndex(context);
     final cards = [
       _supplements[idx % _supplements.length],
       _trends[idx % _trends.length],
@@ -1642,7 +1501,6 @@ class _InsightCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.radiusL),
         child: Stack(
           children: [
-            // Dekorativer Kreis
             Positioned(
               top: -24,
               right: -24,
@@ -1655,54 +1513,44 @@ class _InsightCard extends StatelessWidget {
                 ),
               ),
             ),
-            // Content
             Padding(
               padding: const EdgeInsets.all(AppConstants.spaceM),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Kategorie-Badge
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(data.icon,
-                          size: 13, color: Colors.white.withOpacity(0.80)),
-                      const SizedBox(width: 5),
+                      Icon(data.icon, color: Colors.white.withOpacity(0.9), size: 18),
+                      const SizedBox(width: 6),
                       Text(
-                        data.category,
+                        data.tag,
                         style: AppTextStyles.caption.copyWith(
-                          color: Colors.white.withOpacity(0.80),
+                          color: Colors.white.withOpacity(0.85),
                           fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Großer Titel
                   Text(
                     data.title,
-                    style: AppTextStyles.headlineSmall.copyWith(
+                    style: AppTextStyles.labelMedium.copyWith(
                       color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      height: 1.15,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
-                  // Beschreibung
-                  Expanded(
-                    child: Text(
-                      data.text,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Colors.white.withOpacity(0.82),
-                        height: 1.4,
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    data.text,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Colors.white.withOpacity(0.82),
+                      height: 1.4,
                     ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

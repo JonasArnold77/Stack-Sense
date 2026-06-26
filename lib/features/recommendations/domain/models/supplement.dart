@@ -109,6 +109,7 @@ class Supplement {
   final String name;
   final String? substanceName;
   final EvidenceLevel evidenceLevel;
+  final String pitch;         // Kurzer Nutzen-Satz für die Card (persönlich, ohne Fachjargon)
   final String evidenceReason;
   final String dosage;
   final String intakeTime;
@@ -133,6 +134,7 @@ class Supplement {
     required this.name,
     this.substanceName,
     required this.evidenceLevel,
+    this.pitch = '',
     required this.evidenceReason,
     required this.dosage,
     required this.intakeTime,

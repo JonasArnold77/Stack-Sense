@@ -41,6 +41,7 @@ class SupplementRecommendation(BaseModel):
     name: str
     substance_name: Optional[str]
     evidence_level: EvidenceLevel
+    pitch: str = ""              # Kurzer Nutzen-Text für die Card (1 Satz, persönlich, kein Werbejargon)
     evidence_reason: str
     secondary_benefit: Optional[SecondaryBenefit] = None
     dosage: str

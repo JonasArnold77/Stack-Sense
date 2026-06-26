@@ -205,6 +205,23 @@ def _build_pubmed_context(studies: list[dict]) -> str:
     return "\n".join(lines)
 
 
+_PITCH_MAX_CHARS = 320
+
+
+def _truncate_pitch(text: str) -> str:
+    """Kürzt den Pitch-Text an der letzten vollständigen Satzgrenze vor _PITCH_MAX_CHARS.
+    Niemals mitten in einem Satz abschneiden."""
+    if len(text) <= _PITCH_MAX_CHARS:
+        return text
+    window = text[:_PITCH_MAX_CHARS]
+    # Letzte Satzgrenze (. ! ?) innerhalb des Fensters suchen
+    for i in range(len(window) - 1, 40, -1):
+        if window[i] in ".!?" and (i + 1 >= len(window) or window[i + 1] == " "):
+            return window[:i + 1]
+    # Fallback: letztes vollständiges Wort, kein harter Schnitt
+    return window.rsplit(" ", 1)[0].rstrip(".,;:—–-") + "."
+
+
 SYSTEM_PROMPT = """Du bist StackSense, ein evidenzbasierter Supplement-Berater.
 
 DEINE AUFGABE:
@@ -228,10 +245,22 @@ WICHTIGE REGELN:
    - "red": Kaum oder keine belastbare Evidenz beim Menschen
 3. Berücksichtige ALLE Profilparameter: Alter, Geschlecht, Erkrankungen, Medikamente, Jahreszeit, Sport
 4. Wechselwirkungen: Nutze AUSSCHLIESSLICH die Daten aus der Supplement-DB — erfinde keine
-5. Formuliere HWG-konform: keine Heilsversprechen, nur sachliche Informationen
+5. FORMULIERUNGSREGELN (HWG-konform — sehr wichtig):
+   - Keine direkten Wirkungsbehauptungen ("senkt Cortisol", "stärkt das Immunsystem", "verbessert den Schlaf")
+   - Beschreibe stattdessen was Studien beobachtet haben: "In Studien berichteten Teilnehmer von...", "RCTs zeigen...", "Studien deuten auf... hin"
+   - Persönlich und verständlich formulieren — aber immer aus Studienperspektive: "In Studien mit Schlafschwierigkeiten zeigte Magnesium in mehreren RCTs messbare Verbesserungen"
+   - Kein Imperativ der Wirkungen verspricht ("schläfst du besser", "wachst erholt auf")
+   - Erlaubt: Mangelaussagen ("Im Winter haben 70% der Deutschen zu wenig Vitamin D") und neutrale Studienbeschreibungen
 6. Sortiere STRIKT nach relevance_score absteigend — das Supplement mit dem höchsten relevance_score kommt zuerst in der Liste. WICHTIG: Reihenfolge und Score müssen übereinstimmen: Platz 1 = höchster Score, Platz 2 = zweithöchster usw. Grüne Supplements erhalten tendenziell höhere Scores als gelbe oder rote, da starke Evidenz die Zielpassung erhöht. Die ersten 3 in der Liste sind die absolut besten Empfehlungen — sie werden dem Nutzer als "Beste Wahl", "2. Wahl" und "3. Wahl" hervorgehoben angezeigt.
 7. ZEICHENLIMITS — unbedingt einhalten:
-   - evidence_reason: max 100 Zeichen
+   - pitch: 3–4 vollständige Sätze, zusammen 200–300 Zeichen. Jeder Satz endet mit einem Punkt.
+       Satz 1: Warum ist dieses Supplement für den Nutzer jetzt relevant? (Profil, Jahreszeit, Ziel)
+       Satz 2–3: Was zeigen Studien konkret? (Studientyp, beobachteter Effekt — keine direkte Wirkungsbehauptung)
+       Satz 4 (optional): Besonderheit für dieses Profil oder Hinweis der Mehrwert schafft.
+       Fließend und informativ — kein Aufzählungsstil, kein Fachjargon.
+       ✅ "Im Winter hat fast jeder zu wenig Vitamin D. Mehrere große RCTs zeigen, dass Menschen mit ausreichendem Spiegel seltener krank werden. Für dein Immunsystem ist das gerade besonders relevant."
+       ✅ "Magnesium wird bei Stress besonders schnell verbraucht. Mehrere RCTs berichten von ruhigerem Schlaf bei Menschen mit niedrigem Spiegel. Da du viel Sport machst, ist dein Bedarf zusätzlich erhöht."
+   - evidence_reason: max 90 Zeichen — Studienlage präzise, Effekt als Beobachtung nicht als Tatsache
    - secondary_benefit.text: max 100 Zeichen (oder null)
    - dosage: max 40 Zeichen
    - intake_time: max 40 Zeichen
@@ -264,9 +293,10 @@ JSON-FORMAT (exakt einhalten):
       "supplement_type": "single",
       "enthaltene_wirkstoffe": [],
       "evidence_level": "green",
-      "evidence_reason": "Starke RCT-Evidenz bei Defizit — im Winter bei 70% der Deutschen zu niedrig.",
+      "pitch": "Im Winter hat fast jeder zu wenig Vitamin D. Mehrere große RCTs zeigen, dass Menschen mit ausreichendem Spiegel seltener krank werden. Für dein Immunsystem ist das gerade besonders relevant.",
+      "evidence_reason": "Mehrere Meta-Analysen (>10.000 Teilnehmer) belegen: Mangel erhöht Infektrisiko messbar.",
       "secondary_benefit": {
-        "text": "Bei Hashimoto: moduliert Immunantwort, reduziert TPO-Antikörper.",
+        "text": "Bei Hashimoto: Studien zeigen Zusammenhang mit niedrigeren TPO-Antikörperwerten.",
         "evidence_level": "green",
         "condition": "Hashimoto"
       },
@@ -570,6 +600,7 @@ class ClaudeService:
                 name=item["name"],
                 substance_name=item.get("substance_name"),
                 evidence_level=EvidenceLevel(item["evidence_level"]),
+                pitch=_truncate_pitch(item.get("pitch", "")),
                 evidence_reason=item["evidence_reason"],
                 secondary_benefit=secondary_benefit,
                 dosage=item["dosage"],
