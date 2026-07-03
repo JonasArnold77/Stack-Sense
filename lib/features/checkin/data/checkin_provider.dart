@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,12 +5,27 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 import '../domain/models/checkin_entry.dart';
+import '../domain/repositories/checkin_repository.dart';
+import 'repositories/checkin_repository_impl.dart';
 
-/// Verwaltet alle Check-ins und Streak-Berechnung.
-/// Persistiert automatisch in SharedPreferences.
+// ---------------------------------------------------------------------------
+// Repository-Provider
+// ---------------------------------------------------------------------------
+
+final checkinRepositoryProvider = Provider<CheckinRepository>(
+  (ref) => SharedPreferencesCheckinRepository(),
+);
+
+// ---------------------------------------------------------------------------
+// StateNotifier — Business Logic für Check-ins und Streak.
+// Persistenz läuft ausschließlich über CheckinRepository.
+// ---------------------------------------------------------------------------
+
 class CheckinNotifier extends StateNotifier<List<CheckinEntry>> {
-  CheckinNotifier() : super([]) {
-    _loadFromPrefs();
+  final CheckinRepository _repository;
+
+  CheckinNotifier(this._repository) : super([]) {
+    _load();
   }
 
   // --- Öffentliche Abfragen ---
@@ -19,15 +33,13 @@ class CheckinNotifier extends StateNotifier<List<CheckinEntry>> {
   /// Wurde heute bereits eingecheckt?
   bool get hasCheckedInToday {
     if (state.isEmpty) return false;
-    final today = _today();
-    return state.any((e) => e.dateOnly == today);
+    return state.any((e) => e.dateOnly == _today());
   }
 
   /// Heutiger Check-in (falls vorhanden)
   CheckinEntry? get todayEntry {
-    final today = _today();
     try {
-      return state.firstWhere((e) => e.dateOnly == today);
+      return state.firstWhere((e) => e.dateOnly == _today());
     } catch (_) {
       return null;
     }
@@ -36,13 +48,10 @@ class CheckinNotifier extends StateNotifier<List<CheckinEntry>> {
   /// Aktuelle Streak in Tagen (aufeinanderfolgende Tage mit Check-in)
   int get currentStreak {
     if (state.isEmpty) return 0;
-
     final sorted = [...state]
       ..sort((a, b) => b.dateOnly.compareTo(a.dateOnly));
-
     int streak = 0;
     DateTime expected = _today();
-
     for (final entry in sorted) {
       if (entry.dateOnly == expected) {
         streak++;
@@ -64,34 +73,27 @@ class CheckinNotifier extends StateNotifier<List<CheckinEntry>> {
   // --- Mutationen ---
 
   /// Check-in für heute speichern. Überschreibt bestehenden falls vorhanden.
-  /// [supplementNames] — Namen der aktuell im Stack enthaltenen Supplements
-  ///                     werden anonym ans Backend gesendet für Community-Insights.
   Future<void> submit(CheckinEntry entry, {List<String> supplementNames = const []}) async {
     final today = _today();
-    // Alten heutigen Eintrag entfernen falls vorhanden
     final filtered = state.where((e) => e.dateOnly != today).toList();
     state = [...filtered, entry];
-    await _saveToPrefs();
-
+    await _persist();
     // Anonym ans Backend senden (nicht-blockierend, scheitert still)
     _syncToBackend(entry, supplementNames);
   }
 
-  /// Sendet Check-in-Daten mit anonymer Device-ID ans Backend.
+  Future<void> clearAll() async {
+    state = [];
+    await _persist();
+  }
+
+  // --- Community-Backend-Sync (anonym, nicht-kritisch) ---
+
   Future<void> _syncToBackend(CheckinEntry entry, List<String> supplementNames) async {
     if (supplementNames.isEmpty) return;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      // Anonyme Geräte-UUID — einmalig generiert und gespeichert
-      String? deviceId = prefs.getString(AppConstants.keyDeviceId);
-      if (deviceId == null) {
-        deviceId = _generateDeviceId();
-        await prefs.setString(AppConstants.keyDeviceId, deviceId);
-      }
-
-      final dateStr =
-          '${entry.date.year}-${entry.date.month.toString().padLeft(2, '0')}-${entry.date.day.toString().padLeft(2, '0')}';
-
+      final deviceId = await _getOrCreateDeviceId();
+      final dateStr = _formatDate(entry.date);
       await ApiService.instance.syncCheckin(
         deviceId: deviceId,
         checkinDate: dateStr,
@@ -106,6 +108,75 @@ class CheckinNotifier extends StateNotifier<List<CheckinEntry>> {
     }
   }
 
+  Future<void> syncAllToBackend(List<String> supplementNames) async {
+    if (state.isEmpty || supplementNames.isEmpty) return;
+    try {
+      final deviceId = await _getOrCreateDeviceId();
+      for (final entry in state) {
+        await ApiService.instance.syncCheckin(
+          deviceId: deviceId,
+          checkinDate: _formatDate(entry.date),
+          sleep: entry.sleep,
+          energy: entry.energy,
+          focus: entry.focus,
+          mood: entry.mood,
+          supplementNames: supplementNames,
+        );
+      }
+    } catch (_) {}
+  }
+
+  // --- Simulation ---
+
+  /// Generiert 21 Tage simulierte Check-in-Daten für Demo-Zwecke.
+  Future<void> simulateHistory({Map<String, double>? goalBoosts}) async {
+    final rng = Random(42);
+    final today = _today();
+    final entries = <CheckinEntry>[];
+
+    for (int daysAgo = 20; daysAgo >= 0; daysAgo--) {
+      final date = today.subtract(Duration(days: daysAgo));
+      final supplementEffect = daysAgo <= 13 ? ((13 - daysAgo) / 13.0) : 0.0;
+
+      double simScore(double base, double target, {double boost = 0}) {
+        final trend = base + (target - base) * supplementEffect + boost * supplementEffect;
+        final noise = (rng.nextDouble() - 0.5) * 0.6;
+        return (trend + noise).clamp(1.0, 5.0);
+      }
+
+      entries.add(CheckinEntry(
+        date: date,
+        energy: simScore(2.2, 3.8, boost: goalBoosts?['energy'] ?? 0).round().clamp(1, 5),
+        sleep:  simScore(2.0, 4.0, boost: goalBoosts?['sleep']  ?? 0).round().clamp(1, 5),
+        focus:  simScore(2.5, 3.6, boost: goalBoosts?['focus']  ?? 0).round().clamp(1, 5),
+        mood:   simScore(2.3, 3.9, boost: goalBoosts?['mood']   ?? 0).round().clamp(1, 5),
+      ));
+    }
+
+    state = entries;
+    await _persist();
+  }
+
+  // --- Hilfsmethoden ---
+
+  DateTime _today() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  String _formatDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  Future<String> _getOrCreateDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? deviceId = prefs.getString(AppConstants.keyDeviceId);
+    if (deviceId == null) {
+      deviceId = _generateDeviceId();
+      await prefs.setString(AppConstants.keyDeviceId, deviceId);
+    }
+    return deviceId;
+  }
+
   String _generateDeviceId() {
     const chars = 'abcdef0123456789';
     final rng = Random.secure();
@@ -114,118 +185,17 @@ class CheckinNotifier extends StateNotifier<List<CheckinEntry>> {
     return '${segment(8)}-${segment(4)}-${segment(4)}-${segment(4)}-${segment(12)}';
   }
 
-  /// Sendet alle lokalen Check-ins ans Backend — für Simulation und Nachsync.
-  Future<void> syncAllToBackend(List<String> supplementNames) async {
-    if (state.isEmpty || supplementNames.isEmpty) return;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      String? deviceId = prefs.getString(AppConstants.keyDeviceId);
-      if (deviceId == null) {
-        deviceId = _generateDeviceId();
-        await prefs.setString(AppConstants.keyDeviceId, deviceId);
-      }
-      for (final entry in state) {
-        final dateStr =
-            '${entry.date.year}-${entry.date.month.toString().padLeft(2, '0')}-${entry.date.day.toString().padLeft(2, '0')}';
-        await ApiService.instance.syncCheckin(
-          deviceId: deviceId,
-          checkinDate: dateStr,
-          sleep: entry.sleep,
-          energy: entry.energy,
-          focus: entry.focus,
-          mood: entry.mood,
-          supplementNames: supplementNames,
-        );
-      }
-    } catch (_) {
-      // Nicht-kritisch
-    }
+  // --- Persistenz (nur über Repository) ---
+
+  Future<void> _load() async {
+    state = await _repository.getAll();
   }
 
-  // --- Simulation ---
-
-  /// Generiert 21 Tage simulierte Check-in-Daten.
-  ///
-  /// Verlauf pro Dimension:
-  /// - Woche 1 (Tage 21–15): Startwerte 2.0–3.0, eher schlecht
-  /// - Woche 2 (Tage 14–8):  Ergänzung kommt dazu, langsame Besserung
-  /// - Woche 3 (Tage 7–0):   Deutliche Verbesserung Richtung 3.5–4.5
-  ///
-  /// [goalBoosts] — optional Map von Dimension auf Extra-Boost (z.B. {"sleep": 0.5})
-  Future<void> simulateHistory({Map<String, double>? goalBoosts}) async {
-    final rng = Random(42); // Seed = reproduzierbar
-    final today = _today();
-    final entries = <CheckinEntry>[];
-
-    for (int daysAgo = 20; daysAgo >= 0; daysAgo--) {
-      final date = today.subtract(Duration(days: daysAgo));
-
-      // Fortschritt 0.0 (Tag 20, vor Supplements) → 1.0 (heute)
-      final progress = (20 - daysAgo) / 20.0;
-
-      // Ab Tag 14 (daysAgo <= 14) greifen die Supplements
-      final supplementEffect = daysAgo <= 13 ? ((13 - daysAgo) / 13.0) : 0.0;
-
-      double _simScore(double base, double target, {double boost = 0}) {
-        // Linearer Anstieg von base → target mit natürlichem Rauschen
-        final trend = base + (target - base) * supplementEffect + boost * supplementEffect;
-        final noise = (rng.nextDouble() - 0.5) * 0.6; // ±0.3 Streuung
-        return (trend + noise).clamp(1.0, 5.0);
-      }
-
-      final energyBoost = goalBoosts?['energy'] ?? 0;
-      final sleepBoost = goalBoosts?['sleep'] ?? 0;
-      final focusBoost = goalBoosts?['focus'] ?? 0;
-      final moodBoost = goalBoosts?['mood'] ?? 0;
-
-      entries.add(CheckinEntry(
-        date: date,
-        energy: _simScore(2.2, 3.8, boost: energyBoost).round().clamp(1, 5),
-        sleep:  _simScore(2.0, 4.0, boost: sleepBoost).round().clamp(1, 5),
-        focus:  _simScore(2.5, 3.6, boost: focusBoost).round().clamp(1, 5),
-        mood:   _simScore(2.3, 3.9, boost: moodBoost).round().clamp(1, 5),
-      ));
-    }
-
-    state = entries;
-    await _saveToPrefs();
-  }
-
-  /// Löscht alle simulierten / echten Daten (Reset für Tests).
-  Future<void> clearAll() async {
-    state = [];
-    await _saveToPrefs();
-  }
-
-  // --- Persistenz ---
-
-  Future<void> _loadFromPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(AppConstants.keyCheckinHistory);
-      if (raw == null) return;
-      final list = jsonDecode(raw) as List<dynamic>;
-      state = list
-          .map((e) => CheckinEntry.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      state = [];
-    }
-  }
-
-  Future<void> _saveToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = jsonEncode(state.map((e) => e.toJson()).toList());
-    await prefs.setString(AppConstants.keyCheckinHistory, encoded);
-  }
-
-  DateTime _today() {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day);
+  Future<void> _persist() async {
+    await _repository.saveAll(state);
   }
 }
 
-final checkinProvider =
-    StateNotifierProvider<CheckinNotifier, List<CheckinEntry>>(
-  (ref) => CheckinNotifier(),
+final checkinProvider = StateNotifierProvider<CheckinNotifier, List<CheckinEntry>>(
+  (ref) => CheckinNotifier(ref.read(checkinRepositoryProvider)),
 );

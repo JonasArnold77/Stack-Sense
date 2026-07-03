@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/phase_goals_provider.dart';
 import '../../domain/models/phase_goal.dart';
+import 'milestone_dots.dart';
 
 /// Home-Screen Panel für aktive Phasenziele.
 /// Nur angezeigt wenn mindestens ein Ziel aktiv ist.
@@ -150,6 +151,13 @@ class _ActiveGoalCard extends StatelessWidget {
                     '${goal.elapsedDays} von ${goal.totalDays} Tagen',
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.textTertiary),
+                  ),
+                  const SizedBox(height: AppConstants.spaceS),
+                  MilestoneDots(
+                    progress: goal.progress,
+                    accent: accent,
+                    showLabels: true,
+                    onDark: false,
                   ),
                 ],
               ),

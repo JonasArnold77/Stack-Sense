@@ -12,6 +12,7 @@ import '../../../stack/domain/models/stack_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../data/phase_goals_provider.dart';
 import '../../domain/models/phase_goal.dart';
+import '../widgets/milestone_dots.dart';
 
 /// Detailansicht eines aktiven Phasenziels.
 /// Zeigt Fortschrittsbalken, verbleibende Tage, zugehörige Supplements
@@ -274,6 +275,16 @@ class _DetailHeader extends StatelessWidget {
                     .copyWith(color: Colors.white.withOpacity(0.75)),
               ),
             ],
+          ),
+
+          const SizedBox(height: AppConstants.spaceM),
+
+          // Milestone-Dots
+          MilestoneDots(
+            progress: goal.progress,
+            accent: Colors.white,
+            showLabels: true,
+            onDark: true,
           ),
         ],
       ),

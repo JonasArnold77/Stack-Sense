@@ -77,6 +77,7 @@ class _PhaseGoalRecommendationsScreenState
       supplement: supplement,
       phaseGoalId: goal.id,
       endDate: goal.endDate,
+      goalContext: goal.definition?.name,
     );
 
     // Supplement-ID auch im PhaseGoal registrieren
@@ -225,6 +226,7 @@ class _PhaseGoalRecommendationsScreenState
                           supplement: s,
                           isInStack: alreadyInStack,
                           rank: i < 3 ? i + 1 : null,
+                          goalContext: goal.definition?.name,
                           onAddToStack:
                               alreadyInStack ? null : () => _addToStack(s, goal),
                         ),

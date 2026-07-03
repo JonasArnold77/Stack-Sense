@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/error/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -8,12 +10,13 @@ import '../../../../core/services/api_service.dart';
 import '../../domain/models/supplement.dart';
 import '../screens/supplement_detail_screen.dart';
 import '../../../community/domain/models/community_insight.dart';
+import '../../../stack/data/stack_provider.dart';
 
 /// Die Kern-Komponente der App — zeigt ein Supplement mit Evidenz-Ampel.
 /// Tap → öffnet SupplementDetailScreen mit slide-from-bottom Transition.
 /// Aufklappbar für "Einfach erklärt" (on-demand via API).
 /// Shopping-Button öffnet Bottomsheet mit allen Kaufoptionen.
-class EvidenceCard extends StatefulWidget {
+class EvidenceCard extends ConsumerStatefulWidget {
   final Supplement supplement;
   final bool isInStack;
   final VoidCallback? onAddToStack;
@@ -22,6 +25,10 @@ class EvidenceCard extends StatefulWidget {
   final int? rank;
   /// Optionaler Community-Insight — wird als Banner am Ende der Card angezeigt.
   final CommunityInsight? communityInsight;
+  /// Der aktuelle Problemfeld- / Phasenziel-Kontext (z.B. "Schlaf").
+  /// Wird als "+ Schlaf" Button angezeigt wenn das Supplement bereits im Stack ist
+  /// aber dieser Kontext noch nicht gespeichert wurde.
+  final String? goalContext;
 
   const EvidenceCard({
     super.key,
@@ -31,13 +38,14 @@ class EvidenceCard extends StatefulWidget {
     this.onRemoveFromStack,
     this.rank,
     this.communityInsight,
+    this.goalContext,
   });
 
   @override
-  State<EvidenceCard> createState() => _EvidenceCardState();
+  ConsumerState<EvidenceCard> createState() => _EvidenceCardState();
 }
 
-class _EvidenceCardState extends State<EvidenceCard>
+class _EvidenceCardState extends ConsumerState<EvidenceCard>
     with SingleTickerProviderStateMixin {
   bool _expanded = false;
   bool _reasonExpanded = false;
@@ -80,6 +88,13 @@ class _EvidenceCardState extends State<EvidenceCard>
     widget.onAddToStack?.call();
   }
 
+  /// Fügt den aktuellen Ziel-Kontext zum Stack-Eintrag hinzu (ohne Dialog).
+  Future<void> _handleAddGoalContext() async {
+    final ctx = widget.goalContext;
+    if (ctx == null) return;
+    await ref.read(stackProvider.notifier).addGoalContext(widget.supplement.id, ctx);
+  }
+
   Future<void> _toggleExplanation() async {
     if (_expanded) {
       setState(() => _expanded = false);
@@ -96,6 +111,10 @@ class _EvidenceCardState extends State<EvidenceCard>
           substanceName: widget.supplement.substanceName,
         );
         if (mounted) setState(() => _explanation = text);
+      } on AppFailure catch (e) {
+        if (mounted) {
+          setState(() => _explanation = e.message);
+        }
       } catch (_) {
         if (mounted) {
           setState(() => _explanation = 'Erklärung konnte nicht geladen werden.');
@@ -121,7 +140,7 @@ class _EvidenceCardState extends State<EvidenceCard>
           substanceName: widget.supplement.substanceName,
         );
         if (mounted) setState(() => _foodSources = sources);
-      } catch (_) {
+      } on AppFailure catch (_) {
         if (mounted) setState(() => _foodSources = []);
       } finally {
         if (mounted) setState(() => _loadingFoodSources = false);
@@ -442,6 +461,22 @@ class _EvidenceCardState extends State<EvidenceCard>
             // --- Relevanz-Balken ---
             _RelevanceBar(score: supplement.relevanceScore),
 
+            // --- Im-Stack-Panel (direkt unter Score, wenn im Stack) ---
+            if (widget.isInStack)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppConstants.cardPadding,
+                  AppConstants.spaceS,
+                  AppConstants.cardPadding,
+                  0,
+                ),
+                child: _InStackPanel(
+                  supplementId: widget.supplement.id,
+                  goalContext: widget.goalContext,
+                  onAddGoalContext: _handleAddGoalContext,
+                ),
+              ),
+
             // --- Kategorie-Tags ---
             if (supplement.categories.isNotEmpty)
               Padding(
@@ -612,6 +647,141 @@ class _EvidenceCardState extends State<EvidenceCard>
 
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Panel das angezeigt wird wenn das Supplement bereits im Stack ist.
+// Zeigt alle gespeicherten Ziel-Kontexte als Chips + optional einen
+// "+ [aktuelles Ziel]" Button um den aktuellen Kontext hinzuzufügen.
+// ---------------------------------------------------------------------------
+
+class _InStackPanel extends ConsumerWidget {
+  final String supplementId;
+  final String? goalContext;
+  final VoidCallback onAddGoalContext;
+
+  const _InStackPanel({
+    required this.supplementId,
+    required this.goalContext,
+    required this.onAddGoalContext,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entry = ref
+        .watch(stackProvider)
+        .where((e) => e.id == supplementId)
+        .firstOrNull;
+    final goals = entry?.addedFromGoals ?? const [];
+    final isPhaseGoal = entry?.isTemporary ?? false;
+
+    // Ist der aktuelle Kontext bereits gespeichert?
+    final contextAlreadyLinked =
+        goalContext == null || goals.contains(goalContext);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.evidenceGreen.withOpacity(0.09),
+        borderRadius: BorderRadius.circular(AppConstants.radiusM),
+        border: Border.all(
+          color: AppColors.evidenceGreen.withOpacity(0.40),
+          width: 1.5,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.spaceM,
+        vertical: AppConstants.spaceM,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // "Im Stack" Zeile
+          Row(
+            children: [
+              const Icon(Icons.check_circle,
+                  size: 20, color: AppColors.evidenceGreen),
+              const SizedBox(width: 8),
+              Text(
+                'Im Stack',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.evidenceGreen,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+
+          // Ziel-Chips — nur wenn mindestens ein Kontext vorhanden
+          if (goals.isNotEmpty) ...[
+            const SizedBox(height: AppConstants.spaceS),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: goals.map((g) {
+                final color = isPhaseGoal
+                    ? const Color(0xFF5C35CC)
+                    : AppColors.primary;
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.radiusRound),
+                    border: Border.all(
+                        color: color.withOpacity(0.40), width: 1.2),
+                  ),
+                  child: Text(
+                    g,
+                    style: AppTextStyles.labelMedium.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
+          // "+ [Ziel]" Button — nur wenn aktueller Kontext noch nicht verknüpft
+          if (!contextAlreadyLinked) ...[
+            const SizedBox(height: AppConstants.spaceS),
+            GestureDetector(
+              onTap: onAddGoalContext,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.radiusRound),
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.40),
+                    width: 1.2,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add,
+                        size: 16, color: AppColors.primary),
+                    const SizedBox(width: 5),
+                    Text(
+                      goalContext!,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

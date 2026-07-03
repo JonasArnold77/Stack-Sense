@@ -35,6 +35,13 @@ class StackEntry {
   final SupplementType supplementType;
   final List<String> enthalteneWirkstoffe; // Nur bei Kombipräparaten befüllt
   final List<String> categories;           // Themen-Tags z.B. ["Schlaf", "Entspannung"]
+  final List<String> goalIds;              // Explizit verknüpfte Ziele (für Mehrfachziel-Feature)
+
+  /// Alle Problemfelder / Phasenziele aus denen dieses Supplement hinzugefügt wurde.
+  /// Wird beim Hinzufügen gesetzt und kann nachträglich erweitert werden.
+  /// Beispiele: ["Schlaf"], ["Schlaf", "Energie"], ["Marathon-Vorbereitung"]
+  final List<String> addedFromGoals;
+
   final bool hasDuplicateWarning; // Orange Warnung wenn Wirkstoff doppelt im Stack
 
   /// Wenn gesetzt: dieses Supplement gehört zu einem Phasenziel und ist temporär.
@@ -59,6 +66,8 @@ class StackEntry {
     this.supplementType = SupplementType.single,
     this.enthalteneWirkstoffe = const [],
     this.categories = const [],
+    this.goalIds = const [],
+    this.addedFromGoals = const [],
     this.hasDuplicateWarning = false,
     this.phaseGoalId,
     this.phaseEndDate,
@@ -74,6 +83,8 @@ class StackEntry {
     InteractionSeverity? interactionSeverity,
     String? drugInteraction,
     DateTime? addedAt,
+    List<String>? goalIds,
+    List<String>? addedFromGoals,
   }) =>
       StackEntry(
         id: id,
@@ -89,6 +100,8 @@ class StackEntry {
         supplementType: supplementType,
         enthalteneWirkstoffe: enthalteneWirkstoffe,
         categories: categories,
+        goalIds: goalIds ?? this.goalIds,
+        addedFromGoals: addedFromGoals ?? this.addedFromGoals,
         hasDuplicateWarning: hasDuplicateWarning ?? this.hasDuplicateWarning,
         phaseGoalId: phaseGoalId,
         phaseEndDate: phaseEndDate,
@@ -145,6 +158,8 @@ class StackEntry {
         'supplementType': supplementType.name,
         'enthalteneWirkstoffe': enthalteneWirkstoffe,
         'categories': categories,
+        'goalIds': goalIds,
+        'addedFromGoals': addedFromGoals,
         'hasDuplicateWarning': hasDuplicateWarning,
         'phaseGoalId': phaseGoalId,
         'phaseEndDate': phaseEndDate?.toIso8601String(),
@@ -155,6 +170,17 @@ class StackEntry {
     final severityRaw = json['interactionSeverity'] as String?;
     final typeRaw = json['supplementType'] as String?;
     final rawWirkstoffe = json['enthalteneWirkstoffe'] as List<dynamic>? ?? [];
+
+    // Rückwärtskompatibilität: alter String-Wert "addedFrom" → Liste
+    final List<String> addedFromGoals;
+    final goalsRaw = json['addedFromGoals'] as List<dynamic>?;
+    if (goalsRaw != null) {
+      addedFromGoals = goalsRaw.map((e) => e as String).toList();
+    } else {
+      final legacyFrom = json['addedFrom'] as String?;
+      addedFromGoals = legacyFrom != null ? [legacyFrom] : [];
+    }
+
     return StackEntry(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -173,6 +199,8 @@ class StackEntry {
           : SupplementType.single,
       enthalteneWirkstoffe: rawWirkstoffe.map((e) => e as String).toList(),
       categories: List<String>.from(json['categories'] ?? []),
+      goalIds: List<String>.from(json['goalIds'] ?? []),
+      addedFromGoals: addedFromGoals,
       hasDuplicateWarning: json['hasDuplicateWarning'] as bool? ?? false,
       phaseGoalId: json['phaseGoalId'] as String?,
       phaseEndDate: json['phaseEndDate'] != null

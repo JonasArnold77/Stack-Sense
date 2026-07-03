@@ -10,6 +10,7 @@ import '../../../recommendations/domain/models/supplement.dart';
 ///
 /// Hintergrundfarbe = Evidenzstufe (grün/gelb/rot, dezent).
 /// Warnfeld unten = Wechselwirkungsschwere (gelb/orange/rot, auffällig).
+/// Ziel-Chips = explizit verknüpfte Ziele + Sekundärziele aus Kategorien.
 class StackSupplementCard extends StatelessWidget {
   final StackEntry entry;
   final VoidCallback onRemove;
@@ -155,6 +156,14 @@ class StackSupplementCard extends StatelessWidget {
             ),
           ),
 
+          // --- Herkunfts-Badge (prominent, wenn Ziel-Kontexte vorhanden) ---
+          if (entry.addedFromGoals.isNotEmpty)
+            _SourceBadge(entry: entry),
+
+          // --- Ziel-Chips (nur wenn goalIds oder categories vorhanden) ---
+          if (entry.goalIds.isNotEmpty || entry.categories.isNotEmpty)
+            _GoalChipsRow(entry: entry),
+
           // --- Dosierung + Einnahme-Hinweis ---
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -295,6 +304,214 @@ class _WarningField extends StatelessWidget {
               height: 1.4,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Herkunfts-Badge — zeigt woher das Supplement hinzugefügt wurde
+// ---------------------------------------------------------------------------
+
+/// Zeigt alle gespeicherten Ziel-Kontexte (addedFromGoals) als farbige Chips
+/// in einem Panel. Phasenziele = violett, Problemfelder = primärblau.
+class _SourceBadge extends StatelessWidget {
+  final StackEntry entry;
+
+  const _SourceBadge({required this.entry});
+
+  bool get _isPhaseGoal => entry.isTemporary;
+
+  Color get _color => _isPhaseGoal
+      ? const Color(0xFF5C35CC) // Violett — Phasenziele
+      : AppColors.primary;     // Blau — Problemfelder / Entdecken
+
+  IconData get _icon =>
+      _isPhaseGoal ? Icons.flag_outlined : Icons.search_outlined;
+
+  String get _prefix => _isPhaseGoal ? 'Phasenziel' : 'Problemfeld';
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _color;
+    final goals = entry.addedFromGoals;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.cardPadding,
+        0,
+        AppConstants.cardPadding,
+        AppConstants.spaceS,
+      ),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(AppConstants.radiusM),
+          border: Border.all(color: color.withOpacity(0.20)),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.spaceM,
+          vertical: AppConstants.spaceS,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Label-Zeile: Icon + Kategorie-Typ
+            Row(
+              children: [
+                Icon(_icon, size: 12, color: color.withOpacity(0.7)),
+                const SizedBox(width: 4),
+                Text(
+                  _prefix,
+                  style: AppTextStyles.caption.copyWith(
+                    color: color.withOpacity(0.65),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            // Ziel-Chips — alle nebeneinander
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: goals.map((g) => Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.radiusRound),
+                  border: Border.all(color: color.withOpacity(0.30)),
+                ),
+                child: Text(
+                  g,
+                  style: AppTextStyles.caption.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              )).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ziel-Chips: "Aktiv für" (primär) + "Wirkt auch bei" (sekundär)
+// ---------------------------------------------------------------------------
+
+// Farb-Lookup für Ziel-Chips (ohne externe Abhängigkeit).
+Color _goalChipColor(String goal) {
+  const map = {
+    'Schlaf': Color(0xFF3F51B5),
+    'Energie': Color(0xFFE65100),
+    'Immunsystem': Color(0xFF2E7D32),
+    'Fokus': Color(0xFF6A1B9A),
+    'Sport': Color(0xFFD32F2F),
+    'Stress': Color(0xFF0277BD),
+    'Herzgesundheit': Color(0xFFAD1457),
+    'Verdauung': Color(0xFF558B2F),
+    'Knochen': Color(0xFF4E342E),
+    'Haare & Haut': Color(0xFF00838F),
+  };
+  return map[goal] ?? const Color(0xFF546E7A);
+}
+
+class _GoalChipsRow extends StatelessWidget {
+  final StackEntry entry;
+
+  const _GoalChipsRow({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    // Sekundärziele = Kategorien die NICHT in goalIds sind.
+    final secondary = entry.categories
+        .where((c) => !entry.goalIds.contains(c))
+        .toList();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.cardPadding,
+        0,
+        AppConstants.cardPadding,
+        AppConstants.spaceS,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Primäre Ziele
+          if (entry.goalIds.isNotEmpty) ...[
+            Text(
+              'Aktiv für',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textTertiary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: AppConstants.spaceXS,
+              runSpacing: AppConstants.spaceXS,
+              children: entry.goalIds.map((g) {
+                final color = _goalChipColor(g);
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+                    border: Border.all(color: color.withOpacity(0.35)),
+                  ),
+                  child: Text(
+                    g,
+                    style: AppTextStyles.caption.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
+          // Sekundäre Ziele
+          if (secondary.isNotEmpty) ...[
+            SizedBox(height: entry.goalIds.isEmpty ? 0 : AppConstants.spaceXS),
+            Text(
+              'Wirkt auch bei',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textTertiary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: AppConstants.spaceXS,
+              runSpacing: AppConstants.spaceXS,
+              children: secondary.map((g) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.border.withOpacity(0.5),
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.radiusRound),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Text(
+                    g,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );

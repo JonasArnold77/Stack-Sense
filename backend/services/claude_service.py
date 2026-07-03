@@ -11,7 +11,7 @@ import anthropic
 
 from config.settings import settings
 from models.profile import UserProfile
-from models.recommendation import RecommendationResponse, SupplementRecommendation, SecondaryBenefit, EvidenceLevel, InteractionSeverity, SupplementType, ProductLink
+from models.recommendation import RecommendationResponse, SupplementRecommendation, SecondaryBenefit, EvidenceLevel, InteractionSeverity, SupplementType, ProductLink, SynergyRecommendation, SynergyResponse
 from data.products import get_products
 from services.pubmed_service import PubMedService
 from services.vector_service import search_studies as vector_search
@@ -415,6 +415,160 @@ JSON-FORMAT (exakt einhalten):
 }"""
 
 
+SYNERGY_SYSTEM_PROMPT = """Du bist ein Supplement-Experte. Deine Aufgabe: Synergie-Kombinationen empfehlen.
+
+WICHTIG: Antworte NUR mit dem JSON-Objekt. Kein Text davor, kein Text danach, keine Erklärung.
+
+JSON-FORMAT (exakt so):
+{"synergies":[{"id":"magnesium-b6","substances":["Magnesium Bisglycinat","Vitamin B6"],"evidence_level":"green","synergy_score":85,"synergy_explanation":"Vitamin B6 erhöht die intrazelluläre Magnesiumkonzentration um bis zu 40%. Klinisch besonders relevant bei Stress und Schlaf.","dosage_hint":"Zusammen abends zum Essen nehmen"}]}
+
+REGELN:
+- evidence_level muss exakt "green", "yellow" oder "red" sein
+- synergy_score: 0-100 (Passgenauigkeit zum Ziel)
+- 3-4 Synergien ausgeben
+- Nur wissenschaftlich belegte Kombinationen"""
+
+
+# ---------------------------------------------------------------------------
+# Kuratierter Fallback — greift wenn Claude-Call fehlschlägt oder 0 Synergien liefert
+# Key = Keyword im Ziel (lowercase), Value = Liste von SynergyRecommendation-Dicts
+# ---------------------------------------------------------------------------
+_SYNERGY_FALLBACKS: list[dict] = [
+    {
+        "id": "vitamin-d3-k2",
+        "substances": ["Vitamin D3", "Vitamin K2"],
+        "evidence_level": "green",
+        "synergy_score": 88,
+        "synergy_explanation": (
+            "Vitamin D3 erhöht die Calciumaufnahme — K2 (MK-7) sorgt dafür dass das Calcium "
+            "in den Knochen landet und nicht in Arterien. Ohne K2 kann hochdosiertes D3 "
+            "langfristig zu Verkalkungen führen. Die Kombination ist bei nahezu jedem Profil sinnvoll."
+        ),
+        "dosage_hint": "Beide fettlöslich — zusammen zur fetthaltigen Mahlzeit nehmen",
+    },
+    {
+        "id": "magnesium-b6",
+        "substances": ["Magnesium Bisglycinat", "Vitamin B6"],
+        "evidence_level": "green",
+        "synergy_score": 82,
+        "synergy_explanation": (
+            "Vitamin B6 (Pyridoxin) erhöht die intrazelluläre Magnesiumkonzentration um bis zu 40% "
+            "und verbessert so die Aufnahme in die Zellen. Klinisch besonders wirksam bei Stress, "
+            "Muskelkrämpfen und Schlafproblemen."
+        ),
+        "dosage_hint": "Zusammen abends zum Essen — ideal vor dem Schlafen",
+    },
+    {
+        "id": "omega3-vitamin-d3",
+        "substances": ["Omega-3 (EPA/DHA)", "Vitamin D3"],
+        "evidence_level": "green",
+        "synergy_score": 79,
+        "synergy_explanation": (
+            "Omega-3-Fettsäuren verbessern die Bioverfügbarkeit von Vitamin D3 erheblich, "
+            "da D3 fettlöslich ist und Fischöl als optimales Lösungsmittel wirkt. "
+            "Beide haben zudem synergistische entzündungshemmende Effekte."
+        ),
+        "dosage_hint": "Zusammen zur fetthaltigen Mahlzeit — maximale D3-Aufnahme",
+    },
+    {
+        "id": "eisen-vitamin-c",
+        "substances": ["Eisen (Bisglycinate)", "Vitamin C"],
+        "evidence_level": "green",
+        "synergy_score": 91,
+        "synergy_explanation": (
+            "Vitamin C (Ascorbinsäure) reduziert dreiwertiges Eisen zu zweiwertigem Eisen, "
+            "das vom Darm wesentlich besser aufgenommen wird. Studien zeigen eine 2-3-fach "
+            "höhere Absorptionsrate wenn beide zusammen eingenommen werden."
+        ),
+        "dosage_hint": "Zusammen auf nüchternen Magen — kein Kaffee/Tee dabei",
+    },
+    {
+        "id": "zink-selen",
+        "substances": ["Zink (Bisglycinat)", "Selen"],
+        "evidence_level": "yellow",
+        "synergy_score": 74,
+        "synergy_explanation": (
+            "Zink und Selen sind beides essenzielle Spurenelemente für das Immunsystem "
+            "und wirken synergistisch als Antioxidantien. Beide aktivieren verschiedene "
+            "Enzyme der Immunabwehr und ergänzen sich ohne gegenseitige Hemmung."
+        ),
+        "dosage_hint": "Morgens zum Frühstück — nicht mit Milchprodukten",
+    },
+    {
+        "id": "ashwagandha-magnesium",
+        "substances": ["Ashwagandha (KSM-66)", "Magnesium Bisglycinat"],
+        "evidence_level": "yellow",
+        "synergy_score": 80,
+        "synergy_explanation": (
+            "Ashwagandha senkt den Cortisolspiegel über die HPA-Achse, "
+            "während Magnesium direkt das Nervensystem beruhigt und die Schlafqualität verbessert. "
+            "Die Kombination adressiert Stress auf zwei verschiedenen Wegen gleichzeitig."
+        ),
+        "dosage_hint": "Beide abends 1h vor dem Schlafen nehmen",
+    },
+    {
+        "id": "coq10-omega3",
+        "substances": ["Coenzym Q10", "Omega-3 (EPA/DHA)"],
+        "evidence_level": "yellow",
+        "synergy_score": 76,
+        "synergy_explanation": (
+            "CoQ10 verbessert die mitochondriale Energieproduktion, "
+            "Omega-3 reduziert die Entzündungslast die Mitochondrien belastet. "
+            "Zusammen zeigen Studien positive Effekte auf kardiovaskuläre Gesundheit und Energie."
+        ),
+        "dosage_hint": "Beide fettlöslich — zum Mittagessen für beste Aufnahme",
+    },
+]
+
+
+def _get_fallback_synergies(goal: str, n: int = 3) -> list[dict]:
+    """
+    Wählt n Fallback-Synergien aus basierend auf Keyword-Matching mit dem Ziel.
+    Gibt immer mindestens die n besten Synergien zurück.
+    """
+    goal_lower = goal.lower()
+
+    # Ziel-spezifische Gewichtung
+    boost = {
+        "schlaf": ["magnesium-b6", "ashwagandha-magnesium"],
+        "stress": ["ashwagandha-magnesium", "magnesium-b6"],
+        "energie": ["coq10-omega3", "omega3-vitamin-d3"],
+        "immunsystem": ["zink-selen", "vitamin-d3-k2", "omega3-vitamin-d3"],
+        "immun": ["zink-selen", "vitamin-d3-k2"],
+        "knochen": ["vitamin-d3-k2", "eisen-vitamin-c"],
+        "basis": ["vitamin-d3-k2", "omega3-vitamin-d3", "magnesium-b6"],
+        "eisen": ["eisen-vitamin-c"],
+        "erschöpf": ["coq10-omega3", "eisen-vitamin-c", "magnesium-b6"],
+        "müd": ["coq10-omega3", "eisen-vitamin-c"],
+        "fokus": ["omega3-vitamin-d3", "magnesium-b6"],
+        "sport": ["magnesium-b6", "coq10-omega3"],
+    }
+
+    priority_ids: list[str] = []
+    for keyword, ids in boost.items():
+        if keyword in goal_lower:
+            for sid in ids:
+                if sid not in priority_ids:
+                    priority_ids.append(sid)
+
+    # Synergien nach Priorität sortieren
+    id_index = {s["id"]: s for s in _SYNERGY_FALLBACKS}
+    result = [id_index[sid] for sid in priority_ids if sid in id_index]
+
+    # Auffüllen mit restlichen bis n erreicht
+    for s in _SYNERGY_FALLBACKS:
+        if len(result) >= n:
+            break
+        if s not in result:
+            result.append(s)
+
+    # Score leicht anpassen damit Ziel-relevante Synergien oben stehen
+    adjusted = []
+    for i, s in enumerate(result[:n]):
+        adjusted.append({**s, "synergy_score": max(0, s["synergy_score"] - i * 3)})
+    return adjusted
+
+
 DUPLICATE_CHECK_PROMPT = """Du prüfst ob ein neues Supplement Wirkstoffe enthält die bereits im Stack des Nutzers vorhanden sind.
 
 REGELN:
@@ -717,3 +871,80 @@ class ClaudeService:
         except (json.JSONDecodeError, KeyError) as e:
             logger.error(f"Food-Sources JSON Fehler: {e}\nRaw: {raw}")
             return []
+
+    async def get_synergies(
+        self, profile: UserProfile, goal: str,
+    ) -> SynergyResponse:
+        """
+        Generiert Claude-basierte Synergie-Empfehlungen für ein Nutzerprofil + Ziel.
+        Gibt 3–4 Wirkstoff-Kombinationen zurück die sich nachweislich gegenseitig verstärken.
+        """
+        season = _get_season()
+        gender_map = {"male": "männlich", "female": "weiblich", "diverse": "divers"}
+        sport_map = {
+            "none": "kaum aktiv",
+            "light": "leicht aktiv (1-2x/Woche)",
+            "moderate": "moderat aktiv (3-4x/Woche)",
+            "intense": "sehr aktiv (5+x/Woche)",
+        }
+
+        profile_lines = [
+            f"Alter: {profile.age} Jahre",
+            f"Geschlecht: {gender_map.get(profile.gender, profile.gender)}",
+            f"Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}",
+            f"Jahreszeit: {season}",
+        ]
+        if profile.conditions:
+            profile_lines.append(f"Erkrankungen: {', '.join(profile.conditions)}")
+        if profile.medications:
+            profile_lines.append(f"Dauermedikamente: {', '.join(profile.medications)}")
+        if profile.is_pregnant:
+            profile_lines.append("Schwanger / stillend: ja")
+
+        user_msg = (
+            f"NUTZERPROFIL:\n" + "\n".join(f"- {l}" for l in profile_lines) +
+            f"\n\nZIEL: {goal}\n\n"
+            "Empfehle 3–4 Supplement-Synergien die für dieses Profil und Ziel besonders relevant sind."
+        )
+
+        logger.info(f"Synergy-Anfrage: Ziel='{goal}', Alter={profile.age}")
+
+        synergies: list[SynergyRecommendation] = []
+        try:
+            message = await self.client.messages.create(
+                model=settings.claude_model,
+                max_tokens=1024,
+                system=SYNERGY_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_msg}],
+            )
+
+            raw = _extract_json(message.content[0].text.strip())
+            logger.debug(f"Synergy raw response: {raw[:300]}")
+            data = json.loads(raw)
+            for item in data.get("synergies", []):
+                synergies.append(SynergyRecommendation(
+                    id=item["id"],
+                    substances=item["substances"],
+                    evidence_level=EvidenceLevel(item["evidence_level"]),
+                    synergy_score=max(0, min(100, int(item.get("synergy_score", 70)))),
+                    synergy_explanation=item["synergy_explanation"],
+                    dosage_hint=item.get("dosage_hint"),
+                ))
+            logger.info(f"Synergy Claude: {len(synergies)} Synergien für Ziel='{goal}'")
+        except Exception as e:
+            logger.warning(f"Synergy Claude-Call fehlgeschlagen ({e}) — verwende Fallback")
+
+        # Fallback wenn Claude 0 Synergien liefert oder fehlschlägt
+        if not synergies:
+            logger.info(f"Synergy Fallback aktiv für Ziel='{goal}'")
+            for item in _get_fallback_synergies(goal, n=3):
+                synergies.append(SynergyRecommendation(
+                    id=item["id"],
+                    substances=item["substances"],
+                    evidence_level=EvidenceLevel(item["evidence_level"]),
+                    synergy_score=item["synergy_score"],
+                    synergy_explanation=item["synergy_explanation"],
+                    dosage_hint=item.get("dosage_hint"),
+                ))
+
+        return SynergyResponse(goal=goal, synergies=synergies)

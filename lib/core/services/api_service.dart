@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants/app_constants.dart';
+import '../error/failures.dart';
 import '../services/url_config_service.dart';
 import '../../features/onboarding/domain/models/user_profile.dart';
 import '../../features/recommendations/domain/models/supplement.dart';
@@ -381,6 +382,47 @@ class ApiService {
     return {};
   }
 
+  /// Lädt Claude-generierte Synergie-Empfehlungen für ein Profil + Ziel.
+  /// Gibt leere Liste zurück wenn Backend nicht erreichbar.
+  Future<List<SupplementSynergy>> getSynergies({
+    required UserProfile profile,
+    required String goal,
+  }) async {
+    final body = jsonEncode({
+      'profile': _profileToJson(profile),
+      'goal': goal,
+      'limit': 5,        // RecommendationRequest erwartet limit, Endpoint ignoriert es
+      'exclude_ids': [],
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/synergies'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 25));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final list = data['synergies'] as List<dynamic>? ?? [];
+        return list
+            .map((e) => SupplementSynergy.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        debugPrint('Synergy API Fehler ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      debugPrint('Synergy-Fehler (ignoriert): $e');
+      return [];
+    }
+  }
+
   /// Lädt natürliche Lebensmittelquellen für einen Nährstoff (lazy, on-demand).
   Future<List<FoodSource>> getFoodSources({
     required String supplementName,
@@ -421,11 +463,12 @@ class ApiService {
   }
 }
 
-class ApiException implements Exception {
-  final String message;
-  const ApiException(this.message);
-  @override
-  String toString() => message;
+/// Netzwerk-/API-Fehler aus dem Backend.
+/// Erweitert [NetworkFailure] aus der AppFailure-Hierarchie —
+/// bestehende `on ApiException`-Catches funktionieren weiterhin,
+/// neu geschriebener Code kann `on AppFailure` verwenden.
+class ApiException extends NetworkFailure {
+  const ApiException(String message) : super(message: message);
 }
 
 /// Ergebnis der KI-basierten Duplikatprüfung.

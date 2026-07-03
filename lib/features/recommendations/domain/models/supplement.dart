@@ -103,6 +103,47 @@ class SecondaryBenefit {
       };
 }
 
+/// Eine Synergie-Empfehlung — Kombination von Wirkstoffen die sich gegenseitig verstärken.
+class SupplementSynergy {
+  final String id;
+  /// Die beteiligten Wirkstoffe (z.B. ["Magnesium Bisglycinat", "Vitamin B6"])
+  final List<String> substances;
+  final EvidenceLevel evidenceLevel;
+  /// Passgenauigkeit für das aktuelle Ziel: 0–100
+  final int synergyScore;
+  /// Mechanistische Erklärung warum diese Kombination wirkt
+  final String synergyExplanation;
+  /// Optionaler kombinierter Einnahmehinweis
+  final String? dosageHint;
+
+  const SupplementSynergy({
+    required this.id,
+    required this.substances,
+    required this.evidenceLevel,
+    required this.synergyScore,
+    required this.synergyExplanation,
+    this.dosageHint,
+  });
+
+  factory SupplementSynergy.fromJson(Map<String, dynamic> json) {
+    final rawSubstances = json['substances'] as List<dynamic>? ?? [];
+    return SupplementSynergy(
+      id: json['id'] as String,
+      substances: rawSubstances.map((e) => e as String).toList(),
+      evidenceLevel: _parseLevel(json['evidence_level'] as String? ?? 'yellow'),
+      synergyScore: (json['synergy_score'] as num?)?.toInt() ?? 70,
+      synergyExplanation: json['synergy_explanation'] as String? ?? '',
+      dosageHint: json['dosage_hint'] as String?,
+    );
+  }
+
+  static EvidenceLevel _parseLevel(String raw) => switch (raw) {
+        'green' => EvidenceLevel.green,
+        'red' => EvidenceLevel.red,
+        _ => EvidenceLevel.yellow,
+      };
+}
+
 /// Ein Supplement mit allen relevanten Informationen für die Card-Anzeige.
 class Supplement {
   final String id;

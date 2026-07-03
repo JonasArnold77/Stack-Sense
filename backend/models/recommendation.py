@@ -65,3 +65,18 @@ class RecommendationResponse(BaseModel):
         "Diese Informationen ersetzen keine medizinische Beratung. "
         "Bitte sprich mit einem Arzt oder Apotheker."
     )
+
+
+class SynergyRecommendation(BaseModel):
+    """Eine Synergie zwischen zwei oder mehr Wirkstoffen."""
+    id: str                          # z.B. "magnesium-b6"
+    substances: list[str]            # z.B. ["Magnesium Bisglycinat", "Vitamin B6"]
+    evidence_level: EvidenceLevel    # Grün/Gelb/Rot für die Synergie selbst
+    synergy_score: int               # 0–100: Passgenauigkeit für aktuelles Ziel
+    synergy_explanation: str         # Warum diese Kombination wirkt (2–3 Sätze)
+    dosage_hint: Optional[str] = None  # Kombinierter Einnahmehinweis
+
+
+class SynergyResponse(BaseModel):
+    goal: str
+    synergies: list[SynergyRecommendation]

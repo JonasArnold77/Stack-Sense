@@ -5,7 +5,7 @@ import json
 import os
 
 from models.profile import RecommendationRequest
-from models.recommendation import RecommendationResponse, ProductLink
+from models.recommendation import RecommendationResponse, ProductLink, SynergyResponse
 from services.claude_service import ClaudeService
 from services.pubmed_service import PubMedService
 
@@ -203,6 +203,32 @@ async def get_studies(request: StudiesRequest) -> dict:
     except Exception as e:
         logger.error(f"Studies-Fehler: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Studien konnten nicht geladen werden")
+
+
+class SynergyRequest(BaseModel):
+    profile: dict
+    goal: str
+
+
+@router.post("/synergies", response_model=SynergyResponse)
+async def get_synergies(request: RecommendationRequest) -> SynergyResponse:
+    """
+    Gibt Claude-generierte Synergie-Empfehlungen zurück.
+
+    Analysiert Nutzerprofil + Ziel und empfiehlt 3–4 Wirkstoff-Kombinationen
+    die sich nachweislich gegenseitig verstärken.
+    """
+    try:
+        result = await claude_service.get_synergies(
+            profile=request.profile,
+            goal=request.goal,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        logger.error(f"Synergy-Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Synergien konnten nicht geladen werden")
 
 
 @router.get("/health")

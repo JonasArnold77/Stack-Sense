@@ -1,13 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/constants/app_constants.dart';
 import '../domain/models/xp_level.dart';
+import '../domain/repositories/xp_repository.dart';
+import 'repositories/xp_repository_impl.dart';
 
-/// Verwaltet den gesamten XP-Stand des Nutzers.
-/// Persistiert in SharedPreferences.
+// ---------------------------------------------------------------------------
+// Repository-Provider
+// ---------------------------------------------------------------------------
+
+final xpRepositoryProvider = Provider<XpRepository>(
+  (ref) => SharedPreferencesXpRepository(),
+);
+
+// ---------------------------------------------------------------------------
+// StateNotifier — XP-Stand und Level-Berechnung.
+// ---------------------------------------------------------------------------
+
 class XpNotifier extends StateNotifier<int> {
-  XpNotifier() : super(0) {
+  final XpRepository _repository;
+
+  XpNotifier(this._repository) : super(0) {
     _load();
   }
 
@@ -17,18 +29,16 @@ class XpNotifier extends StateNotifier<int> {
   /// XP hinzufügen und speichern
   Future<void> addXp(int amount) async {
     state = state + amount;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(AppConstants.keyUserXp, state);
+    await _repository.saveXp(state);
   }
 
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    state = prefs.getInt(AppConstants.keyUserXp) ?? 0;
+    state = await _repository.getXp();
   }
 }
 
 final xpProvider = StateNotifierProvider<XpNotifier, int>(
-  (ref) => XpNotifier(),
+  (ref) => XpNotifier(ref.read(xpRepositoryProvider)),
 );
 
 /// Convenience-Provider: gibt direkt das XpLevel-Objekt zurück

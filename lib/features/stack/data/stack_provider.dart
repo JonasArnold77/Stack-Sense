@@ -1,29 +1,69 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/constants/app_constants.dart';
-import '../domain/models/stack_entry.dart';
 import '../../recommendations/domain/models/supplement.dart';
+import '../domain/models/stack_entry.dart';
+import '../domain/repositories/stack_repository.dart';
+import 'repositories/stack_repository_impl.dart';
 
-/// Verwaltet den Supplement-Stack des Nutzers.
-/// Persistiert automatisch in SharedPreferences bei jeder Änderung.
+// ---------------------------------------------------------------------------
+// Repository-Provider — einziger Ort wo die konkrete Implementierung genannt wird.
+// In Tests kann dieser Provider überschrieben werden (z.B. InMemoryStackRepository).
+// ---------------------------------------------------------------------------
+
+final stackRepositoryProvider = Provider<StackRepository>(
+  (ref) => SharedPreferencesStackRepository(),
+);
+
+// ---------------------------------------------------------------------------
+// StateNotifier — Business Logic für den Supplement-Stack.
+// Kennt nur das StackRepository-Interface, nie SharedPreferences direkt.
+// ---------------------------------------------------------------------------
+
 class StackNotifier extends StateNotifier<List<StackEntry>> {
-  StackNotifier() : super([]) {
-    _loadFromPrefs();
+  final StackRepository _repository;
+
+  StackNotifier(this._repository) : super([]) {
+    _load();
   }
 
-  // --- Öffentliche API ---
+  // --- Öffentliche Abfragen ---
 
   bool contains(String supplementId) =>
       state.any((e) => e.id == supplementId);
 
+  List<StackEntry> forSlot(IntakeSlot slot) =>
+      state.where((e) => e.intakeSlot == slot).toList();
+
+  // --- Mutationen ---
+
   /// Einfaches Hinzufügen ohne Duplikat-Check (intern / nach Dialog-Bestätigung).
-  Future<void> add(Supplement supplement) async {
+  /// [goalId]      – wenn angegeben, wird das Supplement diesem Ziel zugeordnet.
+  /// [goalContext] – Anzeige-Name des Problemfelds / Phasenziels (z.B. "Schlaf").
+  Future<void> add(
+    Supplement supplement, {
+    String? goalId,
+    String? goalContext,
+  }) async {
     if (contains(supplement.id)) return;
-    final entry = StackEntry.fromSupplement(supplement);
+    var entry = StackEntry.fromSupplement(supplement);
+    entry = entry.copyWith(
+      goalIds: goalId != null ? [goalId] : entry.goalIds,
+      addedFromGoals: goalContext != null ? [goalContext] : entry.addedFromGoals,
+    );
     state = [...state, entry];
-    await _saveToPrefs();
+    await _persist();
+  }
+
+  /// Fügt einen weiteren Ziel-Kontext zum bestehenden Stack-Eintrag hinzu.
+  /// Doppelte werden ignoriert. Wird aufgerufen wenn der Nutzer auf einer anderen
+  /// Problemfeld-/Phasenziel-Karte auf "+ [Ziel]" tippt.
+  Future<void> addGoalContext(String supplementId, String goalName) async {
+    state = state.map((e) {
+      if (e.id != supplementId) return e;
+      if (e.addedFromGoals.contains(goalName)) return e; // bereits vorhanden
+      return e.copyWith(addedFromGoals: [...e.addedFromGoals, goalName]);
+    }).toList();
+    await _persist();
   }
 
   /// Hinzufügen mit Duplikat-Warnflag (wenn Nutzer "Beides behalten" wählt).
@@ -32,42 +72,42 @@ class StackNotifier extends StateNotifier<List<StackEntry>> {
     final entry = StackEntry.fromSupplement(supplement)
         .copyWith(hasDuplicateWarning: true);
     state = [...state, entry];
-    await _saveToPrefs();
+    await _persist();
   }
 
   Future<void> remove(String supplementId) async {
     state = state.where((e) => e.id != supplementId).toList();
-    await _saveToPrefs();
+    await _persist();
   }
 
   /// Mehrere Einträge auf einmal entfernen (Duplikat-Bereinigung).
   Future<void> removeMany(List<String> ids) async {
     state = state.where((e) => !ids.contains(e.id)).toList();
-    await _saveToPrefs();
+    await _persist();
   }
 
-  /// Setzt hasDuplicateWarning=true für bestehende Einträge (wenn "Beides behalten").
+  /// Setzt hasDuplicateWarning=true für bestehende Einträge.
   Future<void> markDuplicateWarnings(List<String> ids) async {
     state = state
         .map((e) => ids.contains(e.id) ? e.copyWith(hasDuplicateWarning: true) : e)
         .toList();
-    await _saveToPrefs();
+    await _persist();
   }
 
   Future<void> clear() async {
     state = [];
-    await _saveToPrefs();
+    await _persist();
   }
 
   /// Fügt ein Supplement als temporären Phasenziel-Eintrag zum Stack hinzu.
-  /// Das Supplement wird mit [phaseGoalId] und [endDate] markiert.
+  /// [goalContext] – Phasenziel-Name (z.B. "Marathon-Vorbereitung") für den Source-Badge.
   Future<void> addForPhaseGoal({
     required Supplement supplement,
     required String phaseGoalId,
     required DateTime endDate,
+    String? goalContext,
   }) async {
     if (contains(supplement.id)) return;
-    // fromSupplement baut den Basis-Entry; wir rekonstruieren ihn mit Phase-Feldern.
     final base = StackEntry.fromSupplement(supplement);
     final entry = StackEntry(
       id: base.id,
@@ -85,16 +125,17 @@ class StackNotifier extends StateNotifier<List<StackEntry>> {
       categories: base.categories,
       phaseGoalId: phaseGoalId,
       phaseEndDate: endDate,
+      addedFromGoals: goalContext != null ? [goalContext] : const [],
       addedAt: DateTime.now(),
     );
     state = [...state, entry];
-    await _saveToPrefs();
+    await _persist();
   }
 
   /// Entfernt alle Stack-Einträge die zu einem bestimmten Phasenziel gehören.
   Future<void> removeByPhaseGoal(String phaseGoalId) async {
     state = state.where((e) => e.phaseGoalId != phaseGoalId).toList();
-    await _saveToPrefs();
+    await _persist();
   }
 
   /// Entfernt automatisch alle abgelaufenen Phasenziel-Supplements.
@@ -102,55 +143,39 @@ class StackNotifier extends StateNotifier<List<StackEntry>> {
   Future<List<String>> removeExpiredPhaseSupplements() async {
     final now = DateTime.now();
     final expired = state
-        .where((e) =>
-            e.phaseEndDate != null && now.isAfter(e.phaseEndDate!))
+        .where((e) => e.phaseEndDate != null && now.isAfter(e.phaseEndDate!))
         .map((e) => e.phaseGoalId!)
         .toSet()
         .toList();
     if (expired.isNotEmpty) {
       state = state
-          .where((e) =>
-              e.phaseEndDate == null || !now.isAfter(e.phaseEndDate!))
+          .where((e) => e.phaseEndDate == null || !now.isAfter(e.phaseEndDate!))
           .toList();
-      await _saveToPrefs();
+      await _persist();
     }
     return expired;
   }
 
-  /// Setzt addedAt aller Stack-Einträge auf ~14 Tage zurück.
-  /// Wird für die Verlaufs-Simulation verwendet damit Korrelationen sichtbar werden.
-  /// Die Supplements sind dann "in Woche 2" hinzugekommen — passend zur Simulationskurve.
+  /// Backdating für Simulation — setzt addedAt aller Einträge 14 Tage zurück.
   Future<void> backdateForSimulation() async {
     if (state.isEmpty) return;
     final baseDate = DateTime.now().subtract(const Duration(days: 14));
-    state = state
-        .map((e) => e.copyWith(addedAt: baseDate))
-        .toList();
-    await _saveToPrefs();
+    state = state.map((e) => e.copyWith(addedAt: baseDate)).toList();
+    await _persist();
   }
 
-  /// Alle Einträge für einen bestimmten Zeitslot
-  List<StackEntry> forSlot(IntakeSlot slot) =>
-      state.where((e) => e.intakeSlot == slot).toList();
+  // --- Duplikat-Erkennung ---
 
   /// Findet alle Stack-Einträge deren Wirkstoffe mit dem neuen Supplement überlappen.
-  ///
-  /// Matching-Logik (case-insensitiv, substring):
-  /// - Gruppen-Supplement: jedes Element in enthalteneWirkstoffe gegen bestehende Einträge
-  /// - Einzel-Supplement: name/substanceName gegen enthalteneWirkstoffe aller Gruppen
   List<StackEntry> findDuplicates(Supplement supplement) {
     final newWirkstoffe = _wirkstoffeOf(supplement);
     return state.where((entry) {
       final entryWirkstoffe = _wirkstoffeOfEntry(entry);
-      // Überlappung wenn mindestens ein Wirkstoff auf beiden Seiten matched
       return newWirkstoffe.any((nw) =>
           entryWirkstoffe.any((ew) => _matches(nw, ew)));
     }).toList();
   }
 
-  // --- Hilfsmethoden für Duplikat-Erkennung ---
-
-  /// Liefert alle Wirkstoffe eines Supplements (lowercase).
   List<String> _wirkstoffeOf(Supplement s) {
     if (s.supplementType == SupplementType.group) {
       return s.enthalteneWirkstoffe.map((w) => w.toLowerCase()).toList();
@@ -161,7 +186,6 @@ class StackNotifier extends StateNotifier<List<StackEntry>> {
     ];
   }
 
-  /// Liefert alle Wirkstoffe eines StackEntry (lowercase).
   List<String> _wirkstoffeOfEntry(StackEntry e) {
     if (e.supplementType == SupplementType.group) {
       return e.enthalteneWirkstoffe.map((w) => w.toLowerCase()).toList();
@@ -172,36 +196,19 @@ class StackNotifier extends StateNotifier<List<StackEntry>> {
     ];
   }
 
-  /// Exakter case-insensitiver Match auf den vollen Wirkstoff-Namen.
-  /// Da wir eine Supplement-Datenbank mit standardisierten Bezeichnungen nutzen,
-  /// reicht exakter Vergleich — keine Substring-Logik nötig.
   bool _matches(String a, String b) => a.toLowerCase() == b.toLowerCase();
 
-  // --- Persistenz ---
+  // --- Persistenz (nur über Repository-Interface) ---
 
-  Future<void> _loadFromPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(AppConstants.keyUserStack);
-      if (raw == null) return;
-      final list = jsonDecode(raw) as List<dynamic>;
-      state = list
-          .map((e) => StackEntry.fromJson(e as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      // Korrupte Daten ignorieren — Stack leer starten
-      state = [];
-    }
+  Future<void> _load() async {
+    state = await _repository.getAll();
   }
 
-  Future<void> _saveToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = jsonEncode(state.map((e) => e.toJson()).toList());
-    await prefs.setString(AppConstants.keyUserStack, encoded);
+  Future<void> _persist() async {
+    await _repository.saveAll(state);
   }
 }
 
-final stackProvider =
-    StateNotifierProvider<StackNotifier, List<StackEntry>>(
-  (ref) => StackNotifier(),
+final stackProvider = StateNotifierProvider<StackNotifier, List<StackEntry>>(
+  (ref) => StackNotifier(ref.read(stackRepositoryProvider)),
 );

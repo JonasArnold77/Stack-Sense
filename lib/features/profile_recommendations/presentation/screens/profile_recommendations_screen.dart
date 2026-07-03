@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -247,8 +248,8 @@ class _ProfileRecommendationsScreenState
           _hasMore = results.length >= _pageSize;
         });
       }
-    } catch (_) {
-      // Beim Nachladen stumm bleiben
+    } on AppFailure catch (_) {
+      // Beim Nachladen stumm bleiben — kein Snackbar, kein Error-State
     } finally {
       if (mounted) setState(() => _isLoadingMore = false);
     }
@@ -259,7 +260,7 @@ class _ProfileRecommendationsScreenState
   void _addToStack(Supplement supplement) {
     final notifier = ref.read(stackProvider.notifier);
     if (ref.read(stackProvider).any((e) => e.id == supplement.id)) return;
-    notifier.add(supplement);
+    notifier.add(supplement, goalContext: 'Basissupplementierung');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('${supplement.name} zum Stack hinzugefügt'),
       backgroundColor: AppColors.evidenceGreen,
@@ -414,6 +415,7 @@ class _ProfileRecommendationsScreenState
                         supplement: s,
                         isInStack: inStack,
                         rank: i < 3 ? i + 1 : null,
+                        goalContext: 'Basissupplementierung',
                         onAddToStack: inStack ? null : () => _addToStack(s),
                       ),
                     );
