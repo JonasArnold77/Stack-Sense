@@ -25,7 +25,10 @@ import '../widgets/synergy_card.dart';
 const _pageSize = 4;
 
 class RecommendationsScreen extends ConsumerStatefulWidget {
-  const RecommendationsScreen({super.key});
+  /// Optionales Startziel — wenn gesetzt wird es beim ersten Build direkt geladen.
+  final String? initialGoal;
+
+  const RecommendationsScreen({super.key, this.initialGoal});
 
   @override
   ConsumerState<RecommendationsScreen> createState() =>
@@ -54,6 +57,12 @@ class _RecommendationsScreenState
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    // Direkt das übergebene Ziel laden (z.B. aus GoalProgressScreen)
+    if (widget.initialGoal != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadRecommendations(widget.initialGoal!);
+      });
+    }
   }
 
   @override

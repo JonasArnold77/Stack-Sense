@@ -9,14 +9,12 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../checkin/data/checkin_provider.dart';
 import '../../../gamification/data/xp_provider.dart';
 import '../../../insights/data/insights_provider.dart';
-import '../../../phase_goals/presentation/widgets/phase_goals_home_panel.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/data/taken_provider.dart';
 import '../widgets/checkin_summary_card.dart';
 import '../widgets/daily_insights_panel.dart';
-import '../widgets/discover_card.dart';
+import '../widgets/goal_progress_panel.dart';
 import '../widgets/insight_snippet_card.dart';
-import '../widgets/phase_goals_card.dart';
 import '../widgets/plan_card.dart';
 import '../widgets/profile_recommendations_banner.dart';
 import '../widgets/progress_card.dart';
@@ -122,22 +120,9 @@ class HeuteScreen extends ConsumerWidget {
                   const ProfileRecommendationsBanner(),
                 ],
 
-                // Aktive Phasenziele
+                // Meine Ziele — Prominentes Panel
                 const SizedBox(height: AppConstants.spaceL),
-                const PhaseGoalsHomePanel(),
-                const SizedBox(height: AppConstants.spaceS),
-
-                // Phasenziele Einstieg
-                PhaseGoalsCard(
-                  onTap: () => context.push(AppRoutes.phaseGoals),
-                ),
-
-                const SizedBox(height: AppConstants.spaceL),
-
-                // Entdecken Schnellzugang
-                DiscoverCard(
-                  onTap: () => context.go(AppRoutes.recommendations),
-                ),
+                const GoalProgressPanel(),
 
                 const SizedBox(height: AppConstants.spaceL),
 

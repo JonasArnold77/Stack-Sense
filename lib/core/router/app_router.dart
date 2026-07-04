@@ -17,6 +17,7 @@ import '../../features/profile_recommendations/presentation/screens/profile_reco
 import '../../features/phase_goals/presentation/screens/phase_goals_screen.dart';
 import '../../features/phase_goals/presentation/screens/phase_goal_recommendations_screen.dart';
 import '../../features/phase_goals/presentation/screens/phase_goal_detail_screen.dart';
+import '../../features/goal_progress/presentation/screens/goal_progress_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/confirm_email_screen.dart';
@@ -52,6 +53,7 @@ class AppRoutes {
   static const String phaseGoals = '/phase-goals';
   static const String phaseGoalRecommendations = '/phase-goals/recommendations';
   static const String phaseGoalDetail = '/phase-goals/detail';
+  static const String goalProgress = '/goal-progress';
 }
 
 // Routen die ohne Login zugänglich sind
@@ -198,6 +200,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           return PhaseGoalDetailScreen(goalId: goalId);
         },
       ),
+      GoRoute(
+        path: AppRoutes.goalProgress,
+        name: 'goalProgress',
+        builder: (context, state) {
+          final goalName = state.extra as String;
+          return GoalProgressScreen(goalName: goalName);
+        },
+      ),
 
       // --- Haupt-App (Shell mit Bottom Navigation) ---
       ShellRoute(
@@ -216,7 +226,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.recommendations,
             name: 'recommendations',
-            builder: (context, state) => const RecommendationsScreen(),
+            builder: (context, state) => RecommendationsScreen(
+              initialGoal: state.extra as String?,
+            ),
           ),
           GoRoute(
             path: AppRoutes.stack,
