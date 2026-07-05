@@ -27,17 +27,27 @@ _CACHE_TTL = 6 * 3600  # 6 Stunden
 
 
 def _cache_key(goal: str, profile: UserProfile, limit: int, exclude_ids: list[str]) -> str:
-    """Erzeugt einen stabilen Cache-Key aus den relevanten Anfrage-Parametern."""
-    relevant = {
-        "goal": goal,
-        "age": profile.age,
-        "sex": profile.gender,
-        "conditions": sorted(profile.conditions or []),
-        "medications": sorted(profile.medications or []),
-        "sport": profile.sport_level,
-        "limit": limit,
-        "exclude": sorted(exclude_ids),
-    }
+    """Erzeugt einen stabilen Cache-Key aus den relevanten Anfrage-Parametern.
+    Für Basis-Supplementierung wird das vollständige Profil einbezogen;
+    für alle anderen Ziele (Problemfelder / Phasenziele) zählt nur das Ziel selbst.
+    """
+    if goal == "Basis-Supplementierung":
+        relevant = {
+            "goal": goal,
+            "age": profile.age,
+            "sex": profile.gender,
+            "conditions": sorted(profile.conditions or []),
+            "medications": sorted(profile.medications or []),
+            "sport": profile.sport_level,
+            "limit": limit,
+            "exclude": sorted(exclude_ids),
+        }
+    else:
+        relevant = {
+            "goal": goal,
+            "limit": limit,
+            "exclude": sorted(exclude_ids),
+        }
     raw = json.dumps(relevant, ensure_ascii=False, sort_keys=True)
     return hashlib.md5(raw.encode()).hexdigest()
 
@@ -613,20 +623,22 @@ def _build_user_message(
         "intense": "sehr aktiv (5+x/Woche)",
     }
 
-    lines = ["NUTZERPROFIL:"]
-    lines.append(f"- Alter: {profile.age} Jahre")
-    lines.append(f"- Geschlecht: {gender_map.get(profile.gender, profile.gender)}")
-    lines.append(f"- Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}")
-    lines.append(f"- Jahreszeit: {season}")
-
-    if profile.conditions:
-        lines.append(f"- Erkrankungen: {', '.join(profile.conditions)}")
-    if profile.medications:
-        lines.append(f"- Dauermedikamente: {', '.join(profile.medications)}")
-    if profile.is_pregnant:
-        lines.append("- Schwanger / stillend: ja")
-
     if goal == "Basis-Supplementierung":
+        # Basis: vollständiges Profil einbeziehen — die Empfehlung soll
+        # individuell auf Alter, Geschlecht, Erkrankungen usw. abgestimmt sein.
+        lines = ["NUTZERPROFIL:"]
+        lines.append(f"- Alter: {profile.age} Jahre")
+        lines.append(f"- Geschlecht: {gender_map.get(profile.gender, profile.gender)}")
+        lines.append(f"- Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}")
+        lines.append(f"- Jahreszeit: {season}")
+
+        if profile.conditions:
+            lines.append(f"- Erkrankungen: {', '.join(profile.conditions)}")
+        if profile.medications:
+            lines.append(f"- Dauermedikamente: {', '.join(profile.medications)}")
+        if profile.is_pregnant:
+            lines.append("- Schwanger / stillend: ja")
+
         lines.append(
             "\nGEWÜNSCHTES ZIEL: Basis-Supplementierung\n"
             "Empfehle alle Supplements die für dieses Profil grundsätzlich sinnvoll sind — "
@@ -640,7 +652,9 @@ def _build_user_message(
             "- secondary_benefit = null bei ALLEN Supplements. Es gibt keine zweite Ebene."
         )
     else:
-        lines.append(f"\nGEWÜNSCHTES ZIEL: {goal}")
+        # Problemfelder & Phasenziele: kein Profil — Empfehlung gilt allgemein
+        # für das Ziel, unabhängig von individuellen Nutzerdaten.
+        lines = [f"GEWÜNSCHTES ZIEL: {goal}"]
     lines.append(f"\nLIMIT: Generiere exakt {limit} Supplements.")
 
     if exclude_ids:
@@ -675,12 +689,19 @@ class ClaudeService:
             return cached
 
         # --- Kontext aufbauen: DB + PubMed + Vector parallel ---
+        # Für Problemfelder / Phasenziele: kein Profilbezug — rein zielbasiert.
+        # Für Basis-Supplementierung: vollständiges Profil einbeziehen.
+        is_basis = goal == "Basis-Supplementierung"
         db_context = _build_db_context(
-            medications=profile.medications or [],
-            conditions=profile.conditions or [],
+            medications=profile.medications or [] if is_basis else [],
+            conditions=profile.conditions or [] if is_basis else [],
         )
 
-        query_text = f"{goal} supplement {profile.conditions or ''} {profile.medications or ''}"
+        query_text = (
+            f"{goal} supplement {profile.conditions or ''} {profile.medications or ''}"
+            if is_basis
+            else f"{goal} supplement"
+        )
 
         # Nur Vector-DB — kein PubMed live fetch (zu langsam, Daten bereits in Vector-DB)
         vector_context = vector_search(query_text, supplement_names=[], top_k=8) or ""
