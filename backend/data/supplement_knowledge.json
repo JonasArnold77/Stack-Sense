@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "source": "Kuratiert aus EFSA, NIH ODS, Examine.com (public), PubMed Reviews",
+  "source": "LLM-synthetisiert (Claude) aus PubMed-Abstracts via scripts/generate_supplement_db.py — NICHT direkt aus EFSA/NIH ODS/Examine.com transkribiert. Unabhängig verifizierte Fakten aus EFSA, NIH ODS, openFDA CAERS und NIH DSLD liegen separat als Vektor-Embeddings in der Tabelle supplement_facts (siehe scripts/populate_efsa.py, populate_nih_ods.py, populate_openfda_caers.py, populate_dsld.py) und werden zur Laufzeit über vector_service.search_studies() zusätzlich in den Claude-Kontext geladen.",
   "supplements": {
     "vitamin-d3": {
       "name": "Vitamin D3",

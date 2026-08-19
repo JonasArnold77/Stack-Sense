@@ -15,6 +15,7 @@ from models.recommendation import RecommendationResponse, SupplementRecommendati
 from data.products import get_products
 from services.pubmed_service import PubMedService
 from services.vector_service import search_studies as vector_search
+from services.rxnorm_service import RxNormService
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,16 @@ except Exception as e:
     logger.error(f"Supplement-DB konnte nicht geladen werden: {e}")
     _SUPPLEMENT_DB = {}
 
+# --- RxNorm Singleton (lazy) — Fallback-Normalisierung für Medikamentennamen ---
+_rxnorm_service: RxNormService | None = None
+
+
+def _get_rxnorm() -> RxNormService:
+    global _rxnorm_service
+    if _rxnorm_service is None:
+        _rxnorm_service = RxNormService()
+    return _rxnorm_service
+
 
 # --- Fester Gruppen-Supplement Platzhalter (immer angehängt) ---
 _BKOMPLEX = SupplementRecommendation(
@@ -108,7 +119,7 @@ def _get_season() -> str:
     return "Herbst"
 
 
-def _severity_from_db(supplement_id: str, medications: list[str]) -> tuple[InteractionSeverity, str | None]:
+async def _severity_from_db(supplement_id: str, medications: list[str]) -> tuple[InteractionSeverity, str | None]:
     """
     Sucht in der lokalen DB nach Wechselwirkungen zwischen dem Supplement
     und den Medikamenten des Nutzers. Gibt die schlimmste Severity + Text zurück.
@@ -116,6 +127,12 @@ def _severity_from_db(supplement_id: str, medications: list[str]) -> tuple[Inter
       "gering"  → timing   (gelb — Zeitabstand genügt meist)
       "moderat" → moderate (orange — Arzt-Rücksprache)
       "hoch"    → high     (rot — starke Wechselwirkung)
+
+    Matching läuft zweistufig:
+      1. Einfacher Substring-Abgleich (schnell, deckt die meisten Fälle ab)
+      2. Falls kein Treffer: RxNorm-Wirkstoffnamen-Fallback (fängt Marken-
+         namen/Schreibvarianten ab, die Stufe 1 verpasst — siehe rxnorm_service.py
+         für die Abdeckungs-Limitation bei deutschen Markennamen)
     """
     if not medications or supplement_id not in _SUPPLEMENT_DB:
         return InteractionSeverity.none, None
@@ -142,6 +159,29 @@ def _severity_from_db(supplement_id: str, medications: list[str]) -> tuple[Inter
                     worst_text = interaction["effect"]
                     worst_level = severity_map.get(interaction.get("severity", "gering"), InteractionSeverity.timing)
 
+    if worst_severity == 0:
+        try:
+            rxnorm = _get_rxnorm()
+            for med in medications:
+                ingredient_names = await rxnorm.resolve_ingredient_names(med)
+                if not ingredient_names:
+                    continue
+                for interaction in db_entry.get("drug_interactions", []):
+                    drug_lower = interaction["drug"].lower()
+                    if any(
+                        name.lower() in drug_lower or drug_lower in name.lower()
+                        for name in ingredient_names
+                    ):
+                        rank = severity_rank.get(interaction.get("severity", "gering"), 1)
+                        if rank > worst_severity:
+                            worst_severity = rank
+                            worst_text = interaction["effect"]
+                            worst_level = severity_map.get(
+                                interaction.get("severity", "gering"), InteractionSeverity.timing
+                            )
+        except Exception as e:
+            logger.warning(f"RxNorm-Fallback-Matching fehlgeschlagen (non-fatal): {e}")
+
     return worst_level, worst_text
 
 
@@ -154,8 +194,10 @@ def _build_db_context(medications: list[str], conditions: list[str]) -> str:
     if not _SUPPLEMENT_DB:
         return ""
 
-    lines = ["=== VERIFIZIERTE SUPPLEMENT-DATENBANK ==="]
-    lines.append("(Aus dieser Datenbank stammen Wechselwirkungen und Kontraindikationen)\n")
+    lines = ["=== KURATIERTE SUPPLEMENT-DATENBANK (LLM-synthetisiert aus PubMed) ==="]
+    lines.append("(Aus dieser Datenbank stammen Wechselwirkungen und Kontraindikationen. "
+                  "Unabhängig extern verifizierte Fakten — EFSA, NIH ODS, openFDA CAERS, "
+                  "NIH DSLD — stehen zusätzlich im Block 'Kuratierte Datenbanken' weiter unten.)\n")
 
     for supp_id, data in _SUPPLEMENT_DB.items():
         relevant_interactions = []
@@ -238,14 +280,16 @@ DEINE AUFGABE:
 Analysiere das Nutzerprofil und erstelle personalisierte Supplement-Empfehlungen für das angegebene Ziel.
 
 ⛔ HARDREGEL — KEIN TRAININGSWISSEN:
-Du darfst AUSSCHLIESSLICH Supplements empfehlen, die in der VERIFIZIERTEN SUPPLEMENT-DATENBANK oder den PUBMED-STUDIEN im Kontext explizit erwähnt werden.
+Du darfst AUSSCHLIESSLICH Supplements empfehlen, die in der KURATIERTEN SUPPLEMENT-DATENBANK, den PUBMED-STUDIEN oder dem Block "Kuratierte Datenbanken" (EFSA/NIH ODS/openFDA/DSLD) im Kontext explizit erwähnt werden.
 Wenn ein Supplement NICHT im bereitgestellten Kontext vorkommt, empfiehl es NICHT — auch wenn du aus deinem Training weißt dass es wirksam sein könnte.
 Erfinde keine Evidenz. Verwende KEIN Wissen aus deinem Training außer zur Formatierung der JSON-Antwort.
 Falls der Kontext für das angegebene Ziel zu wenig Supplements enthält, gib weniger als das Limit zurück — aber fülle nie mit Trainingswissen auf.
+Warnhinweise aus dem Block "openFDA CAERS" (gemeldete unerwünschte Ereignisse) sind unvalidierte Verdachtsmeldungen — stelle sie nie als bewiesene Kausalität dar, sondern als "in Einzelfällen berichtet".
 
 DATENQUELLEN (Priorität absteigend):
-1. Die VERIFIZIERTE SUPPLEMENT-DATENBANK im Kontext — einzige erlaubte Grundlage für Empfehlungen
-2. Die PUBMED-STUDIEN im Kontext — bestätigen oder erhöhen die Priorität von DB-Einträgen
+1. Die KURATIERTE SUPPLEMENT-DATENBANK im Kontext — primäre Grundlage für Wechselwirkungen/Kontraindikationen
+2. Der Block "Kuratierte Datenbanken" (EFSA, NIH ODS, openFDA CAERS, NIH DSLD) — unabhängig verifizierte externe Fakten, bei Widerspruch zur DB aus 1. vorrangig
+3. Die PUBMED-STUDIEN im Kontext — bestätigen oder erhöhen die Priorität von Einträgen aus 1./2.
 
 WICHTIGE REGELN:
 1. Antworte AUSSCHLIESSLICH mit validem JSON — kein Text davor oder danach
@@ -739,7 +783,7 @@ class ClaudeService:
             ]
 
             # Wechselwirkung + Severity aus DB (verifiziert) — überschreibt Claude
-            db_severity, db_interaction_text = _severity_from_db(
+            db_severity, db_interaction_text = await _severity_from_db(
                 supplement_id, profile.medications or []
             )
             # Falls DB nichts kennt, Claudes Hinweis als Fallback (timing-Level)

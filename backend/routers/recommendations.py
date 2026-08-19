@@ -5,9 +5,13 @@ import json
 import os
 
 from models.profile import RecommendationRequest
-from models.recommendation import RecommendationResponse, ProductLink, SynergyResponse
+from models.recommendation import (
+    RecommendationResponse, ProductLink, SynergyResponse,
+    RagRecommendationResponse, RagSupplementResult, RagSnippet,
+)
 from services.claude_service import ClaudeService
 from services.pubmed_service import PubMedService
+from services.vector_service import search_structured
 
 router = APIRouter(prefix="/api/v1", tags=["Empfehlungen"])
 logger = logging.getLogger(__name__)
@@ -48,6 +52,42 @@ async def get_recommendations(request: RecommendationRequest) -> RecommendationR
     except Exception as e:
         logger.error(f"Unerwarteter Fehler: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Interner Serverfehler")
+
+
+class RagQueryRequest(BaseModel):
+    goal: str
+    limit: int = 6
+
+
+@router.post("/recommendations/rag-only", response_model=RagRecommendationResponse)
+async def get_rag_only_recommendations(request: RagQueryRequest) -> RagRecommendationResponse:
+    """
+    RAG-only Modus: reine Datenbank-Ansicht ohne LLM-Aufruf.
+
+    Sucht direkt in der Vektor-DB (PubMed, Europe PMC, EFSA, NIH ODS,
+    openFDA CAERS, NIH DSLD) und gibt die Treffer strukturiert zurück —
+    kein Claude-Call, keine personalisierte Aufbereitung (kein Pitch-Text,
+    keine Relevanz-Wertung), dafür ohne Generierungsschritt zwischen
+    Quelle und Nutzer.
+    """
+    try:
+        query = f"{request.goal} supplement"
+        raw_results = search_structured(query, limit=request.limit)
+        return RagRecommendationResponse(
+            goal=request.goal,
+            results=[
+                RagSupplementResult(
+                    id=r["slug"],
+                    name=r["name"],
+                    evidence_level=r["evidence_level"],
+                    snippets=[RagSnippet(**s) for s in r["snippets"]],
+                )
+                for r in raw_results
+            ],
+        )
+    except Exception as e:
+        logger.error(f"RAG-only Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Datenbank-Suche fehlgeschlagen")
 
 
 class ExplainRequest(BaseModel):
