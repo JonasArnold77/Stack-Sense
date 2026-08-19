@@ -27,12 +27,19 @@ _recommendation_cache: dict[str, tuple[float, RecommendationResponse]] = {}
 _CACHE_TTL = 6 * 3600  # 6 Stunden
 
 
-def _cache_key(goal: str, profile: UserProfile, limit: int, exclude_ids: list[str]) -> str:
+def _cache_key(
+    goal: str, profile: UserProfile, limit: int, exclude_ids: list[str],
+    db_only: bool = False,
+) -> str:
     """Erzeugt einen stabilen Cache-Key aus den relevanten Anfrage-Parametern.
     Für Basis-Supplementierung wird das vollständige Profil einbezogen;
     für alle anderen Ziele (Problemfelder / Phasenziele) zählt nur das Ziel selbst.
+    db_only-Anfragen bekommen einen eigenen Cache-Namespace, da Kontext/Prompt
+    grundlegend anders sind (kein Profil, kein LLM-synthetisierte Datenbank).
     """
-    if goal == "Basis-Supplementierung":
+    if db_only:
+        relevant = {"goal": goal, "limit": limit, "exclude": sorted(exclude_ids), "db_only": True}
+    elif goal == "Basis-Supplementierung":
         relevant = {
             "goal": goal,
             "age": profile.age,
@@ -404,6 +411,33 @@ KATEGORIEN-REGELN:
 - Nur Kategorien die wirklich zutreffen — nicht alle auflisten"""
 
 
+# ---------------------------------------------------------------------------
+# Datenbank-Modus — dieselbe Card-Generierung wie im LLM-Modus (siehe
+# SYSTEM_PROMPT oben, insb. JSON-Format/Formulierungsregeln), aber mit
+# verschärfter Grounding-Regel: kein Nutzerprofil, keine kuratierte
+# LLM-synthetisierte Datenbank — nur die echten externen Rohdaten
+# (PubMed/Europe PMC/EFSA/NIH ODS/openFDA CAERS/NIH DSLD) aus dem Kontext.
+# ---------------------------------------------------------------------------
+_DB_ONLY_PREFIX = """⛔ DATENBANK-MODUS — ZUSÄTZLICHE HARDREGEL (gilt zusätzlich zu allem Folgenden):
+In diesem Modus gibt es KEINE kuratierte Supplement-Datenbank im Kontext und KEIN Nutzerprofil.
+Die EINZIGE erlaubte Grundlage sind die Blöcke "PubMed Studienbasis" und "Kuratierte Datenbanken"
+(EFSA/NIH ODS/openFDA CAERS/NIH DSLD) weiter unten im Kontext — echte externe Quellen, keine LLM-Synthese.
+Verwende STRIKT NICHTS aus deinem Trainingswissen, auch nicht für Dosierung oder Einnahmezeitpunkt:
+- dosage/intake_time/intake_hint: NUR befüllen wenn eine konkrete Angabe im Kontext steht (z.B. aus einem
+  NIH-DSLD-Marktprodukt-Fakt oder einer NIH-ODS-Angabe). Steht nichts im Kontext, schreibe exakt
+  "Siehe Herstellerangabe" (dosage) bzw. "Nicht in Datenbank" (intake_time) — rate NICHT.
+- pitch/evidence_reason: Fasse NUR zusammen was in den Kontext-Snippets tatsächlich steht — keine
+  Ausschmückung, keine allgemeinen Fakten über das Supplement, die dort nicht belegt sind.
+- secondary_benefit: immer null (kein Nutzerprofil vorhanden).
+- relevance_score: leite ihn NUR aus Menge und Stärke der im Kontext gefundenen Belege für dieses
+  Supplement ab — nicht aus persönlicher Einschätzung, da kein Nutzerprofil existiert.
+- Empfehle NUR Supplements, die im Kontext unten mit Namen vorkommen.
+
+"""
+
+SYSTEM_PROMPT_DB_ONLY = _DB_ONLY_PREFIX + SYSTEM_PROMPT
+
+
 PRODUCTS_SYSTEM_PROMPT = """Du bist ein Supplement-Einkaufsberater für den deutschen Markt.
 
 AUFGABE:
@@ -657,6 +691,7 @@ def _build_user_message(
     pubmed_context: str,
     limit: int = 5,
     exclude_ids: list[str] | None = None,
+    db_only: bool = False,
 ) -> str:
     season = _get_season()
     gender_map = {"male": "männlich", "female": "weiblich", "diverse": "divers"}
@@ -667,7 +702,10 @@ def _build_user_message(
         "intense": "sehr aktiv (5+x/Woche)",
     }
 
-    if goal == "Basis-Supplementierung":
+    if db_only:
+        # Datenbank-Modus: kein Profil — reine Datenlage zum Ziel.
+        lines = [f"GEWÜNSCHTES ZIEL: {goal}", "(Datenbank-Modus — kein Nutzerprofil)"]
+    elif goal == "Basis-Supplementierung":
         # Basis: vollständiges Profil einbeziehen — die Empfehlung soll
         # individuell auf Alter, Geschlecht, Erkrankungen usw. abgestimmt sein.
         lines = ["NUTZERPROFIL:"]
@@ -722,46 +760,53 @@ class ClaudeService:
     async def get_recommendations(
         self, profile: UserProfile, goal: str,
         limit: int = 5, exclude_ids: list[str] | None = None,
+        db_only: bool = False,
     ) -> RecommendationResponse:
-        logger.info(f"Empfehlungsanfrage: Ziel='{goal}', Alter={profile.age}")
+        logger.info(
+            f"Empfehlungsanfrage: Ziel='{goal}', Alter={profile.age}, db_only={db_only}"
+        )
 
         # --- Cache prüfen ---
-        cache_key = _cache_key(goal, profile, limit, exclude_ids or [])
+        cache_key = _cache_key(goal, profile, limit, exclude_ids or [], db_only=db_only)
         cached = _cache_get(cache_key)
         if cached:
             logger.info(f"Cache-Hit für '{goal}' (limit={limit}) — Claude-Aufruf übersprungen")
             return cached
 
         # --- Kontext aufbauen: DB + PubMed + Vector parallel ---
-        # Für Problemfelder / Phasenziele: kein Profilbezug — rein zielbasiert.
-        # Für Basis-Supplementierung: vollständiges Profil einbeziehen.
+        # Datenbank-Modus: kein Profil, keine kuratierte (LLM-synthetisierte) DB —
+        # nur echte externe Vektor-DB-Quellen. Für Problemfelder/Phasenziele: kein
+        # Profilbezug — rein zielbasiert. Für Basis-Supplementierung: volles Profil.
         is_basis = goal == "Basis-Supplementierung"
-        db_context = _build_db_context(
-            medications=profile.medications or [] if is_basis else [],
-            conditions=profile.conditions or [] if is_basis else [],
+        db_context = (
+            "" if db_only else _build_db_context(
+                medications=profile.medications or [] if is_basis else [],
+                conditions=profile.conditions or [] if is_basis else [],
+            )
         )
 
         query_text = (
             f"{goal} supplement {profile.conditions or ''} {profile.medications or ''}"
-            if is_basis
+            if is_basis and not db_only
             else f"{goal} supplement"
         )
 
         # Nur Vector-DB — kein PubMed live fetch (zu langsam, Daten bereits in Vector-DB)
-        vector_context = vector_search(query_text, supplement_names=[], top_k=8) or ""
+        # Im db_only-Modus mehr Treffer holen, da keine kuratierte DB als Rückgrat dient.
+        vector_context = vector_search(query_text, supplement_names=[], top_k=12 if db_only else 8) or ""
         if vector_context:
             logger.info("Vector-DB: Kontext geladen.")
         combined_study_context = vector_context
 
         user_message = _build_user_message(
             profile, goal, db_context, combined_study_context,
-            limit=limit, exclude_ids=exclude_ids or [],
+            limit=limit, exclude_ids=exclude_ids or [], db_only=db_only,
         )
 
         message = await self.client.messages.create(
             model=settings.claude_model,
             max_tokens=settings.claude_max_tokens,
-            system=SYSTEM_PROMPT,
+            system=SYSTEM_PROMPT_DB_ONLY if db_only else SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
         )
 

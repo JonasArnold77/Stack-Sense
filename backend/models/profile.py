@@ -32,3 +32,11 @@ class RecommendationRequest(BaseModel):
     goal: str = Field(..., description="Aktuell ausgewähltes Ziel/Problemfeld")
     limit: int = Field(default=5, ge=1, le=20, description="Anzahl Supplements pro Seite")
     exclude_ids: list[str] = Field(default=[], description="Bereits gezeigte Supplement-IDs")
+    db_only: bool = Field(
+        default=False,
+        description=(
+            "Datenbank-Modus: Claude nutzt ausschließlich Rohdaten aus der Vektor-DB "
+            "(PubMed/Europe PMC/EFSA/NIH ODS/openFDA/DSLD) statt der kuratierten "
+            "LLM-synthetisierten Datenbank oder Trainingswissen — kein Nutzerprofil."
+        ),
+    )

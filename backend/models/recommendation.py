@@ -80,37 +80,3 @@ class SynergyRecommendation(BaseModel):
 class SynergyResponse(BaseModel):
     goal: str
     synergies: list[SynergyRecommendation]
-
-
-# ---------------------------------------------------------------------------
-# RAG-only Modus — reine Vektor-DB-Rohdaten, kein LLM-Aufruf.
-# Bewusst ein eigenes, schlankeres Shape statt SupplementRecommendation:
-# pitch/evidence_reason/secondary_benefit/relevance_score sind dort LLM-
-# generierte Freitexte ohne DB-Entsprechung und würden hier nur Näherungen
-# vortäuschen.
-# ---------------------------------------------------------------------------
-
-class RagSnippet(BaseModel):
-    source: str          # z.B. "pubmed", "europepmc", "efsa", "nih_ods", "openfda_caers", "nih_dsld"
-    source_label: str    # menschenlesbares Label für die UI
-    title: Optional[str] = None
-    content: str
-    year: Optional[int] = None
-    similarity: float    # 0.0–1.0 Kosinus-Ähnlichkeit zur Anfrage
-
-
-class RagSupplementResult(BaseModel):
-    id: str               # Supplement-Slug
-    name: str
-    evidence_level: Optional[EvidenceLevel] = None  # None = keine Studien mit Evidenzlevel gefunden
-    snippets: list[RagSnippet] = []
-
-
-class RagRecommendationResponse(BaseModel):
-    goal: str
-    results: list[RagSupplementResult]
-    disclaimer: str = (
-        "Reine Datenbank-Ansicht ohne KI-Generierung — unpersonalisierte Rohdaten "
-        "aus Studien und kuratierten Datenbanken, nicht auf dein Profil zugeschnitten. "
-        "Ersetzt keine medizinische Beratung."
-    )
