@@ -7,13 +7,16 @@ import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../data/insights_provider.dart';
 import '../../domain/models/insight_data.dart';
 import '../../../checkin/data/checkin_provider.dart';
+import '../../../checkin/data/problem_checkin_provider.dart';
+import '../../../checkin/domain/models/problem_checkin.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../widgets/correlation_card.dart';
 import '../widgets/insights_empty_state.dart';
+import '../widgets/problem_checkin_trend_section.dart';
 import '../widgets/score_chart_card.dart';
 
 // ---------------------------------------------------------------------------
-// Dimension enum (UI-only, used by screen + filter widget)
+// Dimension enum — nur für Score-Chart (Energie/Schlaf/Fokus/Stimmung)
 // ---------------------------------------------------------------------------
 
 enum InsightsDim {
@@ -30,6 +33,19 @@ enum InsightsDim {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: Problemfeld → InsightsDim (nur für Score-Chart-Färbung)
+// ---------------------------------------------------------------------------
+
+InsightsDim _problemFieldToDim(String fieldId) => switch (fieldId) {
+  'Schlaf'   => InsightsDim.sleep,
+  'Energie'  => InsightsDim.energy,
+  'Sport'    => InsightsDim.energy,
+  'Fokus'    => InsightsDim.focus,
+  'Stimmung' => InsightsDim.mood,
+  _          => InsightsDim.all,
+};
+
+// ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
@@ -41,7 +57,8 @@ class InsightsScreen extends ConsumerStatefulWidget {
 }
 
 class _InsightsScreenState extends ConsumerState<InsightsScreen> {
-  InsightsDim _selectedDim = InsightsDim.all;
+  /// null = "Alle Felder". Sonst: die ausgewählte Problemfeld-ID.
+  String? _selectedFieldId;
   bool _simLoading = false;
 
   Future<void> _runSimulation() async {
@@ -78,6 +95,43 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
   @override
   Widget build(BuildContext context) {
     final data = ref.watch(insightsProvider);
+    final activeFields = ref.watch(activeProblemFieldsProvider);
+
+    // Falls gewähltes Feld aus Stack entfernt wurde → auf "Alle" zurückfallen
+    final effectiveFieldId = activeFields.contains(_selectedFieldId)
+        ? _selectedFieldId
+        : null;
+
+    // Chart-Dim: aus gewähltem Feld ableiten (nur für Farbe)
+    final chartDim = effectiveFieldId == null
+        ? InsightsDim.all
+        : _problemFieldToDim(effectiveFieldId);
+
+    // Chart-Punkte und Label:
+    // • "Alle": allgemeiner Score-Verlauf (inkl. Simulation) → scoreHistory['average']
+    // • Dim-mapped (Schlaf/Energie/Fokus/Stimmung): eigene Dim-Daten aus Simulation
+    //   → scoreHistory[dim.key] (already unique per dim, no cross-contamination)
+    // • Unmapped (Herzgesundheit, Haut, …): NUR echte Problem-Check-ins —
+    //   sonst würden alle ungemappten Felder denselben 'average'-Graph zeigen
+    final List<ChartPoint> chartPoints;
+    final String chartLabel;
+    if (effectiveFieldId != null && chartDim == InsightsDim.all) {
+      // Unmapped field: only real problem check-ins, no generic sim data
+      final history = ref.watch(
+        problemCheckinHistoryProvider((fieldId: effectiveFieldId, days: 90)),
+      );
+      chartPoints = history.entries
+          .map((e) => ChartPoint(date: e.key, score: e.value))
+          .toList()
+        ..sort((a, b) => a.date.compareTo(b.date));
+      chartLabel = kProblemFieldLabel[effectiveFieldId] ?? effectiveFieldId;
+    } else {
+      // "Alle" or dim-mapped field: use scoreHistory (sim + synthetic problem points)
+      chartPoints = data.scoreHistory[chartDim.key] ?? [];
+      chartLabel = effectiveFieldId != null
+          ? (kProblemFieldLabel[effectiveFieldId] ?? chartDim.label)
+          : chartDim.label;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -105,14 +159,24 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                 ),
             ],
             bottomPadding: 0,
-            bottom: _DimFilterBar(
-              selected: _selectedDim,
-              onChanged: (d) => setState(() => _selectedDim = d),
-            ),
+            // Chips: "Alle" + je ein Chip pro aktivem Problemfeld
+            bottom: activeFields.isEmpty
+                ? const SizedBox(height: 8)
+                : _FieldFilterBar(
+                    fields: activeFields,
+                    selected: effectiveFieldId,
+                    onChanged: (f) => setState(() => _selectedFieldId = f),
+                  ),
           ),
           Expanded(
             child: data.hasData
-                ? _InsightsBody(data: data, dim: _selectedDim)
+                ? _InsightsBody(
+                    data: data,
+                    dim: chartDim,
+                    filterFieldId: effectiveFieldId,
+                    chartPoints: chartPoints,
+                    chartLabel: chartLabel,
+                  )
                 : InsightsEmptyState(
                     onSimulate: _runSimulation,
                     loading: _simLoading,
@@ -125,28 +189,47 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Dimension filter chips (stays in screen — uses InsightsDim)
+// Problemfeld-Filter-Chips (direkt aus activeProblemFieldsProvider)
 // ---------------------------------------------------------------------------
 
-class _DimFilterBar extends StatelessWidget {
-  final InsightsDim selected;
-  final ValueChanged<InsightsDim> onChanged;
+class _FieldFilterBar extends StatelessWidget {
+  /// Liste aller aktiven Problemfeld-IDs.
+  final List<String> fields;
 
-  const _DimFilterBar({required this.selected, required this.onChanged});
+  /// null = "Alle" ausgewählt. Sonst: Problemfeld-ID des gewählten Chips.
+  final String? selected;
+
+  /// null = "Alle" gewählt. Sonst: Feld-ID des angeklickten Chips.
+  final ValueChanged<String?> onChanged;
+
+  const _FieldFilterBar({
+    required this.fields,
+    required this.selected,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // "Alle"-Chip immer zuerst, danach je ein Chip pro Problemfeld
+    final chips = <({String? fieldId, String label})>[
+      (fieldId: null, label: 'Alle'),
+      ...fields.map((f) => (
+            fieldId: f,
+            label: kProblemFieldLabel[f] ?? f,
+          )),
+    ];
+
     return SizedBox(
       height: 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        children: InsightsDim.values.map((d) {
-          final isSelected = d == selected;
+        children: chips.map((chip) {
+          final isSelected = chip.fieldId == selected;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
-              onTap: () => onChanged(d),
+              onTap: () => onChanged(chip.fieldId),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 padding:
@@ -164,7 +247,7 @@ class _DimFilterBar extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  d.label,
+                  chip.label,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -235,13 +318,36 @@ class _SimPopupMenu extends StatelessWidget {
 
 class _InsightsBody extends StatelessWidget {
   final InsightsData data;
+
+  /// Nur für Chart-Farbe verwendet.
   final InsightsDim dim;
 
-  const _InsightsBody({required this.data, required this.dim});
+  /// null = alle Felder anzeigen. Sonst: nur dieses eine Feld.
+  final String? filterFieldId;
+
+  /// Vorberechnete Chart-Punkte (parent entscheidet ob Sim-Daten oder nur
+  /// Problem-Check-ins — verhindert Datenmix bei feldspezifischer Ansicht).
+  final List<ChartPoint> chartPoints;
+
+  /// Anzeigetitel des Charts (Feldname oder Dim-Label).
+  final String chartLabel;
+
+  const _InsightsBody({
+    required this.data,
+    required this.dim,
+    this.filterFieldId,
+    required this.chartPoints,
+    required this.chartLabel,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final points = data.scoreHistory[dim.key] ?? [];
+    // Korrelationen filtern: bei spezifischem Feld nur passende Dim anzeigen
+    final filteredCorrelations = filterFieldId == null
+        ? data.correlations
+        : data.correlations
+            .where((c) => c.dimension == dim.label || c.dimension == 'Gesamt')
+            .toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -251,12 +357,12 @@ class _InsightsBody extends StatelessWidget {
         const SizedBox(height: 16),
 
         // Chart
-        if (points.isNotEmpty) ...[
+        if (chartPoints.isNotEmpty) ...[
           InsightsChartCard(
-            points: points,
+            points: chartPoints,
             markers: data.markers,
             lineColor: dim.color,
-            dimLabel: dim.label,
+            dimLabel: chartLabel,
           ),
           const SizedBox(height: 20),
         ],
@@ -270,8 +376,14 @@ class _InsightsBody extends StatelessWidget {
           const SizedBox(height: 20),
         ],
 
+        // Problemfeld-Verlauf (direkt nach Feld-ID filtern)
+        ProblemCheckinTrendSection(
+          filterFieldIds: filterFieldId == null ? null : [filterFieldId!],
+        ),
+        const SizedBox(height: 20),
+
         // Correlations
-        if (data.hasCorrelations) ...[
+        if (data.hasCorrelations && filteredCorrelations.isNotEmpty) ...[
           _sectionTitle('Erkenntnisse'),
           const SizedBox(height: 4),
           Text(
@@ -279,10 +391,7 @@ class _InsightsBody extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
-          ...data.correlations
-              .where((c) => dim == InsightsDim.all
-                  ? c.dimension == 'Gesamt'
-                  : c.dimension == dim.label)
+          ...filteredCorrelations
               .take(6)
               .map((c) => InsightsCorrelationCard(insight: c)),
         ] else ...[

@@ -134,7 +134,7 @@ class CheckinNotifier extends StateNotifier<List<CheckinEntry>> {
     final today = _today();
     final entries = <CheckinEntry>[];
 
-    for (int daysAgo = 20; daysAgo >= 0; daysAgo--) {
+    for (int daysAgo = 20; daysAgo >= 1; daysAgo--) {
       final date = today.subtract(Duration(days: daysAgo));
       final supplementEffect = daysAgo <= 13 ? ((13 - daysAgo) / 13.0) : 0.0;
 

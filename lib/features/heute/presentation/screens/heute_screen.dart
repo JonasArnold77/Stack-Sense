@@ -19,6 +19,7 @@ import '../widgets/plan_card.dart';
 import '../widgets/profile_recommendations_banner.dart';
 import '../widgets/progress_card.dart';
 import '../widgets/quick_stat_chip.dart';
+import '../widgets/daily_checkin_panel.dart';
 import '../widgets/section_title.dart';
 
 /// Heute-Screen — täglicher Einstiegspunkt der App.
@@ -126,8 +127,13 @@ class HeuteScreen extends ConsumerWidget {
 
                 const SizedBox(height: AppConstants.spaceL),
 
-                // Tages-Check-in
-                const SectionTitle(title: 'Tages-Check-in'),
+                // Problemfeld-Check-ins (immer zuerst, wenn aktive Felder vorhanden)
+                // KEIN const — Panel muss neu bauen wenn Felder sich ändern
+                DailyProblemCheckinPanel(),
+
+                // Allgemeiner Tages-Check-in
+                const SizedBox(height: AppConstants.spaceL),
+                const SectionTitle(title: 'Allgemeiner Check-in'),
                 const SizedBox(height: AppConstants.spaceS),
                 CheckinSummaryCard(
                   hasCheckedIn: hasCheckedIn,
@@ -146,7 +152,7 @@ class HeuteScreen extends ConsumerWidget {
                   onTap: () => context.go(AppRoutes.profile),
                 ),
 
-                // Insights Snippet (nur wenn Korrelations-Daten vorhanden)
+                // Multi-Insights (ein Eintrag pro aktivem Zielbereich)
                 if (insights.hasCorrelations) ...[
                   const SizedBox(height: AppConstants.spaceL),
                   SectionTitle(
@@ -166,7 +172,7 @@ class HeuteScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppConstants.spaceS),
-                  InsightSnippetCard(insights: insights),
+                  MultiInsightSnippets(insights: insights),
                 ],
 
                 // Bottom padding
@@ -207,7 +213,7 @@ class _GreetingHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF2D60CE), Color(0xFF0A2060)],
+          colors: [Color(0xFF1A3A6B), Color(0xFF0D2040)],
         ),
       ),
       padding: EdgeInsets.only(

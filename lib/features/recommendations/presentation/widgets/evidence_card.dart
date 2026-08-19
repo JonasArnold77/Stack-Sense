@@ -461,6 +461,10 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
             // --- Relevanz-Balken ---
             _RelevanceBar(score: supplement.relevanceScore),
 
+            // --- Community-Zeile (Variant B: direkt unter dem Balken) ---
+            if (widget.communityInsight != null)
+              _CommunityRow(insight: widget.communityInsight!),
+
             // --- Im-Stack-Panel (direkt unter Score, wenn im Stack) ---
             if (widget.isInStack)
               Padding(
@@ -597,10 +601,6 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
             _FoodCoverageBar(score: supplement.foodCoverageScore),
 
             const SizedBox(height: AppConstants.spaceXS),
-
-            // --- Community Insight Banner ---
-            if (widget.communityInsight != null)
-              _CommunityInsightBanner(insight: widget.communityInsight!),
 
             // --- Actions ---
             Padding(
@@ -1679,64 +1679,88 @@ _EvidenceColors _evidenceColors(EvidenceLevel level) {
 }
 
 // ---------------------------------------------------------------------------
-// Community Insight Banner
+// Community Row (Variant B) — direkt unter dem Relevanz-Balken
 // ---------------------------------------------------------------------------
 
-/// Zeigt aggregierte Community-Daten am unteren Ende einer EvidenceCard:
-/// "👥 Bei 23 Nutzern hat sich der Schlaf durch Melatonin deutlich verbessert"
-class _CommunityInsightBanner extends StatelessWidget {
+/// Kompakte Zeile mit Trennlinie: "✓ 14 gut gewirkt · von 19 Nutzern"
+/// Platziert direkt nach dem Fit-Prozent-Balken, vor den Kategorie-Tags.
+class _CommunityRow extends StatelessWidget {
   final CommunityInsight insight;
-  const _CommunityInsightBanner({required this.insight});
+  const _CommunityRow({required this.insight});
 
   @override
   Widget build(BuildContext context) {
+    // Anzahl Nutzer die eine Verbesserung gemeldet haben
+    final improvedCount =
+        (insight.userCount * insight.improvementPercent / 100).round();
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppConstants.cardPadding, 0, AppConstants.cardPadding, 0,
+        AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.spaceS,
       ),
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppConstants.spaceM,
-          vertical: AppConstants.spaceS + 2,
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(color: AppColors.border),
+          ),
         ),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(AppConstants.radiusM),
-          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
-        ),
+        padding: const EdgeInsets.only(top: AppConstants.spaceS),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.star_outline_rounded,
-              size: 15,
-              color: AppColors.primary.withOpacity(0.8),
+            const Icon(
+              Icons.verified_user_outlined,
+              size: 14,
+              color: AppColors.evidenceGreen,
             ),
-            const SizedBox(width: AppConstants.spaceS),
-            Expanded(
-              child: Text(
-                insight.label,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                  fontSize: 11.5,
+            const SizedBox(width: 6),
+            Text(
+              '$improvedCount',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'gut gewirkt',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7),
+              child: Container(
+                width: 3,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary,
+                  shape: BoxShape.circle,
                 ),
               ),
             ),
-            const SizedBox(width: AppConstants.spaceS),
+            Text(
+              'von ${insight.userCount} Nutzern',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const Spacer(),
+            // Dimension-Label (z. B. "Schlaf") als dezenter Chip
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.evidenceGreen.withOpacity(0.10),
                 borderRadius: BorderRadius.circular(AppConstants.radiusRound),
               ),
               child: Text(
-                '${insight.improvementPercent}%',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
+                insight.dimensionLabel,
+                style: TextStyle(
                   fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.evidenceGreen,
                 ),
               ),
             ),

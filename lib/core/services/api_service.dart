@@ -347,6 +347,39 @@ class ApiService {
     }
   }
 
+  /// Sendet problemfeld-spezifische Check-in-Daten ans Backend.
+  /// Scheitert still — Backend-Sync ist nicht kritisch (lokale Daten sind primär).
+  Future<void> submitProblemCheckin({
+    required String deviceId,
+    required String problemFieldId,
+    required DateTime date,
+    required List<Map<String, int>> answers, // [{question_id: N, score: N}]
+  }) async {
+    final dateStr =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final body = jsonEncode({
+      'device_id': deviceId,
+      'problem_field_id': problemFieldId,
+      'date': dateStr,
+      'answers': answers,
+    });
+
+    try {
+      await http
+          .post(
+            Uri.parse('$_baseUrl/api/v1/checkins/submit'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      debugPrint('Problemfeld-Checkin Sync fehlgeschlagen (ignoriert): $e');
+    }
+  }
+
   /// Lädt aggregierte Community-Insights für eine Liste von Supplement-Namen.
   /// Gibt leere Map zurück wenn Backend nicht erreichbar.
   Future<Map<String, CommunityInsight>> getCommunityInsights(

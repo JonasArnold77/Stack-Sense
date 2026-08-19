@@ -120,7 +120,53 @@ class ScoreChartPainter extends CustomPainter {
     final minDate = dates.reduce((a, b) => a.isBefore(b) ? a : b);
     final maxDate = dates.reduce((a, b) => a.isAfter(b) ? a : b);
     final totalDays = maxDate.difference(minDate).inDays;
-    if (totalDays == 0) return;
+    final dateLabelStyle = TextStyle(fontSize: 9, color: Colors.grey[500]);
+
+    // ── Einzelner Datenpunkt: großen Dot in der Mitte zeichnen ──────────────
+    if (totalDays == 0) {
+      final double x = leftPad + chartW / 2;
+      final double y = chartH - ((points.first.score - 1) / 4) * chartH;
+
+      // Äußerer weißer Ring + farbiger Kern
+      canvas.drawCircle(
+        Offset(x, y),
+        9,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawCircle(
+        Offset(x, y),
+        7,
+        Paint()
+          ..color = lineColor
+          ..style = PaintingStyle.fill,
+      );
+
+      // Score-Label über dem Punkt
+      final scoreTp = TextPainter(
+        text: TextSpan(
+          text: points.first.score.toStringAsFixed(1),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: lineColor,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      scoreTp.paint(canvas, Offset(x - scoreTp.width / 2, y - 24));
+
+      // Datum-Label unter X-Achse
+      final d = points.first.date;
+      final dateTp = TextPainter(
+        text: TextSpan(text: '${d.day}.${d.month}.', style: dateLabelStyle),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      dateTp.paint(canvas, Offset(x - dateTp.width / 2, chartH + 4));
+
+      return;
+    }
 
     double xOf(DateTime d) =>
         leftPad + (d.difference(minDate).inDays / totalDays) * chartW;
@@ -190,20 +236,23 @@ class ScoreChartPainter extends CustomPainter {
         ..style = PaintingStyle.stroke,
     );
 
-    // Data point dots
+    // Data point dots — letzter Punkt (heute) ist größer
     final dotBorder = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
     final dot = Paint()
       ..color = lineColor
       ..style = PaintingStyle.fill;
-    for (final p in points) {
-      canvas.drawCircle(Offset(xOf(p.date), yOf(p.score)), 4, dotBorder);
-      canvas.drawCircle(Offset(xOf(p.date), yOf(p.score)), 3, dot);
+    for (int i = 0; i < points.length; i++) {
+      final p = points[i];
+      final isLatest = i == points.length - 1;
+      final outerR = isLatest ? 7.0 : 4.0;
+      final innerR = isLatest ? 5.0 : 3.0;
+      canvas.drawCircle(Offset(xOf(p.date), yOf(p.score)), outerR, dotBorder);
+      canvas.drawCircle(Offset(xOf(p.date), yOf(p.score)), innerR, dot);
     }
 
     // X-axis date labels
-    final dateLabelStyle = TextStyle(fontSize: 9, color: Colors.grey[500]);
     void drawDateLabel(DateTime d) {
       final tp = TextPainter(
         text: TextSpan(text: '${d.day}.${d.month}', style: dateLabelStyle),

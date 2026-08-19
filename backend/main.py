@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.recommendations import router as recommendations_router
 from routers.users import router as users_router
 from routers.insights import router as insights_router
+from routers.checkin import router as checkin_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,15 +31,17 @@ app.add_middleware(
 app.include_router(recommendations_router)
 app.include_router(users_router)
 app.include_router(insights_router)
+app.include_router(checkin_router)
 
 
 @app.on_event("startup")
 async def startup_event():
     """Datenbank-Tabellen beim Start initialisieren."""
     try:
-        from database.db import init_user_tables, init_community_tables
+        from database.db import init_user_tables, init_community_tables, init_checkin_tables
         init_user_tables()
         init_community_tables()
+        init_checkin_tables()
     except Exception as e:
         logger.warning("DB-Init beim Start fehlgeschlagen (wird ignoriert): %s", e)
 

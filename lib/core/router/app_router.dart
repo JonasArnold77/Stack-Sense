@@ -18,6 +18,7 @@ import '../../features/phase_goals/presentation/screens/phase_goals_screen.dart'
 import '../../features/phase_goals/presentation/screens/phase_goal_recommendations_screen.dart';
 import '../../features/phase_goals/presentation/screens/phase_goal_detail_screen.dart';
 import '../../features/goal_progress/presentation/screens/goal_progress_screen.dart';
+import '../../features/checkin/presentation/screens/problem_checkin_flow_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/confirm_email_screen.dart';
@@ -54,6 +55,7 @@ class AppRoutes {
   static const String phaseGoalRecommendations = '/phase-goals/recommendations';
   static const String phaseGoalDetail = '/phase-goals/detail';
   static const String goalProgress = '/goal-progress';
+  static const String problemCheckin = '/problem-checkin';
 }
 
 // Routen die ohne Login zugänglich sind
@@ -206,6 +208,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final goalName = state.extra as String;
           return GoalProgressScreen(goalName: goalName);
+        },
+      ),
+      GoRoute(
+        path: '${AppRoutes.problemCheckin}/:fieldId',
+        name: 'problemCheckin',
+        builder: (context, state) {
+          final fieldId = state.pathParameters['fieldId']!;
+          return ProblemCheckinFlowScreen(problemFieldId: fieldId);
         },
       ),
 

@@ -96,6 +96,84 @@ def init_user_tables() -> None:
         logger.warning("User-Tabellen konnten nicht initialisiert werden: %s", e)
 
 
+def init_checkin_tables() -> None:
+    """
+    Erstellt die Tabellen für problemfeld-spezifische Tages-Check-ins.
+
+    checkin_questions — statische Fragen pro Problemfeld (einmalig befüllt).
+    daily_checkins    — tägliche Antworten pro (device_id, question_id, date).
+    """
+    create_sql = """
+    -- Fragen pro Problemfeld
+    CREATE TABLE IF NOT EXISTS checkin_questions (
+        id               SERIAL PRIMARY KEY,
+        problem_field_id TEXT   NOT NULL,   -- z.B. "Schlaf", "Energie"
+        question_text    TEXT   NOT NULL,
+        sort_order       SMALLINT NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_cq_field ON checkin_questions(problem_field_id);
+
+    -- Tägliche Antworten (device_id = anonyme Geräte-UUID, kein Personenbezug)
+    CREATE TABLE IF NOT EXISTS daily_checkins (
+        id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        device_id    TEXT     NOT NULL,
+        problem_field_id TEXT NOT NULL,
+        question_id  INT      NOT NULL REFERENCES checkin_questions(id),
+        score        SMALLINT NOT NULL CHECK (score BETWEEN 1 AND 5),
+        date         DATE     NOT NULL,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (device_id, question_id, date)
+    );
+    CREATE INDEX IF NOT EXISTS idx_dc_device_field ON daily_checkins(device_id, problem_field_id);
+    CREATE INDEX IF NOT EXISTS idx_dc_date         ON daily_checkins(date);
+    """
+
+    seed_sql = """
+    INSERT INTO checkin_questions (problem_field_id, question_text, sort_order)
+    SELECT v.field, v.text, v.ord
+    FROM (VALUES
+        ('Schlaf',      'Wie gut hast du geschlafen?',                      0),
+        ('Schlaf',      'Wie lange hat das Einschlafen gedauert?',          1),
+        ('Schlaf',      'Wie erholt hast du dich beim Aufwachen gefühlt?', 2),
+        ('Schlaf',      'Wie war deine Energie am Vormittag?',              3),
+        ('Energie',     'Wie war dein Energielevel heute?',                 0),
+        ('Energie',     'Wie gut konntest du körperliche Aufgaben erfüllen?', 1),
+        ('Energie',     'Hattest du einen Nachmittagstief?',                2),
+        ('Energie',     'Wie erholt fühlst du dich insgesamt?',             3),
+        ('Fokus',       'Wie gut konntest du dich konzentrieren?',          0),
+        ('Fokus',       'Wie klar war dein Denken heute?',                  1),
+        ('Fokus',       'Wie gut hast du Aufgaben zu Ende gebracht?',       2),
+        ('Fokus',       'Wie war deine mentale Ausdauer?',                  3),
+        ('Stimmung',    'Wie war deine allgemeine Stimmung heute?',         0),
+        ('Stimmung',    'Wie motiviert hast du dich gefühlt?',              1),
+        ('Stimmung',    'Wie gut konntest du mit Stress umgehen?',          2),
+        ('Stimmung',    'Wie positiv war dein Ausblick auf den Tag?',       3),
+        ('Sport',       'Wie war deine körperliche Leistung?',              0),
+        ('Sport',       'Wie gut war deine Ausdauer?',                      1),
+        ('Sport',       'Wie schnell hast du dich erholt?',                 2),
+        ('Sport',       'Wie hoch war deine Motivation?',                   3),
+        ('Immunsystem', 'Wie wohl hast du dich körperlich gefühlt?',        0),
+        ('Immunsystem', 'Hattest du Anzeichen von Erkältung oder Unwohlsein?', 1),
+        ('Immunsystem', 'Wie war deine allgemeine Widerstandsfähigkeit?',   2),
+        ('Immunsystem', 'Wie gut hast du auf Stress reagiert?',             3),
+        ('Verdauung',   'Wie gut war deine Verdauung heute?',               0),
+        ('Verdauung',   'Hattest du Beschwerden nach dem Essen?',           1),
+        ('Verdauung',   'Wie war dein Hunger- und Sättigungsgefühl?',       2),
+        ('Verdauung',   'Wie war dein Energielevel nach den Mahlzeiten?',   3)
+    ) AS v(field, text, ord)
+    WHERE NOT EXISTS (SELECT 1 FROM checkin_questions LIMIT 1);
+    """
+
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(create_sql)
+                cur.execute(seed_sql)
+        logger.info("Check-in-Tabellen bereit.")
+    except Exception as e:
+        logger.warning("Check-in-Tabellen konnten nicht initialisiert werden: %s", e)
+
+
 def init_community_tables() -> None:
     """
     Erstellt die supplement_checkins-Tabelle für anonyme Community-Insights.
