@@ -5,9 +5,10 @@ import json
 import os
 
 from models.profile import RecommendationRequest
-from models.recommendation import RecommendationResponse, ProductLink, SynergyResponse
+from models.recommendation import RecommendationResponse, SupplementRecommendation, ProductLink, SynergyResponse
 from services.claude_service import ClaudeService
 from services.pubmed_service import PubMedService
+from services.vector_service import search_supplements
 
 router = APIRouter(prefix="/api/v1", tags=["Empfehlungen"])
 logger = logging.getLogger(__name__)
@@ -49,6 +50,52 @@ async def get_recommendations(request: RecommendationRequest) -> RecommendationR
     except Exception as e:
         logger.error(f"Unerwarteter Fehler: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Interner Serverfehler")
+
+
+class SupplementSearchRequest(BaseModel):
+    q: str
+    limit: int = 10
+
+
+@router.post("/supplements/search")
+async def get_supplements_search(request: SupplementSearchRequest) -> dict:
+    """
+    Schnelle, tippfehler-tolerante Suche über die ~180 bekannten Supplements —
+    kein LLM-Aufruf, direkt gegen die Postgres-Tabelle. Für die Suchleiste im
+    Home Screen (Typeahead während der Nutzer tippt).
+    """
+    try:
+        results = search_supplements(request.q, limit=request.limit)
+        return {"results": results}
+    except Exception as e:
+        logger.error(f"Supplement-Suche Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Suche fehlgeschlagen")
+
+
+class SupplementLookupRequest(BaseModel):
+    supplement_id: str
+    supplement_name: str
+    db_only: bool = False
+
+
+@router.post("/recommendations/lookup", response_model=SupplementRecommendation)
+async def get_supplement_lookup(request: SupplementLookupRequest) -> SupplementRecommendation:
+    """
+    Generiert die volle Supplement-Karte für einen Such-Treffer (Direktsuche,
+    kein Ziel/Profil) — wird aufgerufen wenn der Nutzer in der Home-Screen-
+    Suche auf ein Ergebnis tippt. Respektiert den KI-/Datenbank-Modus.
+    """
+    try:
+        return await claude_service.get_supplement_detail(
+            supplement_id=request.supplement_id,
+            supplement_name=request.supplement_name,
+            db_only=request.db_only,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        logger.error(f"Supplement-Lookup Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Karte konnte nicht erstellt werden")
 
 
 class ExplainRequest(BaseModel):

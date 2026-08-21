@@ -73,6 +73,74 @@ class ApiService {
     }
   }
 
+  /// Schnelle, tippfehler-/schreibweise-tolerante Suche über die bekannten
+  /// Supplements ("Vitamin B", "Vitamin-B", "VitaminB" finden alle dieselben
+  /// Treffer) — kein LLM-Aufruf, für die Home-Screen-Suchleiste.
+  /// Gibt bei Fehlern still eine leere Liste zurück (kein Suchfeld-Absturz).
+  Future<List<SupplementSearchResult>> searchSupplements({
+    required String query,
+    int limit = 10,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/supplements/search'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: jsonEncode({'q': query, 'limit': limit}),
+          )
+          .timeout(AppConstants.apiTimeout);
+
+      if (response.statusCode != 200) return [];
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final list = data['results'] as List<dynamic>? ?? [];
+      return list
+          .map((e) => SupplementSearchResult.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('Supplement-Suche fehlgeschlagen: $e');
+      return [];
+    }
+  }
+
+  /// Generiert die volle Supplement-Karte für einen Such-Treffer (Direktsuche,
+  /// kein Ziel/Profil) — respektiert den aktuellen KI-/Datenbank-Modus.
+  Future<Supplement> lookupSupplement({
+    required String supplementId,
+    required String supplementName,
+    bool dbOnly = false,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/recommendations/lookup'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: jsonEncode({
+              'supplement_id': supplementId,
+              'supplement_name': supplementName,
+              'db_only': dbOnly,
+            }),
+          )
+          .timeout(AppConstants.apiTimeout);
+
+      if (response.statusCode == 200) {
+        return _supplementFromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      }
+      debugPrint('API Fehler ${response.statusCode}: ${response.body}');
+      throw ApiException('Server-Fehler: ${response.statusCode}');
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Netzwerk-Fehler: $e');
+      throw ApiException('Keine Verbindung zum Backend. Läuft start.ps1?');
+    }
+  }
+
   Map<String, dynamic> _profileToJson(UserProfile profile) => {
         'age': profile.age ?? 30,
         'gender': profile.gender?.name ?? 'diverse',

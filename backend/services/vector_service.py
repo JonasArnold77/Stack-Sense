@@ -5,6 +5,7 @@ diese als Kontext-String für den Claude-Prompt zurück.
 """
 import logging
 import os
+import re
 from typing import Optional
 
 try:
@@ -191,6 +192,52 @@ def search_studies(query: str, supplement_names: list[str], top_k: int = 8) -> s
     except Exception as e:
         logger.warning(f"Vector-Suche fehlgeschlagen (non-fatal): {e}")
         return ""  # Graceful degradation — Claude antwortet ohne DB-Kontext
+
+
+def search_supplements(query: str, limit: int = 10) -> list[dict]:
+    """
+    Schnelle, tippfehler-/schreibweise-tolerante Suche gegen die `supplements`-
+    Tabelle — kein LLM-Aufruf, nur ein SQL-Query. Normalisiert Leerzeichen und
+    Bindestriche auf beiden Seiten weg, damit "Vitamin B", "Vitamin-B" und
+    "VitaminB" alle z.B. "Vitamin B12" finden.
+
+    Returns:
+        Liste von {id, name, category}, Präfix-Treffer zuerst.
+    """
+    normalized = re.sub(r"[-\s]+", "", query.strip().lower())
+    if not normalized:
+        return []
+    if not _PSYCOPG2_AVAILABLE:
+        return []
+
+    try:
+        conn = _get_conn()
+        cur = conn.cursor()
+        # Wildcards werden in Python vorbereitet (nicht in der SQL-Vorlage) —
+        # psycopg2 verwechselt sonst rohe '%'-Zeichen im Query-Text mit
+        # %s-Platzhaltern.
+        like_substr = f"%{normalized}%"
+        like_prefix = f"{normalized}%"
+        cur.execute(
+            """
+            SELECT slug, name, category
+            FROM supplements
+            WHERE regexp_replace(lower(name), '[-\\s]+', '', 'g') LIKE %s
+            ORDER BY
+                CASE WHEN regexp_replace(lower(name), '[-\\s]+', '', 'g') LIKE %s
+                     THEN 0 ELSE 1 END,
+                name
+            LIMIT %s
+            """,
+            (like_substr, like_prefix, limit),
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [{"id": slug, "name": name, "category": category} for slug, name, category in rows]
+    except Exception as e:
+        logger.warning(f"Supplement-Suche fehlgeschlagen (non-fatal): {e}")
+        return []
 
 
 def get_supplement_count() -> int:

@@ -15,6 +15,27 @@ enum SupplementType {
   group,  // Kombipräparat (z.B. Vitamin B-Komplex)
 }
 
+/// Ein schneller Such-Treffer (Name/Kategorie) — bevor die volle Karte
+/// generiert wurde. Siehe ApiService.searchSupplements / lookupSupplement.
+class SupplementSearchResult {
+  final String id;
+  final String name;
+  final String category;
+
+  const SupplementSearchResult({
+    required this.id,
+    required this.name,
+    required this.category,
+  });
+
+  factory SupplementSearchResult.fromJson(Map<String, dynamic> json) =>
+      SupplementSearchResult(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        category: json['category'] as String? ?? '',
+      );
+}
+
 /// Eine einzelne Kaufoption für ein Supplement.
 class ProductLink {
   final String label;

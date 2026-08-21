@@ -762,6 +762,118 @@ def _build_user_message(
     return "\n".join(lines)
 
 
+async def _parse_recommendation_item(item: dict, medications: list[str]) -> SupplementRecommendation:
+    """Baut ein SupplementRecommendation aus einem einzelnen Claude-JSON-Item —
+    gemeinsam genutzt von get_recommendations() (mehrere Items pro Anfrage)
+    und get_supplement_detail() (ein Item pro Such-Treffer)."""
+    supplement_id = item["id"]
+    products = get_products(supplement_id)
+    product_links = [
+        ProductLink(label=p["label"], shop=p["shop"], url=p["url"], note=p.get("note"))
+        for p in products
+    ]
+
+    # Wechselwirkung + Severity aus DB (verifiziert) — überschreibt Claude
+    db_severity, db_interaction_text = await _severity_from_db(supplement_id, medications)
+    # Falls DB nichts kennt, Claudes Hinweis als Fallback (timing-Level)
+    if db_severity == InteractionSeverity.none and item.get("drug_interaction"):
+        final_interaction = item.get("drug_interaction")
+        final_severity = InteractionSeverity.timing
+    else:
+        final_interaction = db_interaction_text or item.get("drug_interaction")
+        final_severity = db_severity
+
+    # supplement_type aus Claude-Antwort lesen — Default: single
+    raw_type = item.get("supplement_type", "single")
+    try:
+        supp_type = SupplementType(raw_type)
+    except ValueError:
+        supp_type = SupplementType.single
+
+    # substance_category aus Claude-Antwort lesen — None falls unbekannt/fehlt
+    try:
+        substance_category = SubstanceCategory(item.get("substance_category"))
+    except ValueError:
+        substance_category = None
+
+    # secondary_benefit aus Claude-JSON parsen (optional)
+    raw_secondary = item.get("secondary_benefit")
+    secondary_benefit = None
+    if raw_secondary and isinstance(raw_secondary, dict):
+        try:
+            secondary_benefit = SecondaryBenefit(
+                text=raw_secondary.get("text", ""),
+                evidence_level=EvidenceLevel(raw_secondary.get("evidence_level", "yellow")),
+                condition=raw_secondary.get("condition", ""),
+            )
+        except (ValueError, KeyError) as e:
+            logger.warning(f"secondary_benefit Parse-Fehler für {supplement_id}: {e}")
+
+    return SupplementRecommendation(
+        id=supplement_id,
+        name=item["name"],
+        substance_name=item.get("substance_name"),
+        evidence_level=EvidenceLevel(item["evidence_level"]),
+        substance_category=substance_category,
+        pitch=_truncate_pitch(item.get("pitch", "")),
+        evidence_reason=item["evidence_reason"],
+        secondary_benefit=secondary_benefit,
+        dosage=item["dosage"],
+        intake_time=item["intake_time"],
+        intake_hint=item.get("intake_hint"),
+        drug_interaction=final_interaction,
+        interaction_severity=final_severity,
+        simple_explanation=None,
+        product_links=product_links,
+        categories=item.get("categories", []),
+        supplement_type=supp_type,
+        enthaltene_wirkstoffe=item.get("enthaltene_wirkstoffe", []),
+        food_coverage_score=max(1, min(10, int(item.get("food_coverage_score", 5)))),
+        relevance_score=max(0, min(100, int(item.get("relevance_score", 75)))),
+    )
+
+
+def _build_single_db_context(supplement_id: str) -> str:
+    """Scoped db_context für die Einzel-Supplement-Suche — nur der eine
+    Eintrag statt der gesamten kuratierten Datenbank (spart Tokens/Kosten)."""
+    entry = _SUPPLEMENT_DB.get(supplement_id)
+    if not entry:
+        return ""
+    lines = [
+        "=== KURATIERTE SUPPLEMENT-DATENBANK (LLM-synthetisiert aus PubMed) ===",
+        f"[{entry['name']}]",
+        f"  Evidenz: {entry.get('evidence_summary', '')}",
+        f"  Beste Form: {', '.join(entry.get('optimal_forms', []))}",
+        f"  Einnahme: {entry.get('intake_notes', '')}",
+    ]
+    if entry.get("contraindications"):
+        lines.append(f"  Kontraindikationen: {', '.join(entry['contraindications'])}")
+    return "\n".join(lines)
+
+
+def _build_lookup_message(supplement_name: str, db_context: str, pubmed_context: str) -> str:
+    """User-Message für die Direktsuche nach einem bestimmten Supplement —
+    anders als _build_user_message() geht es hier nicht um mehrere nach Ziel
+    sortierte Empfehlungen, sondern um GENAU EINE Karte für einen Suchtreffer."""
+    lines = [
+        f'NUTZER-SUCHE: "{supplement_name}"',
+        "Der Nutzer hat direkt nach diesem Supplement gesucht — nicht zielbasiert. "
+        "Erstelle GENAU EINE Karte für dieses Supplement mit einer allgemeinen, "
+        "evidenzbasierten Beschreibung seines Hauptnutzens (nicht auf ein bestimmtes "
+        "Ziel bezogen). pitch und evidence_reason beschreiben den generellen "
+        "wissenschaftlichen Nutzen. secondary_benefit = null (kein Nutzerprofil). "
+        "relevance_score = 100 (Direkttreffer, keine Sortierung nötig).",
+    ]
+    if db_context:
+        lines.append(f"\n{db_context}")
+    if pubmed_context:
+        lines.append(f"\n{pubmed_context}")
+    lines.append(
+        '\nErstelle die Supplement-Karte als JSON: {"recommendations": [<genau ein Element>]}'
+    )
+    return "\n".join(lines)
+
+
 class ClaudeService:
     def __init__(self):
         self.client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
@@ -828,80 +940,57 @@ class ClaudeService:
             logger.error(f"Claude JSON-Fehler: {e}\nRaw: {raw[:500]}")
             raise ValueError(f"Claude-Antwort ist kein valides JSON: {e}")
 
-        recommendations = []
-        for item in data.get("recommendations", []):
-            supplement_id = item["id"]
-            products = get_products(supplement_id)
-            product_links = [
-                ProductLink(label=p["label"], shop=p["shop"], url=p["url"], note=p.get("note"))
-                for p in products
-            ]
-
-            # Wechselwirkung + Severity aus DB (verifiziert) — überschreibt Claude
-            db_severity, db_interaction_text = await _severity_from_db(
-                supplement_id, profile.medications or []
-            )
-            # Falls DB nichts kennt, Claudes Hinweis als Fallback (timing-Level)
-            if db_severity == InteractionSeverity.none and item.get("drug_interaction"):
-                final_interaction = item.get("drug_interaction")
-                final_severity = InteractionSeverity.timing
-            else:
-                final_interaction = db_interaction_text or item.get("drug_interaction")
-                final_severity = db_severity
-
-            # supplement_type aus Claude-Antwort lesen — Default: single
-            raw_type = item.get("supplement_type", "single")
-            try:
-                supp_type = SupplementType(raw_type)
-            except ValueError:
-                supp_type = SupplementType.single
-
-            # substance_category aus Claude-Antwort lesen — None falls unbekannt/fehlt
-            try:
-                substance_category = SubstanceCategory(item.get("substance_category"))
-            except ValueError:
-                substance_category = None
-
-            # secondary_benefit aus Claude-JSON parsen (optional)
-            raw_secondary = item.get("secondary_benefit")
-            secondary_benefit = None
-            if raw_secondary and isinstance(raw_secondary, dict):
-                try:
-                    secondary_benefit = SecondaryBenefit(
-                        text=raw_secondary.get("text", ""),
-                        evidence_level=EvidenceLevel(raw_secondary.get("evidence_level", "yellow")),
-                        condition=raw_secondary.get("condition", ""),
-                    )
-                except (ValueError, KeyError) as e:
-                    logger.warning(f"secondary_benefit Parse-Fehler für {supplement_id}: {e}")
-
-            rec = SupplementRecommendation(
-                id=supplement_id,
-                name=item["name"],
-                substance_name=item.get("substance_name"),
-                evidence_level=EvidenceLevel(item["evidence_level"]),
-                substance_category=substance_category,
-                pitch=_truncate_pitch(item.get("pitch", "")),
-                evidence_reason=item["evidence_reason"],
-                secondary_benefit=secondary_benefit,
-                dosage=item["dosage"],
-                intake_time=item["intake_time"],
-                intake_hint=item.get("intake_hint"),
-                drug_interaction=final_interaction,
-                interaction_severity=final_severity,
-                simple_explanation=None,
-                product_links=product_links,
-                categories=item.get("categories", []),
-                supplement_type=supp_type,
-                enthaltene_wirkstoffe=item.get("enthaltene_wirkstoffe", []),
-                food_coverage_score=max(1, min(10, int(item.get("food_coverage_score", 5)))),
-                relevance_score=max(0, min(100, int(item.get("relevance_score", 75)))),
-            )
-            recommendations.append(rec)
+        recommendations = [
+            await _parse_recommendation_item(item, profile.medications or [])
+            for item in data.get("recommendations", [])
+        ]
 
         result = RecommendationResponse(goal=goal, recommendations=recommendations)
         _cache_set(cache_key, result)
         return result
+
+    async def get_supplement_detail(
+        self, supplement_id: str, supplement_name: str, db_only: bool = False,
+    ) -> SupplementRecommendation:
+        """Generiert GENAU EINE volle Karte für einen direkten Such-Treffer —
+        kein Ziel, kein Nutzerprofil, respektiert aber den KI-/Datenbank-Modus."""
+        logger.info(
+            f"Supplement-Detailsuche: '{supplement_name}' (id={supplement_id}, db_only={db_only})"
+        )
+
+        cache_key = f"detail::{supplement_id}::{db_only}"
+        cached = _cache_get(cache_key)
+        if cached and cached.recommendations:
+            return cached.recommendations[0]
+
+        db_context = "" if db_only else _build_single_db_context(supplement_id)
+        vector_context = vector_search(
+            f"{supplement_name} supplement", supplement_names=[supplement_id], top_k=10,
+        ) or ""
+
+        user_message = _build_lookup_message(supplement_name, db_context, vector_context)
+
+        message = await self.client.messages.create(
+            model=settings.claude_model,
+            max_tokens=settings.claude_max_tokens,
+            system=SYSTEM_PROMPT_DB_ONLY if db_only else SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_message}],
+        )
+
+        raw = _extract_json(message.content[0].text.strip())
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            logger.error(f"Claude JSON-Fehler (Detailsuche): {e}\nRaw: {raw[:500]}")
+            raise ValueError(f"Claude-Antwort ist kein valides JSON: {e}")
+
+        items = data.get("recommendations", [])
+        if not items:
+            raise ValueError(f"Claude hat keine Karte für '{supplement_name}' erzeugt.")
+
+        rec = await _parse_recommendation_item(items[0], [])
+        _cache_set(cache_key, RecommendationResponse(goal=supplement_name, recommendations=[rec]))
+        return rec
 
     async def check_duplicate_in_stack(
         self,

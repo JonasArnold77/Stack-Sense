@@ -23,6 +23,7 @@ import '../widgets/progress_card.dart';
 import '../widgets/quick_stat_chip.dart';
 import '../widgets/daily_checkin_panel.dart';
 import '../widgets/section_title.dart';
+import '../widgets/supplement_search_bar.dart';
 
 /// Heute-Screen — täglicher Einstiegspunkt der App.
 class HeuteScreen extends ConsumerWidget {
@@ -82,6 +83,11 @@ class HeuteScreen extends ConsumerWidget {
               xpLevelLabel: 'Level ${xpLevel.level} · ${xpLevel.levelName}',
             ),
           ),
+
+          // ----------------------------------------------------------------
+          // Supplement-Suche
+          // ----------------------------------------------------------------
+          const SliverToBoxAdapter(child: SupplementSearchBar()),
 
           // ----------------------------------------------------------------
           // Daily insights horizontal scroll
