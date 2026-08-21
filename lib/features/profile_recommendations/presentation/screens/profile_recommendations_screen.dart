@@ -12,6 +12,9 @@ import '../../../onboarding/data/onboarding_provider.dart';
 import '../../../onboarding/domain/models/user_profile.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../../recommendations/presentation/widgets/evidence_card.dart';
+import '../../../recommendations/presentation/widgets/safety_warning_dialog.dart';
+import '../../../settings/data/recommendation_mode_provider.dart';
+import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 
 // ---------------------------------------------------------------------------
@@ -203,6 +206,9 @@ class _ProfileRecommendationsScreenState
     }
   }
 
+  bool get _dbOnly =>
+      ref.read(recommendationModeProvider) == RecommendationMode.ragOnly;
+
   Future<void> _loadInitial() async {
     setState(() {
       _isLoading = true;
@@ -216,6 +222,7 @@ class _ProfileRecommendationsScreenState
         profile: _buildFilteredProfile(),
         goal: 'Basis-Supplementierung',
         limit: _pageSize,
+        dbOnly: _dbOnly,
       );
       if (mounted) {
         setState(() {
@@ -241,6 +248,7 @@ class _ProfileRecommendationsScreenState
         goal: 'Basis-Supplementierung',
         limit: _pageSize,
         excludeIds: excludeIds,
+        dbOnly: _dbOnly,
       );
       if (mounted) {
         setState(() {
@@ -257,9 +265,17 @@ class _ProfileRecommendationsScreenState
 
   // --- Stack ---
 
-  void _addToStack(Supplement supplement) {
-    final notifier = ref.read(stackProvider.notifier);
+  Future<void> _addToStack(Supplement supplement) async {
     if (ref.read(stackProvider).any((e) => e.id == supplement.id)) return;
+
+    final safetyConfirmed = await confirmSupplementSafetyIfNeeded(
+      context,
+      supplementId: supplement.id,
+      supplementName: supplement.name,
+    );
+    if (!mounted || !safetyConfirmed) return;
+
+    final notifier = ref.read(stackProvider.notifier);
     notifier.add(supplement, goalContext: 'Basissupplementierung');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('${supplement.name} zum Stack hinzugefügt'),
@@ -318,6 +334,8 @@ class _ProfileRecommendationsScreenState
     final profile = ref.watch(onboardingProvider);
     final existingStack = ref.watch(stackProvider);
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final isRagOnly =
+        ref.watch(recommendationModeProvider) == RecommendationMode.ragOnly;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -370,22 +388,26 @@ class _ProfileRecommendationsScreenState
             onBack: () => context.pop(),
           ),
 
-          // Filter-Tag-Leiste
-          _FilterBar(
-            allTags: _allTags,
-            activeTags: _activeTags,
-            onToggle: (tag) {
-              setState(() {
-                if (_activeTags.contains(tag)) {
-                  _activeTags = _activeTags.difference({tag});
-                } else {
-                  _activeTags = {..._activeTags, tag};
-                }
-              });
-            },
-            onAdd: _openAddTagSheet,
-            onReload: _loadInitial,
-          ),
+          // Filter-Tag-Leiste — nur im LLM-Modus (RAG-only ist unpersonalisiert,
+          // Profil-Tags fließen dort nicht in die Suche ein)
+          if (isRagOnly)
+            _RagModeBanner(onReload: _loadInitial)
+          else
+            _FilterBar(
+              allTags: _allTags,
+              activeTags: _activeTags,
+              onToggle: (tag) {
+                setState(() {
+                  if (_activeTags.contains(tag)) {
+                    _activeTags = _activeTags.difference({tag});
+                  } else {
+                    _activeTags = {..._activeTags, tag};
+                  }
+                });
+              },
+              onAdd: _openAddTagSheet,
+              onReload: _loadInitial,
+            ),
 
           // Supplement-Liste
           Expanded(
@@ -451,6 +473,53 @@ class _ProfileRecommendationsScreenState
 
                 const SizedBox(height: AppConstants.spaceM),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RAG-only Modus — ersetzt die Filter-Tag-Leiste (Profil fließt hier nicht ein)
+// ---------------------------------------------------------------------------
+
+class _RagModeBanner extends StatelessWidget {
+  final VoidCallback onReload;
+
+  const _RagModeBanner({required this.onReload});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.surface,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.screenPaddingH,
+        vertical: AppConstants.spaceS,
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.storage_rounded, size: 16, color: AppColors.textTertiary),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Datenbank-Modus: unpersonalisierte Rohdaten, Profil-Filter inaktiv.',
+              style: AppTextStyles.caption
+                  .copyWith(color: AppColors.textTertiary),
+            ),
+          ),
+          GestureDetector(
+            onTap: onReload,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(AppConstants.radiusM),
+              ),
+              child: const Icon(Icons.refresh_rounded,
+                  size: 16, color: Colors.white),
             ),
           ),
         ],

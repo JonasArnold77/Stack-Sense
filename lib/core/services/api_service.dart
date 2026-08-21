@@ -22,17 +22,24 @@ class ApiService {
   /// Holt personalisierte Empfehlungen von Claude via Backend.
   /// [limit] — Anzahl Supplements pro Seite (Standard: 5).
   /// [excludeIds] — bereits geladene Supplement-IDs, werden übersprungen.
+  /// [dbOnly] — Datenbank-Modus: Claude nutzt ausschließlich echte externe
+  /// Vektor-DB-Quellen (PubMed/Europe PMC/EFSA/NIH ODS/openFDA/DSLD) statt der
+  /// kuratierten LLM-synthetisierten Datenbank oder Trainingswissen. Karten
+  /// sehen identisch zum KI-Modus aus, Felder ohne DB-Beleg werden ehrlich
+  /// als "nicht verfügbar" statt geraten dargestellt.
   Future<List<Supplement>> getRecommendations({
     required UserProfile profile,
     required String goal,
     int limit = 5,
     List<String> excludeIds = const [],
+    bool dbOnly = false,
   }) async {
     final body = jsonEncode({
       'profile': _profileToJson(profile),
       'goal': goal,
       'limit': limit,
       'exclude_ids': excludeIds,
+      'db_only': dbOnly,
     });
 
     try {

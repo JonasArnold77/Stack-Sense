@@ -50,7 +50,7 @@ class StackSenseApp extends ConsumerWidget {
 
     return XpRewardOverlay(
       child: MaterialApp.router(
-        title: 'StackSense',
+        title: 'LifeLab',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         routerConfig: router,

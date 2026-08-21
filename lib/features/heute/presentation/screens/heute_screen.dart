@@ -9,6 +9,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../checkin/data/checkin_provider.dart';
 import '../../../gamification/data/xp_provider.dart';
 import '../../../insights/data/insights_provider.dart';
+import '../../../settings/data/recommendation_mode_provider.dart';
+import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/data/taken_provider.dart';
 import '../widgets/checkin_summary_card.dart';
@@ -193,7 +195,7 @@ class HeuteScreen extends ConsumerWidget {
 // Greeting header — screen-specific, not reused elsewhere
 // ---------------------------------------------------------------------------
 
-class _GreetingHeader extends StatelessWidget {
+class _GreetingHeader extends ConsumerWidget {
   final String greeting;
   final String dateStr;
   final int streak;
@@ -207,7 +209,7 @@ class _GreetingHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -225,7 +227,7 @@ class _GreetingHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // StackSense logo row
+          // LifeLab logo row + Empfehlungs-Modus-Switch
           Row(
             children: [
               Container(
@@ -243,13 +245,15 @@ class _GreetingHeader extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'StackSense',
+                'LifeLab',
                 style: AppTextStyles.labelMedium.copyWith(
                   color: Colors.white.withOpacity(0.85),
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
                 ),
               ),
+              const Spacer(),
+              const _RecommendationModeToggle(),
             ],
           ),
           const SizedBox(height: AppConstants.spaceM),
@@ -286,6 +290,93 @@ class _GreetingHeader extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Empfehlungs-Modus-Switch — "Nur Datenbank (RAG)" vs. "KI" (LLM + RAG-Kontext)
+// ---------------------------------------------------------------------------
+
+class _RecommendationModeToggle extends ConsumerWidget {
+  const _RecommendationModeToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(recommendationModeProvider);
+    final notifier = ref.read(recommendationModeProvider.notifier);
+
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ModeSegment(
+            label: 'Datenbank',
+            icon: Icons.storage_rounded,
+            selected: mode == RecommendationMode.ragOnly,
+            onTap: () => notifier.setMode(RecommendationMode.ragOnly),
+          ),
+          _ModeSegment(
+            label: 'KI',
+            icon: Icons.auto_awesome,
+            selected: mode == RecommendationMode.llm,
+            onTap: () => notifier.setMode(RecommendationMode.llm),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModeSegment extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ModeSegment({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+      child: AnimatedContainer(
+        duration: AppConstants.animFast,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 13,
+              color: selected ? const Color(0xFF1A3A6B) : Colors.white.withOpacity(0.75),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppTextStyles.caption.copyWith(
+                color: selected ? const Color(0xFF1A3A6B) : Colors.white.withOpacity(0.75),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

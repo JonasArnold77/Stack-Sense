@@ -41,6 +41,13 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('Backend-Verbindung',
+                      style: AppTextStyles.headlineSmall),
+                  const SizedBox(height: AppConstants.spaceS),
+                  const BackendUrlCard(),
+
+                  const SizedBox(height: AppConstants.spaceL),
+
                   const ProfileRecommendationsCard(),
 
                   const SizedBox(height: AppConstants.spaceL),
@@ -67,13 +74,6 @@ class ProfileScreen extends ConsumerWidget {
                   Text('Einstellungen', style: AppTextStyles.headlineSmall),
                   const SizedBox(height: AppConstants.spaceS),
                   const ProfileSettingsCard(),
-
-                  const SizedBox(height: AppConstants.spaceL),
-
-                  Text('Backend-Verbindung',
-                      style: AppTextStyles.headlineSmall),
-                  const SizedBox(height: AppConstants.spaceS),
-                  const BackendUrlCard(),
 
                   const SizedBox(height: AppConstants.spaceXL),
                 ],

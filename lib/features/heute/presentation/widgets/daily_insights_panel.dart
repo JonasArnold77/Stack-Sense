@@ -143,7 +143,7 @@ class DailyInsightsPanel extends StatelessWidget {
     InsightCardData(tag: 'Trend', title: 'Zirkadianer Rhythmus', text: 'Einnahmezeit macht den Unterschied — Forschung zeigt dass Timing die Wirkung vieler Supplements beeinflusst.', icon: Icons.schedule_outlined, gradient: [Color(0xFF4527A0), Color(0xFF512DA8)]),
     InsightCardData(tag: 'Trend', title: 'Mikrobiom & Probiotika', text: 'Darmgesundheit als Grundlage — Probiotika mit definierten Stämmen zeigen Wirkung auf Immunsystem und Stimmung.', icon: Icons.biotech_outlined, gradient: [Color(0xFF1B5E20), Color(0xFF2E7D32)]),
     InsightCardData(tag: 'Trend', title: 'Magnesium-Renaissance', text: 'Über 300 Enzymreaktionen benötigen Magnesium — L-Threonat gilt als beste Form für die Blut-Hirn-Schranke.', icon: Icons.auto_awesome_outlined, gradient: [Color(0xFF0D47A1), Color(0xFF1565C0)]),
-    InsightCardData(tag: 'Trend', title: 'Personalisierung durch KI', text: 'Apps wie StackSense kombinieren Blutbild, Profil und Studiendaten für individuell passende Empfehlungen.', icon: Icons.smart_toy_outlined, gradient: [Color(0xFF880E4F), Color(0xFFAD1457)]),
+    InsightCardData(tag: 'Trend', title: 'Personalisierung durch KI', text: 'Apps wie LifeLab kombinieren Blutbild, Profil und Studiendaten für individuell passende Empfehlungen.', icon: Icons.smart_toy_outlined, gradient: [Color(0xFF880E4F), Color(0xFFAD1457)]),
     InsightCardData(tag: 'Trend', title: 'Schlaf-Optimierung', text: 'Glycin, L-Theanin und Magnesium zeigen in Studien schlafverbessernde Effekte — ohne Abhängigkeitspotenzial.', icon: Icons.bedtime_outlined, gradient: [Color(0xFF1A237E), Color(0xFF283593)]),
   ];
 

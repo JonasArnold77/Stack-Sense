@@ -64,7 +64,7 @@
     },
     {
       "name": "amplify_auth_cognito",
-      "version": "2.11.0",
+      "version": "2.15.0",
       "dependencies": [
         "amplify_analytics_pinpoint",
         "amplify_analytics_pinpoint_dart",
@@ -81,7 +81,7 @@
     },
     {
       "name": "amplify_flutter",
-      "version": "2.11.0",
+      "version": "2.15.0",
       "dependencies": [
         "amplify_core",
         "amplify_secure_storage",
@@ -93,7 +93,7 @@
     },
     {
       "name": "audioplayers",
-      "version": "6.7.1",
+      "version": "6.8.1",
       "dependencies": [
         "audioplayers_android",
         "audioplayers_darwin",
@@ -342,7 +342,7 @@
     },
     {
       "name": "amplify_secure_storage",
-      "version": "0.5.17",
+      "version": "0.5.21",
       "dependencies": [
         "amplify_secure_storage_dart",
         "async",
@@ -357,7 +357,7 @@
     },
     {
       "name": "amplify_core",
-      "version": "2.11.0",
+      "version": "2.15.0",
       "dependencies": [
         "async",
         "aws_common",
@@ -376,7 +376,7 @@
     },
     {
       "name": "amplify_auth_cognito_dart",
-      "version": "0.11.20",
+      "version": "0.11.25",
       "dependencies": [
         "amplify_analytics_pinpoint_dart",
         "amplify_core",
@@ -410,7 +410,7 @@
     },
     {
       "name": "amplify_analytics_pinpoint_dart",
-      "version": "0.4.16",
+      "version": "0.4.21",
       "dependencies": [
         "amplify_core",
         "amplify_db_common_dart",
@@ -432,7 +432,7 @@
     },
     {
       "name": "amplify_analytics_pinpoint",
-      "version": "2.11.0",
+      "version": "2.15.0",
       "dependencies": [
         "amplify_analytics_pinpoint_dart",
         "amplify_core",
@@ -443,12 +443,13 @@
         "flutter",
         "meta",
         "package_info_plus",
+        "package_info_plus_platform_interface",
         "path_provider"
       ]
     },
     {
       "name": "aws_common",
-      "version": "0.7.13",
+      "version": "0.7.15",
       "dependencies": [
         "async",
         "built_collection",
@@ -469,7 +470,7 @@
     },
     {
       "name": "uuid",
-      "version": "4.5.3",
+      "version": "4.6.0",
       "dependencies": [
         "crypto",
         "fixnum"
@@ -477,7 +478,7 @@
     },
     {
       "name": "synchronized",
-      "version": "3.4.1",
+      "version": "3.4.1+2",
       "dependencies": []
     },
     {
@@ -502,7 +503,7 @@
     },
     {
       "name": "audioplayers_windows",
-      "version": "4.3.1",
+      "version": "4.4.1",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -510,7 +511,7 @@
     },
     {
       "name": "audioplayers_web",
-      "version": "5.2.1",
+      "version": "5.3.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter",
@@ -520,7 +521,7 @@
     },
     {
       "name": "audioplayers_platform_interface",
-      "version": "7.1.1",
+      "version": "7.2.0",
       "dependencies": [
         "collection",
         "flutter",
@@ -530,7 +531,7 @@
     },
     {
       "name": "audioplayers_linux",
-      "version": "4.2.1",
+      "version": "4.3.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -538,7 +539,7 @@
     },
     {
       "name": "audioplayers_darwin",
-      "version": "6.4.0",
+      "version": "6.5.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -546,7 +547,7 @@
     },
     {
       "name": "audioplayers_android",
-      "version": "5.2.1",
+      "version": "5.3.0",
       "dependencies": [
         "audioplayers_platform_interface",
         "flutter"
@@ -678,7 +679,7 @@
     },
     {
       "name": "shared_preferences_android",
-      "version": "2.4.26",
+      "version": "2.4.27",
       "dependencies": [
         "flutter",
         "meta",
@@ -800,7 +801,7 @@
     },
     {
       "name": "amplify_secure_storage_dart",
-      "version": "0.5.10",
+      "version": "0.5.12",
       "dependencies": [
         "async",
         "aws_common",
@@ -829,7 +830,7 @@
     },
     {
       "name": "intl",
-      "version": "0.20.2",
+      "version": "0.20.3",
       "dependencies": [
         "clock",
         "meta",
@@ -845,7 +846,7 @@
     },
     {
       "name": "aws_signature_v4",
-      "version": "0.6.10",
+      "version": "0.6.13",
       "dependencies": [
         "async",
         "aws_common",
@@ -859,7 +860,7 @@
     },
     {
       "name": "worker_bee",
-      "version": "0.3.11",
+      "version": "0.3.14",
       "dependencies": [
         "async",
         "aws_common",
@@ -876,18 +877,22 @@
     },
     {
       "name": "win32_registry",
-      "version": "2.1.0",
+      "version": "3.0.3",
       "dependencies": [
+        "collection",
         "ffi",
+        "ffi_leak_tracker",
         "meta",
         "win32"
       ]
     },
     {
       "name": "win32",
-      "version": "5.15.0",
+      "version": "6.4.0",
       "dependencies": [
-        "ffi"
+        "ffi",
+        "ffi_leak_tracker",
+        "meta"
       ]
     },
     {
@@ -897,7 +902,7 @@
     },
     {
       "name": "smithy_aws",
-      "version": "0.7.10",
+      "version": "0.7.13",
       "dependencies": [
         "aws_common",
         "aws_signature_v4",
@@ -917,7 +922,7 @@
     },
     {
       "name": "smithy",
-      "version": "0.7.10",
+      "version": "0.7.13",
       "dependencies": [
         "async",
         "aws_common",
@@ -974,7 +979,7 @@
     },
     {
       "name": "built_value",
-      "version": "8.12.6",
+      "version": "8.12.7",
       "dependencies": [
         "built_collection",
         "collection",
@@ -989,7 +994,7 @@
     },
     {
       "name": "drift",
-      "version": "2.31.0",
+      "version": "2.34.3",
       "dependencies": [
         "async",
         "collection",
@@ -1004,7 +1009,7 @@
     },
     {
       "name": "amplify_db_common_dart",
-      "version": "0.4.18",
+      "version": "0.4.23",
       "dependencies": [
         "amplify_core",
         "async",
@@ -1017,8 +1022,17 @@
       ]
     },
     {
+      "name": "package_info_plus_platform_interface",
+      "version": "4.1.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
       "name": "package_info_plus",
-      "version": "9.0.1",
+      "version": "10.2.1",
       "dependencies": [
         "clock",
         "ffi",
@@ -1034,7 +1048,7 @@
     },
     {
       "name": "device_info_plus",
-      "version": "12.4.0",
+      "version": "13.2.0",
       "dependencies": [
         "device_info_plus_platform_interface",
         "ffi",
@@ -1049,7 +1063,7 @@
     },
     {
       "name": "amplify_db_common",
-      "version": "0.4.17",
+      "version": "0.4.21",
       "dependencies": [
         "amplify_db_common_dart",
         "drift",
@@ -1087,7 +1101,7 @@
     },
     {
       "name": "path_provider_linux",
-      "version": "2.2.1",
+      "version": "2.2.2",
       "dependencies": [
         "ffi",
         "flutter",
@@ -1125,12 +1139,19 @@
     },
     {
       "name": "vm_service",
-      "version": "15.2.0",
+      "version": "15.3.0",
       "dependencies": []
     },
     {
+      "name": "ffi_leak_tracker",
+      "version": "0.1.2",
+      "dependencies": [
+        "ffi"
+      ]
+    },
+    {
       "name": "xml",
-      "version": "6.6.1",
+      "version": "7.0.1",
       "dependencies": [
         "collection",
         "meta",
@@ -1159,28 +1180,23 @@
     },
     {
       "name": "sqlite3",
-      "version": "2.9.4",
+      "version": "3.5.1",
       "dependencies": [
+        "code_assets",
         "collection",
+        "crypto",
         "ffi",
+        "hooks",
         "meta",
+        "native_toolchain_c",
         "path",
         "typed_data",
         "web"
       ]
     },
     {
-      "name": "package_info_plus_platform_interface",
-      "version": "3.2.1",
-      "dependencies": [
-        "flutter",
-        "meta",
-        "plugin_platform_interface"
-      ]
-    },
-    {
       "name": "device_info_plus_platform_interface",
-      "version": "7.0.3",
+      "version": "8.1.0",
       "dependencies": [
         "flutter",
         "meta",
@@ -1202,7 +1218,7 @@
     },
     {
       "name": "objective_c",
-      "version": "9.4.1",
+      "version": "9.5.0",
       "dependencies": [
         "code_assets",
         "collection",
@@ -1215,7 +1231,7 @@
     },
     {
       "name": "jni_flutter",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": [
         "flutter",
         "jni"
@@ -1223,11 +1239,12 @@
     },
     {
       "name": "jni",
-      "version": "1.0.0",
+      "version": "1.0.3",
       "dependencies": [
         "args",
         "collection",
         "ffi",
+        "jni_util",
         "meta",
         "package_config",
         "path",
@@ -1248,10 +1265,23 @@
       "dependencies": []
     },
     {
-      "name": "pub_semver",
-      "version": "2.2.0",
+      "name": "native_toolchain_c",
+      "version": "0.19.2",
       "dependencies": [
-        "collection"
+        "code_assets",
+        "glob",
+        "hooks",
+        "logging",
+        "meta",
+        "pub_semver"
+      ]
+    },
+    {
+      "name": "code_assets",
+      "version": "1.2.1",
+      "dependencies": [
+        "collection",
+        "hooks"
       ]
     },
     {
@@ -1268,16 +1298,22 @@
       ]
     },
     {
-      "name": "code_assets",
-      "version": "1.2.1",
+      "name": "pub_semver",
+      "version": "2.2.0",
       "dependencies": [
-        "collection",
-        "hooks"
+        "collection"
       ]
     },
     {
       "name": "package_config",
-      "version": "2.2.0",
+      "version": "3.0.0",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "jni_util",
+      "version": "1.0.0",
       "dependencies": [
         "path"
       ]
@@ -1286,6 +1322,17 @@
       "name": "args",
       "version": "2.7.0",
       "dependencies": []
+    },
+    {
+      "name": "glob",
+      "version": "2.1.3",
+      "dependencies": [
+        "async",
+        "collection",
+        "file",
+        "path",
+        "string_scanner"
+      ]
     },
     {
       "name": "yaml",

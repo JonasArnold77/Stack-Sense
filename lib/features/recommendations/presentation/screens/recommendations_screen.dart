@@ -12,10 +12,13 @@ import '../../../stack/domain/models/stack_entry.dart' show StackEntry;
 import '../widgets/evidence_card.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
+import '../../../settings/data/recommendation_mode_provider.dart';
+import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../community/domain/models/community_insight.dart';
 // ignore: unused_import
 import '../../../community/data/community_insights_provider.dart';
 import '../widgets/duplicate_dialog.dart';
+import '../widgets/safety_warning_dialog.dart';
 import '../widgets/goal_selector.dart';
 import '../widgets/goal_tile_grid.dart';
 import '../widgets/recommendations_states.dart';
@@ -84,6 +87,9 @@ class _RecommendationsScreenState
     }
   }
 
+  bool get _dbOnly =>
+      ref.read(recommendationModeProvider) == RecommendationMode.ragOnly;
+
   Future<void> _loadRecommendations(String goal) async {
     setState(() {
       _selectedGoal = goal;
@@ -102,6 +108,7 @@ class _RecommendationsScreenState
         goal: goal,
         limit: _pageSize,
         excludeIds: const [],
+        dbOnly: _dbOnly,
       );
       if (mounted) {
         setState(() {
@@ -174,6 +181,7 @@ class _RecommendationsScreenState
         goal: _selectedGoal!,
         limit: _pageSize,
         excludeIds: alreadyLoaded,
+        dbOnly: _dbOnly,
       );
       if (mounted) {
         setState(() {
@@ -194,6 +202,13 @@ class _RecommendationsScreenState
   }
 
   Future<void> _handleAddToStack(Supplement supplement) async {
+    final safetyConfirmed = await confirmSupplementSafetyIfNeeded(
+      context,
+      supplementId: supplement.id,
+      supplementName: supplement.name,
+    );
+    if (!mounted || !safetyConfirmed) return;
+
     final stackNotifier = ref.read(stackProvider.notifier);
     final currentStack = ref.read(stackProvider);
     final stackAsSupplements =
@@ -286,6 +301,8 @@ class _RecommendationsScreenState
   Widget build(BuildContext context) {
     final stack = ref.watch(stackProvider);
     final hasGoal = _selectedGoal != null;
+    final isRagOnly =
+        ref.watch(recommendationModeProvider) == RecommendationMode.ragOnly;
 
     return Scaffold(
       body: Column(
@@ -295,7 +312,9 @@ class _RecommendationsScreenState
             title: 'Entdecken',
             subtitle: _selectedGoal == null
                 ? 'Personalisierte Empfehlungen für dich'
-                : 'Ziel: $_selectedGoal',
+                : isRagOnly
+                    ? 'Datenbank-Modus · Ziel: $_selectedGoal'
+                    : 'Ziel: $_selectedGoal',
             bottomPadding: hasGoal ? 0 : 20,
             bottom: hasGoal
                 ? Column(
@@ -333,6 +352,7 @@ class _RecommendationsScreenState
     if (_selectedGoal == null) {
       return GoalTileGrid(onSelect: _loadRecommendations);
     }
+
     if (_isLoading) return const RecommendationsLoadingState();
     if (_error != null) {
       return RecommendationsErrorState(
@@ -435,6 +455,7 @@ class _RecommendationsScreenState
       },
     );
   }
+
 }
 
 // ─── Interne List-Item Typen ─────────────────────────────────────────────────

@@ -31,7 +31,7 @@ class RecommendationsLoadingState extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Claude analysiert dein Profil…',
+                'LifeLab analysiert dein Profil…',
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.textTertiary),
               ),

@@ -1,0 +1,91 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter run -d chrome --web-port 5173
+
+## exception
+
+FileSystemException: FileSystemException: Cannot open file, path = 'C:\Github\Stack Sense\Stack-Sense\.dart_tool\hooks_runner\shared\objective_c\.lock' (OS Error: Der Vorgang ist bei einer Datei mit einem geöffneten Bereich, der einem Benutzer zugeordnet ist, nicht anwendbar, errno = 1224)
+
+```
+#0      _checkForErrorResponse (dart:io/common.dart:58:9)
+#1      _File.open.<anonymous closure> (dart:io/file_impl.dart:438:7)
+#2      _rootRunUnary (dart:async/zone_root.dart:48:47)
+#3      _CustomZone.runUnary (dart:async/zone.dart:733:19)
+<asynchronous suspension>
+#4      _runUnderFileLock (package:hooks_runner/src/locking/locking.dart:88:28)
+<asynchronous suspension>
+#5      runUnderDirectoriesLock (package:hooks_runner/src/locking/locking.dart:21:10)
+<asynchronous suspension>
+#6      NativeAssetsBuildRunner._runHookForPackageCached.<anonymous closure> (package:hooks_runner/src/build_runner/build_runner.dart:441:17)
+<asynchronous suspension>
+#7      NativeAssetsBuildRunner._timeAsync (package:hooks_runner/src/build_runner/build_runner.dart:1173:14)
+<asynchronous suspension>
+#8      NativeAssetsBuildRunner.build.<anonymous closure> (package:hooks_runner/src/build_runner/build_runner.dart:197:22)
+<asynchronous suspension>
+#9      NativeAssetsBuildRunner._timeAsync (package:hooks_runner/src/build_runner/build_runner.dart:1173:14)
+<asynchronous suspension>
+#10     FlutterNativeAssetsBuildRunnerImpl.build (package:flutter_tools/src/isolated/native_assets/native_assets.dart:251:60)
+<asynchronous suspension>
+#11     _build (package:flutter_tools/src/isolated/native_assets/native_assets.dart:624:36)
+<asynchronous suspension>
+#12     _runDartHooks (package:flutter_tools/src/isolated/native_assets/native_assets.dart:558:37)
+<asynchronous suspension>
+#13     FlutterHookRunnerNative.runHooks (package:flutter_tools/src/build_system/targets/hook_runner_native.dart:40:45)
+<asynchronous suspension>
+#14     ResidentWebRunner._updateDevFS (package:flutter_tools/src/isolated/resident_web_runner.dart:781:28)
+<asynchronous suspension>
+#15     ResidentWebRunner.run.<anonymous closure> (package:flutter_tools/src/isolated/resident_web_runner.dart:330:41)
+<asynchronous suspension>
+#16     asyncGuard.<anonymous closure> (package:flutter_tools/src/base/async_guard.dart:108:24)
+<asynchronous suspension>
+```
+
+## flutter doctor
+
+```
+[✓] Flutter (Channel stable, 3.44.1, on Microsoft Windows [Version 10.0.26200.8875], locale en-US) [1,377ms]
+    • Flutter version 3.44.1 on channel stable at C:\Users\jonas\develop\flutter
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision 924134a44c (3 months ago), 2026-05-29 12:13:22 -0400
+    • Engine revision c416acfeb8
+    • Dart version 3.12.1
+    • DevTools version 2.57.0
+    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, enable-swift-package-manager, omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+
+[✓] Windows Version (Windows 11 or higher, 25H2, 2009) [3.8s]
+
+[✓] Android toolchain - develop for Android devices (Android SDK version 36.1.0) [9.3s]
+    • Android SDK at C:\Users\jonas\AppData\Local\Android\sdk
+    • Emulator version 36.4.9.0 (build_id 14788078) (CL:N/A)
+    • Platform android-36.1, build-tools 36.1.0
+    • Java binary at: C:\Program Files\Android\Android Studio\jbr\bin\java
+      This is the JDK bundled with the latest Android Studio installation on this machine.
+      To manually set the JDK path, use: `flutter config --jdk-dir="path/to/jdk"`.
+    • Java version OpenJDK Runtime Environment (build 21.0.9+-14787801-b1163.94)
+    • All Android licenses accepted.
+
+[✓] Chrome - develop for the web [1,043ms]
+    • Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[!] Visual Studio - develop Windows apps (Visual Studio Community 2022 17.13.3) [1,042ms]
+    • Visual Studio at C:\Program Files\Microsoft Visual Studio\2022\Community
+    • Visual Studio Community 2022 version 17.13.35828.75
+    ✗ Visual Studio is missing necessary components. Please re-run the Visual Studio installer for the "Desktop development with C++" workload, and include these components:
+        MSVC v142 - VS 2019 C++ x64/x86 build tools
+         - If there are multiple build tool versions available, install the latest
+        C++ CMake tools for Windows
+        Windows 10 SDK
+
+[✓] Connected device (3 available) [501ms]
+    • Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.26200.8875]
+    • Chrome (web)      • chrome  • web-javascript • Google Chrome 151.0.7922.77
+    • Edge (web)        • edge    • web-javascript • Microsoft Edge 151.0.4129.86
+
+[✓] Network resources [2.1s]
+    • All expected network resources are available.
+
+! Doctor found issues in 1 category.
+```

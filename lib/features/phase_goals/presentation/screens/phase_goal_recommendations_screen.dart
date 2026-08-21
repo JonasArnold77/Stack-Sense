@@ -10,6 +10,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../../recommendations/presentation/widgets/evidence_card.dart';
+import '../../../recommendations/presentation/widgets/safety_warning_dialog.dart';
+import '../../../settings/data/recommendation_mode_provider.dart';
+import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../data/phase_goals_provider.dart';
 import '../../domain/models/phase_goal.dart';
@@ -56,12 +59,15 @@ class _PhaseGoalRecommendationsScreenState
     });
 
     final profile = ref.read(onboardingProvider);
+    final dbOnly =
+        ref.read(recommendationModeProvider) == RecommendationMode.ragOnly;
 
     try {
       final results = await ApiService.instance.getRecommendations(
         profile: profile,
         goal: def.name, // z.B. "Marathon-Vorbereitung"
         limit: 4,
+        dbOnly: dbOnly,
       );
       if (mounted) setState(() => _supplements = results);
     } catch (e) {
@@ -72,6 +78,13 @@ class _PhaseGoalRecommendationsScreenState
   }
 
   Future<void> _addToStack(Supplement supplement, ActivePhaseGoal goal) async {
+    final safetyConfirmed = await confirmSupplementSafetyIfNeeded(
+      context,
+      supplementId: supplement.id,
+      supplementName: supplement.name,
+    );
+    if (!mounted || !safetyConfirmed) return;
+
     final stackNotifier = ref.read(stackProvider.notifier);
     await stackNotifier.addForPhaseGoal(
       supplement: supplement,

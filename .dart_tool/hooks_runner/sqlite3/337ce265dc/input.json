@@ -1,0 +1,12 @@
+{
+  "assets": {},
+  "config": {
+    "build_asset_types": [],
+    "linking_enabled": false
+  },
+  "out_dir_shared": "C:\\Github\\Stack Sense\\Stack-Sense\\.dart_tool\\hooks_runner\\shared\\sqlite3\\build\\",
+  "out_file": "C:\\Github\\Stack Sense\\Stack-Sense\\.dart_tool\\hooks_runner\\sqlite3\\337ce265dc\\output.json",
+  "package_name": "sqlite3",
+  "package_root": "C:\\Users\\jonas\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\sqlite3-3.5.1\\",
+  "user_defines": {}
+}
