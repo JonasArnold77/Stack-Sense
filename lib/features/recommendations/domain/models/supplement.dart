@@ -144,12 +144,56 @@ class SupplementSynergy {
       };
 }
 
+/// Stoffklasse des Supplements — für das Kategorie-Symbol auf der Card.
+/// Unabhängig von [Supplement.categories] (zielbezogene Tags wie "Schlaf").
+enum SubstanceCategory {
+  vitamine,
+  mineralstoffe,
+  omegaFettsaeuren,
+  aminosaeurenProtein,
+  pflanzlicheExtrakte,
+  darmVerdauung,
+}
+
+extension SubstanceCategoryLabel on SubstanceCategory {
+  /// Kurzes, kompaktes Label fürs Karten-Symbol.
+  String get shortLabel => switch (this) {
+        SubstanceCategory.vitamine => 'Vitamin',
+        SubstanceCategory.mineralstoffe => 'Mineral',
+        SubstanceCategory.omegaFettsaeuren => 'Omega',
+        SubstanceCategory.aminosaeurenProtein => 'Protein',
+        SubstanceCategory.pflanzlicheExtrakte => 'Pflanze',
+        SubstanceCategory.darmVerdauung => 'Darm',
+      };
+
+  /// Vollständiger Name für Tooltips/Detailansichten.
+  String get fullLabel => switch (this) {
+        SubstanceCategory.vitamine => 'Vitamine',
+        SubstanceCategory.mineralstoffe => 'Mineralstoffe',
+        SubstanceCategory.omegaFettsaeuren => 'Omega & Fettsäuren',
+        SubstanceCategory.aminosaeurenProtein => 'Aminosäuren & Protein',
+        SubstanceCategory.pflanzlicheExtrakte => 'Pflanzliche Extrakte',
+        SubstanceCategory.darmVerdauung => 'Darm & Verdauung',
+      };
+}
+
+SubstanceCategory? parseSubstanceCategory(String? raw) => switch (raw) {
+      'Vitamine' => SubstanceCategory.vitamine,
+      'Mineralstoffe' => SubstanceCategory.mineralstoffe,
+      'Omega & Fettsäuren' => SubstanceCategory.omegaFettsaeuren,
+      'Aminosäuren & Protein' => SubstanceCategory.aminosaeurenProtein,
+      'Pflanzliche Extrakte' => SubstanceCategory.pflanzlicheExtrakte,
+      'Darm & Verdauung' => SubstanceCategory.darmVerdauung,
+      _ => null,
+    };
+
 /// Ein Supplement mit allen relevanten Informationen für die Card-Anzeige.
 class Supplement {
   final String id;
   final String name;
   final String? substanceName;
   final EvidenceLevel evidenceLevel;
+  final SubstanceCategory? substanceCategory;
   final String pitch;         // Kurzer Nutzen-Satz für die Card (persönlich, ohne Fachjargon)
   final String evidenceReason;
   final String dosage;
@@ -175,6 +219,7 @@ class Supplement {
     required this.name,
     this.substanceName,
     required this.evidenceLevel,
+    this.substanceCategory,
     this.pitch = '',
     required this.evidenceReason,
     required this.dosage,

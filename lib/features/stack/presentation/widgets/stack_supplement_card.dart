@@ -5,6 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/models/stack_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart';
+import '../../../recommendations/presentation/widgets/supplement_category_badge.dart';
 
 /// Card für einen Eintrag im Stack des Nutzers.
 ///
@@ -135,6 +136,12 @@ class StackSupplementCard extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                // Stoffklasse-Symbol
+                if (entry.substanceCategory != null) ...[
+                  SupplementCategoryBadge(category: entry.substanceCategory),
+                  const SizedBox(width: AppConstants.spaceXS),
+                ],
 
                 // Slot Badge
                 _SlotBadge(slot: entry.intakeSlot),

@@ -290,6 +290,7 @@ class _RecommendationsScreenState
         name: e.name,
         substanceName: e.substanceName,
         evidenceLevel: e.evidenceLevel,
+        substanceCategory: e.substanceCategory,
         evidenceReason: '',
         dosage: e.dosage,
         intakeTime: e.intakeTime,

@@ -11,7 +11,7 @@ import anthropic
 
 from config.settings import settings
 from models.profile import UserProfile
-from models.recommendation import RecommendationResponse, SupplementRecommendation, SecondaryBenefit, EvidenceLevel, InteractionSeverity, SupplementType, ProductLink, SynergyRecommendation, SynergyResponse
+from models.recommendation import RecommendationResponse, SupplementRecommendation, SecondaryBenefit, EvidenceLevel, InteractionSeverity, SupplementType, SubstanceCategory, ProductLink, SynergyRecommendation, SynergyResponse
 from data.products import get_products
 from services.pubmed_service import PubMedService
 from services.vector_service import search_studies as vector_search
@@ -344,6 +344,15 @@ SUPPLEMENT-TYPEN:
   → Bei "group": enthaltene_wirkstoffe als Liste angeben
   → Bei "single": enthaltene_wirkstoffe = []
 
+STOFFKLASSE (substance_category) — GENAU EINEN der folgenden 6 Werte wählen, exakt so geschrieben:
+- "Vitamine" (z.B. Vitamin D, Vitamin C, B-Komplex)
+- "Mineralstoffe" (z.B. Magnesium, Zink, Eisen, Calcium)
+- "Omega & Fettsäuren" (z.B. Omega-3, MCT-Öl)
+- "Aminosäuren & Protein" (z.B. BCAA, L-Glutamin, Whey, Kreatin)
+- "Pflanzliche Extrakte" (z.B. Ashwagandha, Kurkuma, Ginseng)
+- "Darm & Verdauung" (z.B. Probiotika, Verdauungsenzyme)
+Wähle die inhaltlich am besten passende Kategorie auch bei Grenzfällen (z.B. Melatonin/Coenzym Q10 → am ehesten "Vitamine" wenn vitaminähnlich, sonst die nächstpassende der 6 Kategorien). Kein 7. Wert, keine Erfindungen.
+
 JSON-FORMAT (exakt einhalten):
 {
   "recommendations": [
@@ -354,6 +363,7 @@ JSON-FORMAT (exakt einhalten):
       "supplement_type": "single",
       "enthaltene_wirkstoffe": [],
       "evidence_level": "green",
+      "substance_category": "Vitamine",
       "pitch": "Im Winter hat fast jeder zu wenig Vitamin D. Mehrere große RCTs zeigen, dass Menschen mit ausreichendem Spiegel seltener krank werden. Für dein Immunsystem ist das gerade besonders relevant.",
       "evidence_reason": "Mehrere Meta-Analysen (>10.000 Teilnehmer) belegen: Mangel erhöht Infektrisiko messbar.",
       "secondary_benefit": {
@@ -846,6 +856,12 @@ class ClaudeService:
             except ValueError:
                 supp_type = SupplementType.single
 
+            # substance_category aus Claude-Antwort lesen — None falls unbekannt/fehlt
+            try:
+                substance_category = SubstanceCategory(item.get("substance_category"))
+            except ValueError:
+                substance_category = None
+
             # secondary_benefit aus Claude-JSON parsen (optional)
             raw_secondary = item.get("secondary_benefit")
             secondary_benefit = None
@@ -864,6 +880,7 @@ class ClaudeService:
                 name=item["name"],
                 substance_name=item.get("substance_name"),
                 evidence_level=EvidenceLevel(item["evidence_level"]),
+                substance_category=substance_category,
                 pitch=_truncate_pitch(item.get("pitch", "")),
                 evidence_reason=item["evidence_reason"],
                 secondary_benefit=secondary_benefit,

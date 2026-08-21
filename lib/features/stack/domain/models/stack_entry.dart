@@ -26,6 +26,7 @@ class StackEntry {
   final String name;
   final String? substanceName;
   final EvidenceLevel evidenceLevel;
+  final SubstanceCategory? substanceCategory;
   final String dosage;
   final String intakeTime; // Lesbarer Text: "Morgens", "Abends vor dem Schlafen"
   final IntakeSlot intakeSlot; // Kalender-Slot (automatisch abgeleitet)
@@ -57,6 +58,7 @@ class StackEntry {
     required this.name,
     this.substanceName,
     required this.evidenceLevel,
+    this.substanceCategory,
     required this.dosage,
     required this.intakeTime,
     required this.intakeSlot,
@@ -91,6 +93,7 @@ class StackEntry {
         name: name,
         substanceName: substanceName,
         evidenceLevel: evidenceLevel,
+        substanceCategory: substanceCategory,
         dosage: dosage,
         intakeTime: intakeTime,
         intakeSlot: intakeSlot,
@@ -114,6 +117,7 @@ class StackEntry {
         name: s.name,
         substanceName: s.substanceName,
         evidenceLevel: s.evidenceLevel,
+        substanceCategory: s.substanceCategory,
         dosage: s.dosage,
         intakeTime: s.intakeTime,
         intakeSlot: _deriveSlot(s.intakeTime),
@@ -149,6 +153,7 @@ class StackEntry {
         'name': name,
         'substanceName': substanceName,
         'evidenceLevel': evidenceLevel.name,
+        'substanceCategory': substanceCategory?.name,
         'dosage': dosage,
         'intakeTime': intakeTime,
         'intakeSlot': intakeSlot.name,
@@ -186,6 +191,7 @@ class StackEntry {
       name: json['name'] as String,
       substanceName: json['substanceName'] as String?,
       evidenceLevel: EvidenceLevel.values.byName(json['evidenceLevel'] as String),
+      substanceCategory: _parseSubstanceCategoryName(json['substanceCategory'] as String?),
       dosage: json['dosage'] as String,
       intakeTime: json['intakeTime'] as String,
       intakeSlot: IntakeSlot.values.byName(json['intakeSlot'] as String),
@@ -209,4 +215,14 @@ class StackEntry {
       addedAt: DateTime.parse(json['addedAt'] as String),
     );
   }
+}
+
+/// Sicheres Parsen des enum-Namens aus SharedPreferences — ältere gespeicherte
+/// Stack-Einträge haben dieses Feld noch nicht (null statt Fehler).
+SubstanceCategory? _parseSubstanceCategoryName(String? raw) {
+  if (raw == null) return null;
+  for (final c in SubstanceCategory.values) {
+    if (c.name == raw) return c;
+  }
+  return null;
 }

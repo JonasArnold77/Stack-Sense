@@ -21,6 +21,17 @@ class SupplementType(str, Enum):
     group = "group"     # Kombipräparat (z.B. Vitamin B-Komplex)
 
 
+class SubstanceCategory(str, Enum):
+    """Stoffklasse des Supplements — für das Kategorie-Symbol auf der Card.
+    Unabhängig von `categories` (zielbezogene Tags wie "Schlaf", "Energie")."""
+    vitamine = "Vitamine"
+    mineralstoffe = "Mineralstoffe"
+    omega_fettsaeuren = "Omega & Fettsäuren"
+    aminosaeuren_protein = "Aminosäuren & Protein"
+    pflanzliche_extrakte = "Pflanzliche Extrakte"
+    darm_verdauung = "Darm & Verdauung"
+
+
 class ProductLink(BaseModel):
     label: str
     shop: str
@@ -41,6 +52,7 @@ class SupplementRecommendation(BaseModel):
     name: str
     substance_name: Optional[str]
     evidence_level: EvidenceLevel
+    substance_category: Optional[SubstanceCategory] = None  # Stoffklasse fürs Karten-Symbol
     pitch: str = ""              # Kurzer Nutzen-Text für die Card (1 Satz, persönlich, kein Werbejargon)
     evidence_reason: str
     secondary_benefit: Optional[SecondaryBenefit] = None

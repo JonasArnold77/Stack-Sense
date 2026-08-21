@@ -11,6 +11,7 @@ import '../../domain/models/supplement.dart';
 import '../screens/supplement_detail_screen.dart';
 import '../../../community/domain/models/community_insight.dart';
 import '../../../stack/data/stack_provider.dart';
+import 'supplement_category_badge.dart';
 
 /// Die Kern-Komponente der App — zeigt ein Supplement mit Evidenz-Ampel.
 /// Tap → öffnet SupplementDetailScreen mit slide-from-bottom Transition.
@@ -645,6 +646,13 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
               ],
             ),
 
+            // --- Stoffklasse-Symbol oben rechts ---
+            if (supplement.substanceCategory != null)
+              Positioned(
+                top: rankStyle != null ? 44 : 12,
+                right: 12,
+                child: SupplementCategoryBadge(category: supplement.substanceCategory),
+              ),
           ],
         ),
       ),
