@@ -11,6 +11,8 @@ import '../../../gamification/data/xp_provider.dart';
 import '../../../insights/data/insights_provider.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
+import '../../../settings/data/recommendation_source_mode_provider.dart';
+import '../../../settings/domain/models/recommendation_source_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/data/taken_provider.dart';
 import '../widgets/checkin_summary_card.dart';
@@ -262,6 +264,11 @@ class _GreetingHeader extends ConsumerWidget {
               const _RecommendationModeToggle(),
             ],
           ),
+          const SizedBox(height: AppConstants.spaceS),
+          const Align(
+            alignment: Alignment.centerRight,
+            child: _RecommendationSourceModeToggle(),
+          ),
           const SizedBox(height: AppConstants.spaceM),
           Text(
             dateStr,
@@ -333,6 +340,41 @@ class _RecommendationModeToggle extends ConsumerWidget {
             icon: Icons.auto_awesome,
             selected: mode == RecommendationMode.llm,
             onTap: () => notifier.setMode(RecommendationMode.llm),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecommendationSourceModeToggle extends ConsumerWidget {
+  const _RecommendationSourceModeToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(recommendationSourceModeProvider);
+    final notifier = ref.read(recommendationSourceModeProvider.notifier);
+
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ModeSegment(
+            label: 'Vorberechnet',
+            icon: Icons.bolt_rounded,
+            selected: mode == RecommendationSourceMode.precomputed,
+            onTap: () => notifier.setMode(RecommendationSourceMode.precomputed),
+          ),
+          _ModeSegment(
+            label: 'Live',
+            icon: Icons.sync_rounded,
+            selected: mode == RecommendationSourceMode.live,
+            onTap: () => notifier.setMode(RecommendationSourceMode.live),
           ),
         ],
       ),

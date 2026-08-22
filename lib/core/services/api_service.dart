@@ -73,6 +73,56 @@ class ApiService {
     }
   }
 
+  /// Vorberechnungs-Modus: nutzt die per precompute_recommendations.py
+  /// vorab erzeugte Rangliste + Zusatzfelder statt bei jedem Öffnen alles
+  /// neu zu generieren. [offset] paginiert durch die bereits umsortierte
+  /// Liste (kein excludeIds-Muster nötig, die Reihenfolge steht ja schon fest).
+  Future<List<Supplement>> getPrecomputedRecommendations({
+    required UserProfile profile,
+    required String goal,
+    int limit = 4,
+    int offset = 0,
+    bool dbOnly = false,
+  }) async {
+    final body = jsonEncode({
+      'profile': _profileToJson(profile),
+      'goal': goal,
+      'limit': limit,
+      'offset': offset,
+      'db_only': dbOnly,
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/recommendations/precomputed'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(AppConstants.apiTimeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final list = data['recommendations'] as List<dynamic>;
+        return list
+            .map((e) => _supplementFromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        debugPrint('API Fehler ${response.statusCode}: ${response.body}');
+        throw ApiException('Server-Fehler: ${response.statusCode}');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Netzwerk-Fehler: $e');
+      throw ApiException(
+          'Keine Verbindung zum Backend. Läuft start.ps1?');
+    }
+  }
+
   /// Schnelle, tippfehler-/schreibweise-tolerante Suche über die bekannten
   /// Supplements ("Vitamin B", "Vitamin-B", "VitaminB" finden alle dieselben
   /// Treffer) — kein LLM-Aufruf, für die Home-Screen-Suchleiste.

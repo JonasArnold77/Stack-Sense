@@ -15,6 +15,8 @@ import '../../../recommendations/presentation/widgets/evidence_card.dart';
 import '../../../recommendations/presentation/widgets/safety_warning_dialog.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
+import '../../../settings/data/recommendation_source_mode_provider.dart';
+import '../../../settings/domain/models/recommendation_source_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 
 // ---------------------------------------------------------------------------
@@ -209,6 +211,32 @@ class _ProfileRecommendationsScreenState
   bool get _dbOnly =>
       ref.read(recommendationModeProvider) == RecommendationMode.ragOnly;
 
+  bool get _precomputed =>
+      ref.read(recommendationSourceModeProvider) ==
+      RecommendationSourceMode.precomputed;
+
+  Future<List<Supplement>> _fetchRecommendations({
+    required int offset,
+    required List<String> alreadyLoadedIds,
+  }) {
+    if (_precomputed) {
+      return ApiService.instance.getPrecomputedRecommendations(
+        profile: _buildFilteredProfile(),
+        goal: 'Basis-Supplementierung',
+        limit: _pageSize,
+        offset: offset,
+        dbOnly: _dbOnly,
+      );
+    }
+    return ApiService.instance.getRecommendations(
+      profile: _buildFilteredProfile(),
+      goal: 'Basis-Supplementierung',
+      limit: _pageSize,
+      excludeIds: alreadyLoadedIds,
+      dbOnly: _dbOnly,
+    );
+  }
+
   Future<void> _loadInitial() async {
     setState(() {
       _isLoading = true;
@@ -218,11 +246,9 @@ class _ProfileRecommendationsScreenState
     });
 
     try {
-      final results = await ApiService.instance.getRecommendations(
-        profile: _buildFilteredProfile(),
-        goal: 'Basis-Supplementierung',
-        limit: _pageSize,
-        dbOnly: _dbOnly,
+      final results = await _fetchRecommendations(
+        offset: 0,
+        alreadyLoadedIds: const [],
       );
       if (mounted) {
         setState(() {
@@ -243,12 +269,9 @@ class _ProfileRecommendationsScreenState
 
     final excludeIds = _supplements.map((s) => s.id).toList();
     try {
-      final results = await ApiService.instance.getRecommendations(
-        profile: _buildFilteredProfile(),
-        goal: 'Basis-Supplementierung',
-        limit: _pageSize,
-        excludeIds: excludeIds,
-        dbOnly: _dbOnly,
+      final results = await _fetchRecommendations(
+        offset: _supplements.length,
+        alreadyLoadedIds: excludeIds,
       );
       if (mounted) {
         setState(() {

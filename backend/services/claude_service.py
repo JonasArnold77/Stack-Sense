@@ -14,7 +14,11 @@ from models.profile import UserProfile
 from models.recommendation import RecommendationResponse, SupplementRecommendation, SecondaryBenefit, EvidenceLevel, InteractionSeverity, SupplementType, SubstanceCategory, ProductLink, SynergyRecommendation, SynergyResponse
 from data.products import get_products
 from services.pubmed_service import PubMedService
-from services.vector_service import search_studies as vector_search
+from services.vector_service import (
+    search_studies as vector_search,
+    get_precomputed_ranking,
+    get_precomputed_supplement_info,
+)
 from services.rxnorm_service import RxNormService
 
 logger = logging.getLogger(__name__)
@@ -448,6 +452,73 @@ Verwende STRIKT NICHTS aus deinem Trainingswissen, auch nicht für Dosierung ode
 SYSTEM_PROMPT_DB_ONLY = _DB_ONLY_PREFIX + SYSTEM_PROMPT
 
 
+# ---------------------------------------------------------------------------
+# Vorberechnungs-Modus — schlanke Rangliste (nur id/name/relevance_score),
+# kein Nutzerprofil. Wird nur vom Precompute-Skript aufgerufen, nie zur
+# Laufzeit. Die eigentliche Kartengenerierung passiert später beim Laden
+# (siehe get_recommendations_from_precomputed / SYSTEM_PROMPT weiter oben).
+# ---------------------------------------------------------------------------
+RANKING_SYSTEM_PROMPT = """Du bewertest Supplements für ein Themenfeld — OHNE Nutzerprofil, rein nach
+grundsätzlicher fachlicher Eignung. Das Ergebnis wird später pro Nutzer anhand des Profils
+umsortiert; deine Aufgabe ist nur die GRUNDREIHENFOLGE.
+
+HARDREGEL — KEIN TRAININGSWISSEN:
+Du darfst AUSSCHLIESSLICH Supplements empfehlen, die im bereitgestellten Kontext explizit erwähnt
+werden. Erfinde keine Evidenz.
+
+AUFGABE:
+Liste bis zu LIMIT Supplements für das angegebene Themenfeld, sortiert nach Passgenauigkeit.
+
+BEWERTUNG (relevance_score, 0-100):
+- Wie direkt und stark wirkt das Supplement auf genau dieses Themenfeld — unabhängig von jedem
+  individuellen Nutzerprofil (das kommt erst in einem späteren Schritt dazu)?
+- Evidenzstärke fließt mit ein (starke RCT-/Meta-Analyse-Lage = Bonus, kaum Evidenz = Abzug).
+- 90–100 = Erstlinien-Supplement für genau dieses Themenfeld, starke Evidenz
+- 70–89 = Sehr wichtig, gute Evidenz
+- 50–69 = Unterstützend, moderate Evidenz
+- 30–49 = Schwacher Bezug
+- 0–29 = Kaum Bezug — nur falls Limit sonst nicht erfüllbar
+
+Bei "Basis-Supplementierung": bewerte generische, altersunabhängige Grundrelevanz für einen
+durchschnittlichen Erwachsenen (Vitamin D, Magnesium, Omega-3 etc. typischerweise hoch) — die
+tatsächliche individuelle Profil-Passung kommt im späteren Umsortier-Schritt hinzu.
+
+JSON-FORMAT (exakt einhalten, keine weiteren Felder):
+{"ranking": [{"id": "vitamin-d3", "name": "Vitamin D3", "relevance_score": 95}]}
+
+Sortiere absteigend nach relevance_score. Keine doppelten IDs. Generiere höchstens LIMIT Einträge."""
+
+_RANKING_DB_ONLY_PREFIX = """⛔ DATENBANK-MODUS — ZUSÄTZLICHE HARDREGEL:
+Die EINZIGE erlaubte Grundlage ist der Kontext unten (PubMed/Europe PMC/EFSA/NIH ODS/openFDA/DSLD) —
+kein Trainingswissen. relevance_score nur aus Menge/Stärke der im Kontext gefundenen Belege ableiten.
+Liste nur Supplements die im Kontext mit Namen vorkommen.
+
+"""
+
+RANKING_SYSTEM_PROMPT_DB_ONLY = _RANKING_DB_ONLY_PREFIX + RANKING_SYSTEM_PROMPT
+
+
+RESORT_SYSTEM_PROMPT = """Du bekommst eine bereits erstellte, themenfeld-bezogene Rangliste von
+Supplements (id, name, base_relevance_score) sowie ein vollständiges Nutzerprofil. Deine einzige
+Aufgabe: die Liste anhand ALLER relevanten Profil-Fakten neu bewerten — Alter, Geschlecht,
+Erkrankungen, Dauermedikamente, Schwangerschaft, Aktivitätslevel, Jahreszeit, und alles sonst was
+du für relevant hältst.
+
+WICHTIG:
+- Passt ein Supplement laut Profil GAR NICHT (z.B. klare Kontraindikation, Schwangerschaft bei
+  einem in der Schwangerschaft abzuratenden Stoff, bekannte Wechselwirkung mit einem
+  Dauermedikament) → Score DEUTLICH absenken (mindestens -30 bis -60 Punkte), damit es weit nach
+  unten rutscht.
+- Passt ein Supplement besonders gut zum Profil zusätzlich zum Themenfeld → Score leicht anheben.
+- Verändere NICHT die Supplement-Auswahl selbst (keine IDs hinzufügen/entfernen) — nur die Scores.
+- Erfinde keine Wechselwirkungen/Kontraindikationen die nicht plausibel/bekannt sind.
+
+Antworte AUSSCHLIESSLICH mit validem JSON, keine Erklärtexte:
+{"ranking": [{"id": "vitamin-d3", "relevance_score": 62}]}
+
+Gib für JEDE gegebene ID genau einen Eintrag zurück, in neuer absteigender Reihenfolge nach Score."""
+
+
 PRODUCTS_SYSTEM_PROMPT = """Du bist ein Supplement-Einkaufsberater für den deutschen Markt.
 
 AUFGABE:
@@ -482,13 +553,22 @@ JSON-FORMAT:
   ]
 }"""
 
-EXPLAIN_SYSTEM_PROMPT = """Du erklärst Nahrungsergänzungsmittel für absolute Laien.
+EXPLAIN_SYSTEM_PROMPT = """Du erklärst Supplements einfach und verständlich — wie einem interessierten Laien
+ohne biochemisches Vorwissen.
+
+AUFGABE:
+Erkläre in 3–5 kurzen Sätzen: Was ist dieser Stoff (Herkunft/Funktion im Körper in einfachen
+Worten), und wofür wird er allgemein eingesetzt.
 
 REGELN:
-- 2-3 kurze Sätze, max 300 Zeichen
-- Keine Fachbegriffe
-- Gerne eine einfache Analogie (Auto, Baukasten, Akku, etc.)
-- Antworte NUR mit dem Erklärungstext — kein JSON, keine Formatierung"""
+- Antworte AUSSCHLIESSLICH mit validem JSON, kein Text davor oder danach
+- Einfache Sprache, keine Fachbegriffe ohne Erklärung, keine Studienzitate
+- Reine Begriffserklärung — keine Wirksamkeitsbehauptungen ("hilft garantiert bei..."),
+  stattdessen neutral beschreiben wofür es typischerweise verwendet wird
+- max. 400 Zeichen insgesamt
+
+JSON-FORMAT (exakt einhalten):
+{"explanation": "Vitamin D ist eigentlich ein Hormon, das deine Haut bei Sonnenlicht selbst herstellt. Es hilft deinem Körper, Kalzium aus der Nahrung aufzunehmen — wichtig für Knochen. Im Winter, wenn wenig Sonne da ist, wird es oft als Supplement genommen."}"""
 
 
 FOOD_SOURCES_SYSTEM_PROMPT = """Du bist ein Ernährungsexperte und nennst die besten natürlichen Lebensmittelquellen für Nährstoffe.
@@ -874,6 +954,91 @@ def _build_lookup_message(supplement_name: str, db_context: str, pubmed_context:
     return "\n".join(lines)
 
 
+def _build_ranking_message(goal: str, db_context: str, pubmed_context: str, limit: int) -> str:
+    lines = [f"THEMENFELD: {goal}", f"LIMIT: {limit}"]
+    if db_context:
+        lines.append(f"\n{db_context}")
+    if pubmed_context:
+        lines.append(f"\n{pubmed_context}")
+    lines.append(f"\nErstelle die Rangliste als JSON (max. {limit} Einträge).")
+    return "\n".join(lines)
+
+
+def _build_resort_message(items: list[dict], profile: UserProfile) -> str:
+    gender_map = {"male": "männlich", "female": "weiblich", "diverse": "divers"}
+    sport_map = {
+        "none": "kaum aktiv", "light": "leicht aktiv",
+        "moderate": "moderat aktiv", "intense": "sehr aktiv",
+    }
+    profile_lines = [
+        f"Alter: {profile.age} Jahre",
+        f"Geschlecht: {gender_map.get(profile.gender, profile.gender)}",
+        f"Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}",
+        f"Jahreszeit: {_get_season()}",
+    ]
+    if profile.conditions:
+        profile_lines.append(f"Erkrankungen: {', '.join(profile.conditions)}")
+    if profile.medications:
+        profile_lines.append(f"Dauermedikamente: {', '.join(profile.medications)}")
+    if profile.is_pregnant:
+        profile_lines.append("Schwanger / stillend: ja")
+
+    ranking_lines = "\n".join(
+        f"- id={i['id']} | {i['name']} | Score={i['base_relevance_score']}" for i in items
+    )
+
+    return (
+        "NUTZERPROFIL:\n" + "\n".join(f"- {l}" for l in profile_lines) +
+        f"\n\nAKTUELLE RANGLISTE:\n{ranking_lines}\n\n"
+        "Bewerte diese Liste anhand des Profils neu."
+    )
+
+
+def _build_fresh_fields_message(
+    profile: UserProfile, goal: str, page_items: list[dict],
+    db_context: str, pubmed_context: str, db_only: bool,
+) -> str:
+    """User-Message für den letzten Schritt im Vorberechnungs-Modus: die
+    Supplement-Auswahl UND Reihenfolge stehen schon fest (vorberechnet +
+    umsortiert) — hier werden nur noch die individuellen Kartenfelder
+    (Pitch, Begründung etc.) für genau diese Supplements generiert."""
+    gender_map = {"male": "männlich", "female": "weiblich", "diverse": "divers"}
+    sport_map = {
+        "none": "kaum aktiv", "light": "leicht aktiv (1-2x/Woche)",
+        "moderate": "moderat aktiv (3-4x/Woche)", "intense": "sehr aktiv (5+x/Woche)",
+    }
+    lines = [f"GEWÜNSCHTES ZIEL: {goal}"]
+    if not db_only:
+        lines.append(
+            f"NUTZERPROFIL — Alter: {profile.age}, "
+            f"Geschlecht: {gender_map.get(profile.gender, profile.gender)}, "
+            f"Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}, "
+            f"Jahreszeit: {_get_season()}"
+        )
+        if profile.conditions:
+            lines.append(f"Erkrankungen: {', '.join(profile.conditions)}")
+        if profile.medications:
+            lines.append(f"Dauermedikamente: {', '.join(profile.medications)}")
+        if profile.is_pregnant:
+            lines.append("Schwanger / stillend: ja")
+
+    supplement_list = "\n".join(f"- id={i['id']} | {i['name']}" for i in page_items)
+    lines.append(
+        "\nDIESE SUPPLEMENTS SIND BEREITS AUSGEWÄHLT UND SORTIERT (nicht verändern, keine "
+        "weiteren hinzufügen, keine weglassen) — erstelle NUR die Kartenfelder dafür:\n"
+        f"{supplement_list}"
+    )
+    if db_context:
+        lines.append(f"\n{db_context}")
+    if pubmed_context:
+        lines.append(f"\n{pubmed_context}")
+    lines.append(
+        f"\nErstelle die Kartenfelder für GENAU diese {len(page_items)} Supplements als JSON "
+        "(recommendations-Array, gleiche Reihenfolge wie oben)."
+    )
+    return "\n".join(lines)
+
+
 class ClaudeService:
     def __init__(self):
         self.client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
@@ -948,6 +1113,182 @@ class ClaudeService:
         result = RecommendationResponse(goal=goal, recommendations=recommendations)
         _cache_set(cache_key, result)
         return result
+
+    async def get_goal_ranking(
+        self, goal: str, db_only: bool = False, limit: int = 20,
+    ) -> list[dict]:
+        """Schlanke Grundrangliste (id/name/score) für ein Themenfeld — kein
+        Nutzerprofil, keine Kartenfelder. Wird NUR vom Precompute-Skript
+        aufgerufen (scripts/precompute_recommendations.py), nie zur Laufzeit."""
+        logger.info(f"Ranking-Anfrage: Ziel='{goal}', db_only={db_only}, limit={limit}")
+
+        db_context = "" if db_only else _build_db_context(medications=[], conditions=[])
+        vector_context = vector_search(
+            f"{goal} supplement", supplement_names=[], top_k=15 if db_only else 10,
+        ) or ""
+
+        user_message = _build_ranking_message(goal, db_context, vector_context, limit)
+
+        message = await self.client.messages.create(
+            model=settings.claude_model,
+            max_tokens=2048,
+            system=RANKING_SYSTEM_PROMPT_DB_ONLY if db_only else RANKING_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_message}],
+        )
+
+        raw = _extract_json(message.content[0].text.strip())
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            logger.error(f"Ranking-JSON-Fehler: {e}\nRaw: {raw[:500]}")
+            raise ValueError(f"Claude-Antwort ist kein valides JSON: {e}")
+
+        seen: set[str] = set()
+        results = []
+        for item in data.get("ranking", []):
+            sid = item.get("id")
+            if not sid or sid in seen:
+                continue
+            seen.add(sid)
+            results.append({
+                "id": sid,
+                "name": item.get("name", sid),
+                "base_relevance_score": max(0, min(100, int(item.get("relevance_score", 50)))),
+            })
+        results.sort(key=lambda r: r["base_relevance_score"], reverse=True)
+        return results[:limit]
+
+    async def resort_by_profile(
+        self, ranked_items: list[dict], profile: UserProfile, db_only: bool = False,
+    ) -> list[dict]:
+        """Sortiert eine vorberechnete Rangliste anhand des Nutzerprofils um —
+        OHNE die Grundauswahl zu verändern. Datenbank-Modus: rein rechnerisch
+        anhand supplement_knowledge.json (kein LLM-Call). KI-Modus: Claude
+        entscheidet anhand aller Profil-Fakten (siehe RESORT_SYSTEM_PROMPT)."""
+        if not ranked_items:
+            return []
+
+        if db_only:
+            adjusted = []
+            for item in ranked_items:
+                entry = _SUPPLEMENT_DB.get(item["id"])
+                penalty = 0
+                if entry:
+                    for contra in entry.get("contraindications", []):
+                        contra_lower = contra.lower()
+                        for cond in profile.conditions or []:
+                            if any(w in contra_lower for w in cond.lower().split() if len(w) > 3):
+                                penalty = max(penalty, 45)
+                        if profile.is_pregnant and any(
+                            w in contra_lower for w in ("schwanger", "stillend", "pregnan")
+                        ):
+                            penalty = max(penalty, 45)
+                    for interaction in entry.get("drug_interactions", []):
+                        drug_lower = interaction.get("drug", "").lower()
+                        for med in profile.medications or []:
+                            if any(w in drug_lower for w in med.lower().split() if len(w) > 3):
+                                sev = interaction.get("severity", "gering")
+                                penalty = max(
+                                    penalty,
+                                    {"hoch": 50, "moderat": 30, "gering": 12}.get(sev, 12),
+                                )
+                adjusted.append({
+                    **item,
+                    "relevance_score": max(0, item["base_relevance_score"] - penalty),
+                })
+            adjusted.sort(key=lambda r: r["relevance_score"], reverse=True)
+            return adjusted
+
+        # KI-Modus: Claude entscheidet die Umsortierung anhand aller Profil-Fakten.
+        try:
+            user_message = _build_resort_message(ranked_items, profile)
+            message = await self.client.messages.create(
+                model=settings.claude_model,
+                max_tokens=1024,
+                system=RESORT_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            raw = _extract_json(message.content[0].text.strip())
+            data = json.loads(raw)
+            score_map = {
+                r["id"]: max(0, min(100, int(r.get("relevance_score", 50))))
+                for r in data.get("ranking", [])
+            }
+            adjusted = [
+                {**item, "relevance_score": score_map.get(item["id"], item["base_relevance_score"])}
+                for item in ranked_items
+            ]
+            adjusted.sort(key=lambda r: r["relevance_score"], reverse=True)
+            return adjusted
+        except Exception as e:
+            logger.warning(f"Umsortierung fehlgeschlagen ({e}) — verwende Grundreihenfolge")
+            return [
+                {**item, "relevance_score": item["base_relevance_score"]}
+                for item in ranked_items
+            ]
+
+    async def get_recommendations_from_precomputed(
+        self, profile: UserProfile, goal: str, db_only: bool = False,
+        limit: int = 4, offset: int = 0,
+    ) -> RecommendationResponse:
+        """Vorberechnungs-Modus: lädt die vorberechnete Rangliste, sortiert sie
+        anhand des Profils um, und generiert nur für die angeforderte Seite die
+        individuellen Kartenfelder frisch. dosage/intake_time/intake_hint und
+        simple_explanation kommen direkt aus der Vorberechnung, nicht von Claude."""
+        logger.info(
+            f"Precomputed-Anfrage: Ziel='{goal}', offset={offset}, limit={limit}, db_only={db_only}"
+        )
+
+        ranking = get_precomputed_ranking(goal, db_only)
+        if not ranking:
+            raise ValueError(
+                f"Keine vorberechneten Daten für '{goal}' (db_only={db_only}) gefunden — "
+                "scripts/precompute_recommendations.py ausführen."
+            )
+
+        resorted = await self.resort_by_profile(ranking, profile, db_only)
+        page = resorted[offset:offset + limit]
+        if not page:
+            return RecommendationResponse(goal=goal, recommendations=[])
+
+        info_map = get_precomputed_supplement_info([item["id"] for item in page], db_only)
+
+        db_context = "" if db_only else _build_db_context(medications=[], conditions=[])
+        vector_context = vector_search(
+            f"{goal} supplement", supplement_names=[item["id"] for item in page], top_k=12,
+        ) or ""
+        user_message = _build_fresh_fields_message(
+            profile, goal, page, db_context, vector_context, db_only,
+        )
+
+        message = await self.client.messages.create(
+            model=settings.claude_model,
+            max_tokens=settings.claude_max_tokens,
+            system=SYSTEM_PROMPT_DB_ONLY if db_only else SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_message}],
+        )
+
+        raw = _extract_json(message.content[0].text.strip())
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            logger.error(f"Precomputed-Fresh-Fields-JSON-Fehler: {e}\nRaw: {raw[:500]}")
+            raise ValueError(f"Claude-Antwort ist kein valides JSON: {e}")
+
+        recommendations = []
+        for item in data.get("recommendations", []):
+            supplement_id = item.get("id")
+            precomputed = info_map.get(supplement_id, {})
+            item["dosage"] = precomputed.get("dosage") or item.get("dosage") or "Siehe Herstellerangabe"
+            item["intake_time"] = (
+                precomputed.get("intake_time") or item.get("intake_time") or "Siehe Herstellerangabe"
+            )
+            item["intake_hint"] = precomputed.get("intake_hint") or item.get("intake_hint")
+            rec = await _parse_recommendation_item(item, profile.medications or [])
+            rec.simple_explanation = precomputed.get("simple_explanation")
+            recommendations.append(rec)
+
+        return RecommendationResponse(goal=goal, recommendations=recommendations)
 
     async def get_supplement_detail(
         self, supplement_id: str, supplement_name: str, db_only: bool = False,
@@ -1066,6 +1407,28 @@ class ClaudeService:
         except (json.JSONDecodeError, KeyError) as e:
             logger.error(f"Produkt-JSON Fehler: {e}\nRaw: {raw}")
             return []
+
+    async def get_simple_explanation(
+        self, supplement_name: str, substance_name: str | None
+    ) -> str:
+        """Kurze Laienerklärung was ein Supplement ist — für "Einfach erklärt"."""
+        name = f"{supplement_name} ({substance_name})" if substance_name else supplement_name
+        logger.info(f"Einfach-erklärt für: {name}")
+
+        message = await self.client.messages.create(
+            model=settings.claude_model,
+            max_tokens=400,
+            system=EXPLAIN_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": f"Supplement: {name}"}],
+        )
+
+        raw = _extract_json(message.content[0].text.strip())
+        try:
+            data = json.loads(raw)
+            return data.get("explanation", "")
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.error(f"Explain-JSON Fehler: {e}\nRaw: {raw}")
+            return ""
 
     async def get_food_sources(
         self, supplement_name: str, substance_name: str | None

@@ -13,6 +13,8 @@ import '../../../recommendations/presentation/widgets/evidence_card.dart';
 import '../../../recommendations/presentation/widgets/safety_warning_dialog.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
+import '../../../settings/data/recommendation_source_mode_provider.dart';
+import '../../../settings/domain/models/recommendation_source_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../data/phase_goals_provider.dart';
 import '../../domain/models/phase_goal.dart';
@@ -61,14 +63,23 @@ class _PhaseGoalRecommendationsScreenState
     final profile = ref.read(onboardingProvider);
     final dbOnly =
         ref.read(recommendationModeProvider) == RecommendationMode.ragOnly;
+    final precomputed = ref.read(recommendationSourceModeProvider) ==
+        RecommendationSourceMode.precomputed;
 
     try {
-      final results = await ApiService.instance.getRecommendations(
-        profile: profile,
-        goal: def.name, // z.B. "Marathon-Vorbereitung"
-        limit: 4,
-        dbOnly: dbOnly,
-      );
+      final results = precomputed
+          ? await ApiService.instance.getPrecomputedRecommendations(
+              profile: profile,
+              goal: def.name, // z.B. "Marathon-Vorbereitung"
+              limit: 4,
+              dbOnly: dbOnly,
+            )
+          : await ApiService.instance.getRecommendations(
+              profile: profile,
+              goal: def.name,
+              limit: 4,
+              dbOnly: dbOnly,
+            );
       if (mounted) setState(() => _supplements = results);
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());

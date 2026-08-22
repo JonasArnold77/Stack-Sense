@@ -8,7 +8,7 @@ from models.profile import RecommendationRequest
 from models.recommendation import RecommendationResponse, SupplementRecommendation, ProductLink, SynergyResponse
 from services.claude_service import ClaudeService
 from services.pubmed_service import PubMedService
-from services.vector_service import search_supplements
+from services.vector_service import search_supplements, get_precomputed_supplement_info_single
 
 router = APIRouter(prefix="/api/v1", tags=["Empfehlungen"])
 logger = logging.getLogger(__name__)
@@ -49,6 +49,36 @@ async def get_recommendations(request: RecommendationRequest) -> RecommendationR
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         logger.error(f"Unerwarteter Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Interner Serverfehler")
+
+
+class PrecomputedRecommendationRequest(RecommendationRequest):
+    offset: int = 0
+
+
+@router.post("/recommendations/precomputed", response_model=RecommendationResponse)
+async def get_precomputed_recommendations(
+    request: PrecomputedRecommendationRequest,
+) -> RecommendationResponse:
+    """
+    Vorberechnungs-Modus: nutzt die per scripts/precompute_recommendations.py
+    vorab erzeugte Rangliste + Zusatzfelder statt bei jedem Öffnen alles neu
+    zu generieren. Nur die individuellen Kartenfelder (Pitch etc.) werden
+    noch frisch erzeugt — für die angeforderte Seite.
+    """
+    try:
+        result = await claude_service.get_recommendations_from_precomputed(
+            profile=request.profile,
+            goal=request.goal,
+            db_only=request.db_only,
+            limit=request.limit,
+            offset=request.offset,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        logger.error(f"Precomputed-Fehler: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Interner Serverfehler")
 
 
@@ -108,7 +138,14 @@ async def explain_supplement(request: ExplainRequest) -> dict:
     """
     Gibt eine einfache Laienerklarung fuer ein Supplement zurueck.
     Wird on-demand geladen wenn der Nutzer auf "Einfach erklaert" tippt.
+    Prueft zuerst precomputed_supplement_info (siehe scripts/precompute_recommendations.py)
+    bevor ein frischer Claude-Call gemacht wird.
     """
+    supp_id = request.supplement_name.lower().strip().replace(" ", "-").replace("_", "-")
+    precomputed = get_precomputed_supplement_info_single(supp_id)
+    if precomputed and precomputed.get("simple_explanation"):
+        return {"explanation": precomputed["simple_explanation"]}
+
     try:
         explanation = await claude_service.get_simple_explanation(
             supplement_name=request.supplement_name,
@@ -173,7 +210,13 @@ async def get_food_sources(request: FoodSourcesRequest) -> dict:
             logger.info(f"food-sources: DB-Treffer via Substance fuer '{substance_id}'")
             return {"sources": entry["food_sources"]}
 
-    # 3. Fallback Claude (nur fuer unbekannte Supplements)
+    # 3. Vorberechnete Daten versuchen (siehe scripts/precompute_recommendations.py)
+    precomputed = get_precomputed_supplement_info_single(supp_id)
+    if precomputed and precomputed.get("food_sources"):
+        logger.info(f"food-sources: Precompute-Treffer fuer '{supp_id}'")
+        return {"sources": precomputed["food_sources"]}
+
+    # 4. Fallback Claude (nur fuer unbekannte Supplements)
     logger.info(f"food-sources: Kein DB-Treffer fuer '{supp_id}' -- Claude-Fallback")
     try:
         sources = await claude_service.get_food_sources(
@@ -206,7 +249,7 @@ async def check_duplicates(request: DuplicateCheckRequest) -> dict:
     Gibt { "duplicates": [ids], "reasoning": "..." } zurueck.
     """
     try:
-        result = await claude_service.check_duplicates(
+        result = await claude_service.check_duplicate_in_stack(
             new_supplement=request.new_supplement.model_dump(),
             stack=[e.model_dump() for e in request.stack],
         )

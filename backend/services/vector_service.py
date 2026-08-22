@@ -240,6 +240,99 @@ def search_supplements(query: str, limit: int = 10) -> list[dict]:
         return []
 
 
+def get_precomputed_ranking(goal: str, db_only: bool) -> list[dict]:
+    """Lädt die vorberechnete Grundrangliste für ein Themenfeld
+    (siehe scripts/precompute_recommendations.py). Leere Liste = noch nicht
+    vorberechnet oder DB nicht erreichbar."""
+    try:
+        conn = _get_conn()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT supplement_id, name, base_relevance_score
+            FROM precomputed_goal_ranking
+            WHERE goal = %s AND db_only = %s
+            ORDER BY base_relevance_score DESC
+            """,
+            (goal, db_only),
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [
+            {"id": slug, "name": name, "base_relevance_score": score}
+            for slug, name, score in rows
+        ]
+    except Exception as e:
+        logger.warning(f"Precomputed-Ranking-Abruf fehlgeschlagen (non-fatal): {e}")
+        return []
+
+
+def get_precomputed_supplement_info(supplement_ids: list[str], db_only: bool) -> dict[str, dict]:
+    """Lädt vorberechnete Zusatzfelder (Einfach erklärt/Lebensmittel/Einnahme)
+    für mehrere Supplement-IDs auf einmal. Fehlende IDs tauchen im Ergebnis-Dict
+    einfach nicht auf (Aufrufer muss Fallbacks bereitstellen)."""
+    if not supplement_ids:
+        return {}
+    try:
+        conn = _get_conn()
+        cur = conn.cursor()
+        placeholders = ", ".join(["%s"] * len(supplement_ids))
+        cur.execute(
+            f"""
+            SELECT supplement_id, simple_explanation, food_sources, dosage, intake_time, intake_hint
+            FROM precomputed_supplement_info
+            WHERE db_only = %s AND supplement_id IN ({placeholders})
+            """,
+            (db_only, *supplement_ids),
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return {
+            slug: {
+                "simple_explanation": explanation,
+                "food_sources": food_sources,
+                "dosage": dosage,
+                "intake_time": intake_time,
+                "intake_hint": intake_hint,
+            }
+            for slug, explanation, food_sources, dosage, intake_time, intake_hint in rows
+        }
+    except Exception as e:
+        logger.warning(f"Precomputed-Supplement-Info-Abruf fehlgeschlagen (non-fatal): {e}")
+        return {}
+
+
+def get_precomputed_supplement_info_single(supplement_id: str) -> dict | None:
+    """Wie get_precomputed_supplement_info, aber für einen einzelnen Supplement
+    ohne bekannten db_only-Kontext (z.B. /explain, /food-sources — nehmen kein
+    db_only entgegen). Bevorzugt die db_only=False-Zeile (allgemeiner/weniger
+    restriktiv), fällt sonst auf db_only=True zurück."""
+    try:
+        conn = _get_conn()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT simple_explanation, food_sources
+            FROM precomputed_supplement_info
+            WHERE supplement_id = %s
+            ORDER BY db_only ASC
+            LIMIT 1
+            """,
+            (supplement_id,),
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not row:
+            return None
+        return {"simple_explanation": row[0], "food_sources": row[1]}
+    except Exception as e:
+        logger.warning(f"Precomputed-Supplement-Info (single) fehlgeschlagen (non-fatal): {e}")
+        return None
+
+
 def get_supplement_count() -> int:
     """Gibt die Anzahl gespeicherter Supplements zurück (für Health-Check)."""
     try:

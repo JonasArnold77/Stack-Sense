@@ -12,8 +12,11 @@ import '../../../stack/domain/models/stack_entry.dart' show StackEntry;
 import '../widgets/evidence_card.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
+import '../../../onboarding/domain/models/user_profile.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
+import '../../../settings/data/recommendation_source_mode_provider.dart';
+import '../../../settings/domain/models/recommendation_source_mode.dart';
 import '../../../community/domain/models/community_insight.dart';
 // ignore: unused_import
 import '../../../community/data/community_insights_provider.dart';
@@ -90,6 +93,37 @@ class _RecommendationsScreenState
   bool get _dbOnly =>
       ref.read(recommendationModeProvider) == RecommendationMode.ragOnly;
 
+  bool get _precomputed =>
+      ref.read(recommendationSourceModeProvider) == RecommendationSourceMode.precomputed;
+
+  /// Holt eine Seite Empfehlungen — verzweigt je nach Live-/Vorberechnet-Switch.
+  /// [alreadyLoadedIds] wird nur im Live-Modus für die Pagination gebraucht;
+  /// im Vorberechnet-Modus steht die Reihenfolge schon fest, dort zählt
+  /// nur [offset] (= Anzahl bereits geladener Supplements).
+  Future<List<Supplement>> _fetchRecommendations({
+    required UserProfile profile,
+    required String goal,
+    required int offset,
+    required List<String> alreadyLoadedIds,
+  }) {
+    if (_precomputed) {
+      return ApiService.instance.getPrecomputedRecommendations(
+        profile: profile,
+        goal: goal,
+        limit: _pageSize,
+        offset: offset,
+        dbOnly: _dbOnly,
+      );
+    }
+    return ApiService.instance.getRecommendations(
+      profile: profile,
+      goal: goal,
+      limit: _pageSize,
+      excludeIds: alreadyLoadedIds,
+      dbOnly: _dbOnly,
+    );
+  }
+
   Future<void> _loadRecommendations(String goal) async {
     setState(() {
       _selectedGoal = goal;
@@ -103,12 +137,11 @@ class _RecommendationsScreenState
     });
     final profile = ref.read(onboardingProvider);
     try {
-      final results = await ApiService.instance.getRecommendations(
+      final results = await _fetchRecommendations(
         profile: profile,
         goal: goal,
-        limit: _pageSize,
-        excludeIds: const [],
-        dbOnly: _dbOnly,
+        offset: 0,
+        alreadyLoadedIds: const [],
       );
       if (mounted) {
         setState(() {
@@ -176,12 +209,11 @@ class _RecommendationsScreenState
     final profile = ref.read(onboardingProvider);
     final alreadyLoaded = _supplements.map((s) => s.id).toList();
     try {
-      final results = await ApiService.instance.getRecommendations(
+      final results = await _fetchRecommendations(
         profile: profile,
         goal: _selectedGoal!,
-        limit: _pageSize,
-        excludeIds: alreadyLoaded,
-        dbOnly: _dbOnly,
+        offset: _supplements.length,
+        alreadyLoadedIds: alreadyLoaded,
       );
       if (mounted) {
         setState(() {
