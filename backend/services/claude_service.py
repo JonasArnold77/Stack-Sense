@@ -823,6 +823,37 @@ def _extract_json(raw: str) -> str:
     return raw
 
 
+def _matches_any_candidate(name: str, candidates: list[dict]) -> bool:
+    """Code-seitiges Sicherheitsnetz zusätzlich zur Prompt-Erlaubnisliste:
+    Claude befolgt die Kandidaten-Einschränkung im Datenbank-Modus nicht
+    immer zuverlässig (beobachtet: vereinzelt Trainingswissen-Empfehlungen
+    trotz expliziter Kandidatenliste). Groben Wortabgleich statt exaktem
+    Slug-Vergleich, da Claude eigene IDs/Schreibweisen generiert, die nicht
+    zwingend exakt mit unseren DB-Slugs übereinstimmen (z.B. "L-Theanine"
+    vs. "l-theanin")."""
+    name_words = {w for w in name.lower().split() if len(w) > 3}
+    if not name_words:
+        return True  # zu kurzer Name für sinnvollen Wortabgleich — durchlassen
+    for c in candidates:
+        cand_words = {w for w in c["name"].lower().split() if len(w) > 3}
+        if name_words & cand_words:
+            return True
+    return False
+
+
+def _build_candidate_allowlist_block(candidates: list[dict]) -> str:
+    """Explizite Erlaubnisliste für den Datenbank-Modus. Eine reine
+    "empfehle nur was im Kontext-Text steht"-Anweisung reicht bei Claude
+    erfahrungsgemäß nicht zuverlässig aus, um Empfehlungen aus dem
+    Trainingswissen zu unterdrücken — eine konkret aufgezählte Liste ist
+    eine deutlich robustere Grenze."""
+    names = ", ".join(c["name"] for c in candidates)
+    return (
+        "ERLAUBTE KANDIDATEN (NUR aus dieser Liste empfehlen, keine anderen "
+        f"Supplements — auch nicht aus deinem Trainingswissen): {names}"
+    )
+
+
 def _build_user_message(
     profile: UserProfile,
     goal: str,
@@ -831,6 +862,7 @@ def _build_user_message(
     limit: int = 5,
     exclude_ids: list[str] | None = None,
     db_only: bool = False,
+    allowed_candidates: list[dict] | None = None,
 ) -> str:
     season = _get_season()
     gender_map = {"male": "männlich", "female": "weiblich", "diverse": "divers"}
@@ -880,6 +912,9 @@ def _build_user_message(
 
     if exclude_ids:
         lines.append(f"BEREITS GEZEIGT (überspringen): {', '.join(exclude_ids)}")
+
+    if allowed_candidates:
+        lines.append(f"\n{_build_candidate_allowlist_block(allowed_candidates)}")
 
     if db_context:
         lines.append(f"\n{db_context}")
@@ -1003,8 +1038,13 @@ def _build_lookup_message(supplement_name: str, db_context: str, pubmed_context:
     return "\n".join(lines)
 
 
-def _build_ranking_message(goal: str, db_context: str, pubmed_context: str, limit: int) -> str:
+def _build_ranking_message(
+    goal: str, db_context: str, pubmed_context: str, limit: int,
+    allowed_candidates: list[dict] | None = None,
+) -> str:
     lines = [f"THEMENFELD: {goal}", f"LIMIT: {limit}"]
+    if allowed_candidates:
+        lines.append(f"\n{_build_candidate_allowlist_block(allowed_candidates)}")
     if db_context:
         lines.append(f"\n{db_context}")
     if pubmed_context:
@@ -1137,9 +1177,10 @@ class ClaudeService:
         category_candidates = (
             get_supplements_by_category(GOAL_CATEGORY_MAP.get(goal, [])) if db_only else []
         )
+        candidate_slugs = [c["slug"] for c in category_candidates]
         vector_context = vector_search(
             query_text,
-            supplement_names=category_candidates,
+            supplement_names=candidate_slugs,
             top_k=20 if db_only else 8,
         ) or ""
         if vector_context:
@@ -1152,6 +1193,7 @@ class ClaudeService:
         user_message = _build_user_message(
             profile, goal, db_context, combined_study_context,
             limit=limit, exclude_ids=exclude_ids or [], db_only=db_only,
+            allowed_candidates=category_candidates,
         )
 
         message = await self.client.messages.create(
@@ -1169,9 +1211,22 @@ class ClaudeService:
             logger.error(f"Claude JSON-Fehler: {e}\nRaw: {raw[:500]}")
             raise ValueError(f"Claude-Antwort ist kein valides JSON: {e}")
 
+        raw_items = data.get("recommendations", [])
+        if db_only and category_candidates:
+            filtered_items = [
+                item for item in raw_items
+                if _matches_any_candidate(item.get("name", ""), category_candidates)
+            ]
+            if len(filtered_items) < len(raw_items):
+                logger.warning(
+                    f"'{goal}' (db_only): {len(raw_items) - len(filtered_items)} "
+                    "Empfehlung(en) außerhalb der Kandidatenliste verworfen."
+                )
+            raw_items = filtered_items
+
         recommendations = [
             await _parse_recommendation_item(item, profile.medications or [])
-            for item in data.get("recommendations", [])
+            for item in raw_items
         ]
 
         result = RecommendationResponse(goal=goal, recommendations=recommendations)
@@ -1190,11 +1245,14 @@ class ClaudeService:
         category_candidates = (
             get_supplements_by_category(GOAL_CATEGORY_MAP.get(goal, [])) if db_only else []
         )
+        candidate_slugs = [c["slug"] for c in category_candidates]
         vector_context = vector_search(
-            f"{goal} supplement", supplement_names=category_candidates, top_k=25 if db_only else 10,
+            f"{goal} supplement", supplement_names=candidate_slugs, top_k=25 if db_only else 10,
         ) or ""
 
-        user_message = _build_ranking_message(goal, db_context, vector_context, limit)
+        user_message = _build_ranking_message(
+            goal, db_context, vector_context, limit, allowed_candidates=category_candidates,
+        )
 
         message = await self.client.messages.create(
             model=settings.claude_model,
@@ -1212,16 +1270,25 @@ class ClaudeService:
 
         seen: set[str] = set()
         results = []
+        dropped = 0
         for item in data.get("ranking", []):
             sid = item.get("id")
+            name = item.get("name", sid)
             if not sid or sid in seen:
+                continue
+            if db_only and category_candidates and not _matches_any_candidate(name, category_candidates):
+                dropped += 1
                 continue
             seen.add(sid)
             results.append({
                 "id": sid,
-                "name": item.get("name", sid),
+                "name": name,
                 "base_relevance_score": max(0, min(100, int(item.get("relevance_score", 50)))),
             })
+        if dropped:
+            logger.warning(
+                f"Ranking '{goal}': {dropped} Empfehlung(en) außerhalb der Kandidatenliste verworfen."
+            )
         results.sort(key=lambda r: r["base_relevance_score"], reverse=True)
         return results[:limit]
 

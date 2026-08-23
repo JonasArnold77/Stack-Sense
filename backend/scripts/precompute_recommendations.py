@@ -69,6 +69,15 @@ def get_db_connection():
 
 
 def upsert_ranking(cur, goal: str, db_only: bool, items: list[dict]) -> None:
+    # Erst alte Einträge für dieses (goal, db_only) löschen — sonst bleiben
+    # Kandidaten aus früheren Läufen (z.B. vor einem Kandidatenpool-Fix) für
+    # immer stehen, auch wenn sie in der neuen Rangliste gar nicht mehr
+    # vorkommen, und können mit ihrem alten base_relevance_score dauerhaft
+    # über den frischen, korrekten Ergebnissen landen.
+    cur.execute(
+        "DELETE FROM precomputed_goal_ranking WHERE goal = %s AND db_only = %s",
+        (goal, db_only),
+    )
     for item in items:
         cur.execute(
             """

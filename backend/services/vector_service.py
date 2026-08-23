@@ -268,23 +268,27 @@ def search_supplements(query: str, limit: int = 10) -> list[dict]:
         return []
 
 
-def get_supplements_by_category(categories: list[str]) -> list[str]:
-    """Liefert alle Supplement-Slugs deren `category` zu einer der übergebenen
-    Kategorien passt. Dient als deterministischer, garantiert themenrelevanter
-    Kandidatenpool für den Datenbank-Modus — Ersatz für die bisherige rein
-    embedding-basierte Suche, die z.B. für "Fokus & Konzentration" auch
-    themenfremde Treffer (Probiotika, Senolytika) lieferte, weil sie nur nach
-    Textähnlichkeit zum Zielnamen sucht statt nach echter Kategorie-Zugehörigkeit."""
+def get_supplements_by_category(categories: list[str]) -> list[dict]:
+    """Liefert alle Supplements (slug+name) deren `category` zu einer der
+    übergebenen Kategorien passt. Dient als deterministischer, garantiert
+    themenrelevanter Kandidatenpool für den Datenbank-Modus — Ersatz für die
+    bisherige rein embedding-basierte Suche, die z.B. für "Fokus & Konzentration"
+    auch themenfremde Treffer (Probiotika, Senolytika) lieferte, weil sie nur
+    nach Textähnlichkeit zum Zielnamen sucht statt nach echter Kategorie-
+    Zugehörigkeit. Namen werden zusätzlich zu den Slugs zurückgegeben, damit der
+    Aufrufer eine explizite Erlaubnisliste im Prompt aufbauen kann — ein reines
+    "wähle nur was im Kontext steht" reicht Claude erfahrungsgemäß nicht immer
+    aus, um Trainingswissen-Empfehlungen sicher zu unterdrücken."""
     if not categories or not _PSYCOPG2_AVAILABLE:
         return []
     try:
         conn = _get_conn()
         cur = conn.cursor()
         cur.execute(
-            "SELECT slug FROM supplements WHERE category = ANY(%s)",
+            "SELECT slug, name FROM supplements WHERE category = ANY(%s)",
             (categories,),
         )
-        rows = [r[0] for r in cur.fetchall()]
+        rows = [{"slug": slug, "name": name} for slug, name in cur.fetchall()]
         cur.close()
         conn.close()
         return rows
