@@ -18,8 +18,11 @@ Voraussetzungen:
 Ausführen (aus dem backend/ Ordner):
     python scripts/populate_dsld.py
 """
+import argparse
+import json
 import logging
 import time
+from pathlib import Path
 
 import httpx
 import psycopg2
@@ -27,6 +30,8 @@ from fastembed import TextEmbedding
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
+
+ALIAS_MAP_PATH = Path(__file__).resolve().parent.parent / "data" / "dsld_alias_map.json"
 
 DB_CONFIG = {
     "host": "stacksense-db.chym26e8iw2p.eu-central-1.rds.amazonaws.com",
@@ -153,9 +158,41 @@ def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
 
 
-def get_supplements(cur) -> list[tuple[str, str]]:
-    cur.execute("SELECT slug, name FROM supplements ORDER BY slug")
+def get_supplements(cur, slugs: list[str] | None = None) -> list[tuple[str, str]]:
+    if slugs:
+        cur.execute("SELECT slug, name FROM supplements WHERE slug = ANY(%s) ORDER BY slug", (slugs,))
+    else:
+        cur.execute("SELECT slug, name FROM supplements ORDER BY slug")
     return cur.fetchall()
+
+
+def load_alias_map() -> dict:
+    if not ALIAS_MAP_PATH.exists():
+        return {}
+    return json.loads(ALIAS_MAP_PATH.read_text(encoding="utf-8"))
+
+
+def copy_alias_facts(cur, target_slug: str, base_slug: str, target_name: str) -> int:
+    """Kopiert bereits vorhandene DSLD/NIH-ODS/EFSA-Fakten des Basis-Wirkstoffs auf
+    den kontext-gebrandeten Slug (z.B. "zink" -> "zink-immun"). Gleicher Wirkstoff,
+    nur andere Zielgruppen-Bezeichnung — kein neuer API-Call nötig."""
+    cur.execute("""
+        SELECT id FROM supplement_facts
+        WHERE supplement_slug = %s AND source IN ('nih_dsld', 'nih_ods', 'efsa')
+    """, (base_slug,))
+    row_ids = [r[0] for r in cur.fetchall()]
+    copied = 0
+    note = f" (Hinweis: Wirkstoff identisch mit '{target_name}', hier unter anderem Verwendungskontext gelistet.)"
+    for row_id in row_ids:
+        cur.execute("""
+            INSERT INTO supplement_facts
+                (supplement_slug, fact_type, content, embedding, source)
+            SELECT %s, fact_type, content || %s, embedding, source
+            FROM supplement_facts WHERE id = %s
+            ON CONFLICT DO NOTHING
+        """, (target_slug, note, row_id))
+        copied += 1
+    return copied
 
 
 def upsert_fact(cur, supplement_slug: str, content: str, embedding_list: list):
@@ -175,6 +212,15 @@ def upsert_fact(cur, supplement_slug: str, content: str, embedding_list: list):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--slugs", type=str, default=None,
+                         help="Kommagetrennte Liste von Supplement-Slugs (Standard: alle)")
+    args = parser.parse_args()
+    slug_filter = [s.strip() for s in args.slugs.split(",")] if args.slugs else None
+
+    alias_map = load_alias_map()
+    logger.info(f"Alias-/Übersetzungs-Map geladen: {len(alias_map)} Einträge")
+
     logger.info("Lade fastembed Modell...")
     model = TextEmbedding("BAAI/bge-small-en-v1.5")
     logger.info("Modell geladen.")
@@ -183,17 +229,34 @@ def main():
     conn.autocommit = False
     cur = conn.cursor()
 
-    supplements = get_supplements(cur)
+    supplements = get_supplements(cur, slug_filter)
     logger.info(f"{len(supplements)} Supplements in DB gefunden.")
 
     client = httpx.Client()
     total_inserted = 0
     total_skipped = 0
+    total_aliased = 0
 
     for i, (slug, name) in enumerate(supplements, 1):
         logger.info(f"[{i}/{len(supplements)}] {name} ({slug})")
 
-        hits = search_products(client, name)
+        map_entry = alias_map.get(slug)
+
+        if map_entry and map_entry.get("type") == "alias":
+            base_slug = map_entry["base_slug"]
+            copied = copy_alias_facts(cur, slug, base_slug, name)
+            conn.commit()
+            if copied:
+                total_aliased += 1
+                logger.info(f"  ✓ {copied} Fakten von '{base_slug}' übernommen (gleicher Wirkstoff)")
+            else:
+                total_skipped += 1
+                logger.warning(f"  Alias-Basis '{base_slug}' hat noch keine Fakten — übersprungen")
+            continue
+
+        search_term = map_entry["query"] if map_entry and map_entry.get("type") == "translate" else name
+
+        hits = search_products(client, search_term)
         time.sleep(REQUEST_DELAY)
         picked = _pick_on_market_id(hits)
         if not picked:
@@ -210,7 +273,7 @@ def main():
         ingredient_line = None
         for row in label.get("ingredientRows") or []:
             row_name = (row.get("name") or "").lower()
-            name_words = [w for w in name.lower().split() if len(w) > 2]
+            name_words = [w for w in search_term.lower().split() if len(w) > 2]
             if any(w in row_name for w in name_words):
                 qty = _extract_quantity(row)
                 if qty:
@@ -253,7 +316,8 @@ def main():
     logger.info(f"""
 ╔══════════════════════════════════════════╗
 ║  NIH DSLD Population abgeschlossen       ║
-║  Eingefügt:  {total_inserted:>4} Einträge              ║
+║  Eingefügt:   {total_inserted:>4} Einträge              ║
+║  Alias-Kopien:{total_aliased:>4} (gleicher Wirkstoff)     ║
 ║  Übersprungen:{total_skipped:>4} (kein sicherer Treffer)  ║
 ╚══════════════════════════════════════════╝
 """)

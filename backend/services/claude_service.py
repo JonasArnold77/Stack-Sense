@@ -437,9 +437,13 @@ In diesem Modus gibt es KEINE kuratierte Supplement-Datenbank im Kontext und KEI
 Die EINZIGE erlaubte Grundlage sind die Blöcke "PubMed Studienbasis" und "Kuratierte Datenbanken"
 (EFSA/NIH ODS/openFDA CAERS/NIH DSLD) weiter unten im Kontext — echte externe Quellen, keine LLM-Synthese.
 Verwende STRIKT NICHTS aus deinem Trainingswissen, auch nicht für Dosierung oder Einnahmezeitpunkt:
-- dosage/intake_time/intake_hint: NUR befüllen wenn eine konkrete Angabe im Kontext steht (z.B. aus einem
-  NIH-DSLD-Marktprodukt-Fakt oder einer NIH-ODS-Angabe). Steht nichts im Kontext, schreibe exakt
-  "Siehe Herstellerangabe" (dosage) bzw. "Nicht in Datenbank" (intake_time) — rate NICHT.
+- dosage/intake_time/intake_hint: Befülle sie aus JEDER konkreten Angabe im Kontext (z.B. aus einem
+  NIH-DSLD-Marktprodukt-Fakt, einer NIH-ODS-Angabe oder einem EFSA Health Claim). Geben mehrere
+  Quellen UNTERSCHIEDLICHE Zahlen an (z.B. EFSA-Referenzwert vs. NIH-ODS-Erhaltungsdosis vs. ein
+  einzelnes DSLD-Marktprodukt-Beispiel), ist das KEIN Grund für die Fallback-Antwort — fasse die
+  Spanne zusammen (z.B. "600–2.000 IU/Tag je nach Quelle/Bedarf") statt nur eine Zahl zu wählen oder
+  aufzugeben. Nur wenn WIRKLICH GAR KEINE Zahl/Zeitangabe zu diesem Supplement im Kontext vorkommt,
+  schreibe exakt "Siehe Herstellerangabe" (dosage) bzw. "Nicht in Datenbank" (intake_time) — rate NICHT.
 - pitch/evidence_reason: Fasse NUR zusammen was in den Kontext-Snippets tatsächlich steht — keine
   Ausschmückung, keine allgemeinen Fakten über das Supplement, die dort nicht belegt sind.
 - secondary_benefit: immer null (kein Nutzerprofil vorhanden).

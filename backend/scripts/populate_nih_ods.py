@@ -334,9 +334,9 @@ NIH_ODS_FACTS = [
         ],
     },
 
-    # ── Coenzym Q10 ──────────────────────────────────────────────────────────
+    # ── Coenzym Q10 (Statin/Herzinsuffizienz-spezifisch) ────────────────────
     {
-        "slug": "coenzym-q10",
+        "slug": "coq10",
         "facts": [
             {
                 "title": "NIH ODS — CoQ10: Statin-Induced Myopathy and Heart Failure",
@@ -461,6 +461,62 @@ NIH_ODS_FACTS = [
             {
                 "title": "NIH ODS — Glutamine: Conditionally Essential and Gut Health",
                 "content": "NIH ODS on Glutamine: Most abundant amino acid in blood and skeletal muscle. Conditionally essential — becomes essential during critical illness, major surgery, burns, severe trauma. Clinical evidence: medical use in critically ill patients controversial (REDOXS trial showed harm at high doses). Gut health: glutamine is primary fuel for enterocytes; supports intestinal barrier integrity. Observational and small RCT evidence for reducing intestinal permeability. Sports use: 5-10 g post-exercise for recovery — limited evidence in healthy athletes. Not essential for healthy individuals who consume adequate protein.",
+                "evidence_level": "yellow",
+            },
+        ],
+    },
+
+    # ── Coenzym Q10 ──────────────────────────────────────────────────────────
+    {
+        "slug": "coq10",
+        "facts": [
+            {
+                "title": "NIH ODS — Coenzyme Q10: Overview and Function",
+                "content": "NIH ODS on Coenzyme Q10 (CoQ10, ubiquinone/ubiquinol): Fat-soluble, vitamin-like compound present in nearly all body cells, concentrated in mitochondria where it functions as an essential cofactor in the electron transport chain for ATP production. Also acts as a lipid-soluble antioxidant. Body synthesizes CoQ10 endogenously; levels decline with age and are reduced by statin therapy (HMG-CoA reductase inhibits the same pathway that produces CoQ10). Dietary sources: organ meats, fatty fish, whole grains — but supplements provide far higher amounts than diet alone.",
+                "evidence_level": "yellow",
+            },
+            {
+                "title": "NIH ODS — Coenzyme Q10: Evidence and Statin-Associated Myalgia",
+                "content": "NIH ODS: Evidence for CoQ10 supplementation is strongest for statin-associated muscle symptoms — several RCTs and meta-analyses show modest reduction in myalgia, though results are mixed and not universally replicated. Research is ongoing for heart failure (some evidence of benefit as adjunct therapy, per ESC guidelines noting possible benefit), migraine prevention, and fertility. Typical studied doses: 100–300 mg/day, in ubiquinone or the more bioavailable ubiquinol form. Evidence for general 'energy' or anti-aging claims in healthy adults is weak.",
+                "evidence_level": "yellow",
+            },
+            {
+                "title": "NIH ODS — Coenzyme Q10: Safety and Interactions",
+                "content": "NIH ODS on CoQ10 safety: Generally well tolerated at studied doses (up to 1,200 mg/day in some trials); mild GI upset is the most common side effect. Interacts with warfarin — CoQ10's structural similarity to vitamin K may reduce anticoagulant effectiveness; monitor INR closely if combined. May modestly lower blood pressure — caution with antihypertensive medication. No established Tolerable Upper Intake Level (UL) due to limited long-term safety data at high doses.",
+                "evidence_level": "yellow",
+            },
+        ],
+    },
+
+    # ── Beta-Alanin (aus "Dietary Supplements for Exercise and Athletic Performance") ──
+    {
+        "slug": "beta-alanin",
+        "facts": [
+            {
+                "title": "NIH ODS — Beta-Alanine: Mechanism and Evidence (Exercise & Athletic Performance Fact Sheet)",
+                "content": "NIH ODS Fact Sheet 'Dietary Supplements for Exercise and Athletic Performance' on Beta-Alanine: A non-essential amino acid that combines with histidine in muscle to form carnosine, which buffers hydrogen ions (lactic acid byproduct) during high-intensity exercise, delaying muscle fatigue. Evidence supports benefit primarily for high-intensity exercise lasting 1–4 minutes (e.g., rowing, swimming, combat sports); less clear benefit for endurance or very short (<60 sec) efforts. Typical studied dose: 4–6 g/day, usually split into smaller doses to reduce side effects, for at least 2–4 weeks to raise muscle carnosine stores.",
+                "evidence_level": "yellow",
+            },
+            {
+                "title": "NIH ODS — Beta-Alanine: Safety Profile",
+                "content": "NIH ODS: Main reported side effect is paresthesia (harmless tingling sensation of the skin), dose-dependent and more common with single doses above ~800 mg; splitting the daily dose into smaller portions reduces this. No serious adverse effects reported in trials at studied doses over several weeks. Long-term safety data (>months) is limited.",
+                "evidence_level": "yellow",
+            },
+        ],
+    },
+
+    # ── L-Citrullin (aus "Dietary Supplements for Exercise and Athletic Performance") ──
+    {
+        "slug": "l-citrullin",
+        "facts": [
+            {
+                "title": "NIH ODS — Citrulline: Mechanism and Evidence (Exercise & Athletic Performance Fact Sheet)",
+                "content": "NIH ODS Fact Sheet 'Dietary Supplements for Exercise and Athletic Performance' on Citrulline (L-citrulline / citrulline malate): A non-essential amino acid converted to L-arginine in the kidneys, which serves as a precursor for nitric oxide — a vasodilator that may improve blood flow to working muscle. Some studies suggest modest improvements in resistance-exercise performance (more repetitions before fatigue) and reduced post-exercise muscle soreness with citrulline malate; evidence for endurance performance is mixed and less consistent. Citrulline raises blood arginine levels more effectively than supplementing arginine directly, due to better intestinal absorption and lower first-pass liver metabolism.",
+                "evidence_level": "yellow",
+            },
+            {
+                "title": "NIH ODS — Citrulline: Dosing and Safety",
+                "content": "NIH ODS: Typical studied doses range from 6–8 g/day of L-citrulline, or 6–18 g/day of citrulline malate (which is roughly half citrulline by weight), usually taken 30–60 minutes before exercise. Generally well tolerated in studied doses; mild GI discomfort reported occasionally at higher doses. No established Tolerable Upper Intake Level; long-term safety data beyond several weeks of use is limited.",
                 "evidence_level": "yellow",
             },
         ],

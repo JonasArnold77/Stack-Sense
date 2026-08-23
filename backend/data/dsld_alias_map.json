@@ -1,0 +1,306 @@
+{
+  "tyrosin": {
+    "type": "translate",
+    "query": "Tyrosine"
+  },
+  "jod-schilddruese": {
+    "type": "alias",
+    "base_slug": "jod"
+  },
+  "mangan": {
+    "type": "translate",
+    "query": "Manganese"
+  },
+  "kreatin-sport": {
+    "type": "alias",
+    "base_slug": "kreatin"
+  },
+  "brennnessel": {
+    "type": "translate",
+    "query": "Nettle Root Urtica dioica"
+  },
+  "pqq": {
+    "type": "translate",
+    "query": "Pyrroloquinoline quinone"
+  },
+  "apfelpektin": {
+    "type": "translate",
+    "query": "Apple Pectin"
+  },
+  "cordyceps": {
+    "type": "translate",
+    "query": "Cordyceps militaris"
+  },
+  "cla": {
+    "type": "translate",
+    "query": "Conjugated Linoleic Acid"
+  },
+  "pflanzenprotein": {
+    "type": "translate",
+    "query": "Plant Protein Pea Rice"
+  },
+  "maltodextrin": {
+    "type": "translate",
+    "query": "Maltodextrin"
+  },
+  "gla": {
+    "type": "translate",
+    "query": "Gamma-Linolenic Acid"
+  },
+  "ingwer": {
+    "type": "translate",
+    "query": "Ginger Zingiber officinale"
+  },
+  "tulsi": {
+    "type": "translate",
+    "query": "Holy Basil Tulsi Ocimum sanctum"
+  },
+  "bockshornklee": {
+    "type": "translate",
+    "query": "Fenugreek Trigonella foenum-graecum"
+  },
+  "bcaa": {
+    "type": "translate",
+    "query": "Branched Chain Amino Acids"
+  },
+  "kollagen-haut": {
+    "type": "alias",
+    "base_slug": "kollagen"
+  },
+  "krilloel": {
+    "type": "translate",
+    "query": "Krill Oil"
+  },
+  "spermidin": {
+    "type": "translate",
+    "query": "Spermidine"
+  },
+  "bittermelone": {
+    "type": "translate",
+    "query": "Bitter Melon Momordica charantia"
+  },
+  "prolin": {
+    "type": "translate",
+    "query": "Proline"
+  },
+  "uridin": {
+    "type": "translate",
+    "query": "Uridine Monophosphate"
+  },
+  "praebiotika": {
+    "type": "translate",
+    "query": "Prebiotics"
+  },
+  "magnesium-pms": {
+    "type": "alias",
+    "base_slug": "magnesium"
+  },
+  "baldrian": {
+    "type": "translate",
+    "query": "Valerian Root Valeriana officinalis"
+  },
+  "eisen-frauen": {
+    "type": "alias",
+    "base_slug": "eisen"
+  },
+  "baerlauch": {
+    "type": "translate",
+    "query": "Garlic Mustard Alliaria petiolata"
+  },
+  "zink-immun": {
+    "type": "alias",
+    "base_slug": "zink"
+  },
+  "moenchspfeffer-pms": {
+    "type": "alias",
+    "base_slug": "moenchspfeffer"
+  },
+  "moenchspfeffer": {
+    "type": "translate",
+    "query": "Chasteberry Vitex agnus-castus"
+  },
+  "theanin-schlaf": {
+    "type": "alias",
+    "base_slug": "l-theanin"
+  },
+  "nr": {
+    "type": "translate",
+    "query": "Nicotinamide Riboside"
+  },
+  "vinpocetin": {
+    "type": "translate",
+    "query": "Vinpocetine"
+  },
+  "alpha-liponsaeure": {
+    "type": "translate",
+    "query": "Alpha Lipoic Acid"
+  },
+  "phosphatidylserin": {
+    "type": "translate",
+    "query": "Phosphatidylserine"
+  },
+  "ala-insulin": {
+    "type": "alias",
+    "base_slug": "alpha-liponsaeure"
+  },
+  "lycopin": {
+    "type": "translate",
+    "query": "Lycopene"
+  },
+  "beta-alanin": {
+    "type": "translate",
+    "query": "Beta-Alanine"
+  },
+  "mariendistel": {
+    "type": "translate",
+    "query": "Milk Thistle Silymarin"
+  },
+  "glutathion": {
+    "type": "translate",
+    "query": "Glutathione"
+  },
+  "hyaluronsaeure": {
+    "type": "translate",
+    "query": "Hyaluronic Acid"
+  },
+  "artischocke": {
+    "type": "translate",
+    "query": "Artichoke Extract Cynara scolymus"
+  },
+  "zink-haut": {
+    "type": "alias",
+    "base_slug": "zink"
+  },
+  "phenylalanin": {
+    "type": "translate",
+    "query": "Phenylalanine"
+  },
+  "tyrosin-schilddruese": {
+    "type": "alias",
+    "base_slug": "tyrosin"
+  },
+  "l-arginin": {
+    "type": "translate",
+    "query": "L-Arginine"
+  },
+  "elektrolyte": {
+    "type": "translate",
+    "query": "Electrolytes Sodium Potassium"
+  },
+  "molybdaen": {
+    "type": "translate",
+    "query": "Molybdenum"
+  },
+  "vitamin-b5": {
+    "type": "translate",
+    "query": "Pantothenic Acid Vitamin B5"
+  },
+  "coq10": {
+    "type": "translate",
+    "query": "Coenzyme Q10 Ubiquinol"
+  },
+  "zink-testosteron": {
+    "type": "alias",
+    "base_slug": "zink"
+  },
+  "folsaeure-schwangerschaft": {
+    "type": "alias",
+    "base_slug": "folsaeure"
+  },
+  "silizium": {
+    "type": "translate",
+    "query": "Silicon"
+  },
+  "opc": {
+    "type": "translate",
+    "query": "Grape Seed Extract OPC"
+  },
+  "nmn": {
+    "type": "translate",
+    "query": "Nicotinamide Mononucleotide"
+  },
+  "silizium-haare": {
+    "type": "alias",
+    "base_slug": "silizium"
+  },
+  "propolis": {
+    "type": "translate",
+    "query": "Propolis"
+  },
+  "glutamin-darm": {
+    "type": "alias",
+    "base_slug": "l-glutamin"
+  },
+  "kupfer": {
+    "type": "translate",
+    "query": "Copper"
+  },
+  "lutein-zeaxanthin": {
+    "type": "translate",
+    "query": "Lutein Zeaxanthin"
+  },
+  "apigenin": {
+    "type": "translate",
+    "query": "Apigenin"
+  },
+  "taurin": {
+    "type": "translate",
+    "query": "Taurine"
+  },
+  "passionsblume": {
+    "type": "translate",
+    "query": "Passionflower Passiflora"
+  },
+  "loewenzahn": {
+    "type": "translate",
+    "query": "Dandelion Taraxacum officinale"
+  },
+  "hyaluron-haut": {
+    "type": "alias",
+    "base_slug": "hyaluronsaeure"
+  },
+  "algenoel-dha": {
+    "type": "translate",
+    "query": "Algal Oil DHA"
+  },
+  "beta-alanin-sport": {
+    "type": "alias",
+    "base_slug": "beta-alanin"
+  },
+  "kollagen": {
+    "type": "translate",
+    "query": "Collagen Hydrolysate"
+  },
+  "vitamind-testosteron": {
+    "type": "alias",
+    "base_slug": "vitamin-d3"
+  },
+  "glycin": {
+    "type": "translate",
+    "query": "Glycine"
+  },
+  "roter-reis": {
+    "type": "translate",
+    "query": "Red Yeast Rice Monacolin K"
+  },
+  "fischoel": {
+    "type": "translate",
+    "query": "Fish Oil"
+  },
+  "knoblauch": {
+    "type": "translate",
+    "query": "Garlic Allium sativum"
+  },
+  "gruentee-extrakt": {
+    "type": "translate",
+    "query": "Green Tea Extract EGCG"
+  },
+  "l-citrullin": {
+    "type": "translate",
+    "query": "L-Citrulline"
+  },
+  "arginin-herz": {
+    "type": "alias",
+    "base_slug": "l-arginin"
+  }
+}
