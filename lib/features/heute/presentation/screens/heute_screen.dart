@@ -13,6 +13,8 @@ import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../settings/data/recommendation_source_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_source_mode.dart';
+import '../../../settings/data/cache_mode_provider.dart';
+import '../../../settings/domain/models/cache_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/data/taken_provider.dart';
 import '../widgets/checkin_summary_card.dart';
@@ -269,6 +271,11 @@ class _GreetingHeader extends ConsumerWidget {
             alignment: Alignment.centerRight,
             child: _RecommendationSourceModeToggle(),
           ),
+          const SizedBox(height: AppConstants.spaceS),
+          const Align(
+            alignment: Alignment.centerRight,
+            child: _CacheModeToggle(),
+          ),
           const SizedBox(height: AppConstants.spaceM),
           Text(
             dateStr,
@@ -375,6 +382,45 @@ class _RecommendationSourceModeToggle extends ConsumerWidget {
             icon: Icons.sync_rounded,
             selected: mode == RecommendationSourceMode.live,
             onTap: () => notifier.setMode(RecommendationSourceMode.live),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cache-Testmodus-Switch — 6h-Backend-Cache für Live-Empfehlungen an/aus
+// ---------------------------------------------------------------------------
+
+class _CacheModeToggle extends ConsumerWidget {
+  const _CacheModeToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(cacheModeProvider);
+    final notifier = ref.read(cacheModeProvider.notifier);
+
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ModeSegment(
+            label: 'Ohne Cache',
+            icon: Icons.block_rounded,
+            selected: mode == CacheMode.noCache,
+            onTap: () => notifier.setMode(CacheMode.noCache),
+          ),
+          _ModeSegment(
+            label: 'Cache',
+            icon: Icons.save_rounded,
+            selected: mode == CacheMode.cached,
+            onTap: () => notifier.setMode(CacheMode.cached),
           ),
         ],
       ),

@@ -17,6 +17,8 @@ import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../settings/data/recommendation_source_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_source_mode.dart';
+import '../../../settings/data/cache_mode_provider.dart';
+import '../../../settings/domain/models/cache_mode.dart';
 import '../../../community/domain/models/community_insight.dart';
 // ignore: unused_import
 import '../../../community/data/community_insights_provider.dart';
@@ -96,6 +98,8 @@ class _RecommendationsScreenState
   bool get _precomputed =>
       ref.read(recommendationSourceModeProvider) == RecommendationSourceMode.precomputed;
 
+  bool get _bypassCache => ref.read(cacheModeProvider) == CacheMode.noCache;
+
   /// Holt eine Seite Empfehlungen — verzweigt je nach Live-/Vorberechnet-Switch.
   /// [alreadyLoadedIds] wird nur im Live-Modus für die Pagination gebraucht;
   /// im Vorberechnet-Modus steht die Reihenfolge schon fest, dort zählt
@@ -121,6 +125,7 @@ class _RecommendationsScreenState
       limit: _pageSize,
       excludeIds: alreadyLoadedIds,
       dbOnly: _dbOnly,
+      bypassCache: _bypassCache,
     );
   }
 

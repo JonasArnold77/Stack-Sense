@@ -40,3 +40,7 @@ class RecommendationRequest(BaseModel):
             "LLM-synthetisierten Datenbank oder Trainingswissen — kein Nutzerprofil."
         ),
     )
+    bypass_cache: bool = Field(
+        default=False,
+        description="Testmodus: 6h-In-Memory-Cache ignorieren, immer frisch generieren.",
+    )

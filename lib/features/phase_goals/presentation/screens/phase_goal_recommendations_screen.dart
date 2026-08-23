@@ -15,6 +15,8 @@ import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../settings/data/recommendation_source_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_source_mode.dart';
+import '../../../settings/data/cache_mode_provider.dart';
+import '../../../settings/domain/models/cache_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../data/phase_goals_provider.dart';
 import '../../domain/models/phase_goal.dart';
@@ -65,6 +67,7 @@ class _PhaseGoalRecommendationsScreenState
         ref.read(recommendationModeProvider) == RecommendationMode.ragOnly;
     final precomputed = ref.read(recommendationSourceModeProvider) ==
         RecommendationSourceMode.precomputed;
+    final bypassCache = ref.read(cacheModeProvider) == CacheMode.noCache;
 
     try {
       final results = precomputed
@@ -79,6 +82,7 @@ class _PhaseGoalRecommendationsScreenState
               goal: def.name,
               limit: 4,
               dbOnly: dbOnly,
+              bypassCache: bypassCache,
             );
       if (mounted) setState(() => _supplements = results);
     } catch (e) {

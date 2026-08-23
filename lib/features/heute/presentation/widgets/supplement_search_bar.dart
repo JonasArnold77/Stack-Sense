@@ -12,6 +12,8 @@ import '../../../recommendations/domain/models/supplement.dart';
 import '../../../recommendations/presentation/screens/supplement_detail_screen.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
+import '../../../settings/data/cache_mode_provider.dart';
+import '../../../settings/domain/models/cache_mode.dart';
 
 /// Suchleiste für den Home Screen — tippfehler-/schreibweise-tolerant
 /// ("Vitamin B", "Vitamin-B", "VitaminB" finden dieselben Treffer).
@@ -75,12 +77,14 @@ class _SupplementSearchBarState extends ConsumerState<SupplementSearchBar> {
   Future<void> _openResult(SupplementSearchResult result) async {
     final dbOnly =
         ref.read(recommendationModeProvider) == RecommendationMode.ragOnly;
+    final bypassCache = ref.read(cacheModeProvider) == CacheMode.noCache;
     setState(() => _loadingResultId = result.id);
     try {
       final supplement = await ApiService.instance.lookupSupplement(
         supplementId: result.id,
         supplementName: result.name,
         dbOnly: dbOnly,
+        bypassCache: bypassCache,
       );
       if (!mounted) return;
       _clear();

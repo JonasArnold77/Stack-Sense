@@ -1136,18 +1136,23 @@ class ClaudeService:
     async def get_recommendations(
         self, profile: UserProfile, goal: str,
         limit: int = 5, exclude_ids: list[str] | None = None,
-        db_only: bool = False,
+        db_only: bool = False, bypass_cache: bool = False,
     ) -> RecommendationResponse:
         logger.info(
-            f"Empfehlungsanfrage: Ziel='{goal}', Alter={profile.age}, db_only={db_only}"
+            f"Empfehlungsanfrage: Ziel='{goal}', Alter={profile.age}, db_only={db_only}, "
+            f"bypass_cache={bypass_cache}"
         )
 
         # --- Cache prüfen ---
+        # bypass_cache: Testmodus, überspringt nur das LESEN — die frische Antwort
+        # wird trotzdem gespeichert, damit reguläre (nicht-bypass) Anfragen weiter
+        # vom Cache profitieren.
         cache_key = _cache_key(goal, profile, limit, exclude_ids or [], db_only=db_only)
-        cached = _cache_get(cache_key)
-        if cached:
-            logger.info(f"Cache-Hit für '{goal}' (limit={limit}) — Claude-Aufruf übersprungen")
-            return cached
+        if not bypass_cache:
+            cached = _cache_get(cache_key)
+            if cached:
+                logger.info(f"Cache-Hit für '{goal}' (limit={limit}) — Claude-Aufruf übersprungen")
+                return cached
 
         # --- Kontext aufbauen: DB + PubMed + Vector parallel ---
         # Datenbank-Modus: kein Profil, keine kuratierte (LLM-synthetisierte) DB —
@@ -1426,6 +1431,7 @@ class ClaudeService:
 
     async def get_supplement_detail(
         self, supplement_id: str, supplement_name: str, db_only: bool = False,
+        bypass_cache: bool = False,
     ) -> SupplementRecommendation:
         """Generiert GENAU EINE volle Karte für einen direkten Such-Treffer —
         kein Ziel, kein Nutzerprofil, respektiert aber den KI-/Datenbank-Modus."""
@@ -1434,9 +1440,10 @@ class ClaudeService:
         )
 
         cache_key = f"detail::{supplement_id}::{db_only}"
-        cached = _cache_get(cache_key)
-        if cached and cached.recommendations:
-            return cached.recommendations[0]
+        if not bypass_cache:
+            cached = _cache_get(cache_key)
+            if cached and cached.recommendations:
+                return cached.recommendations[0]
 
         db_context = "" if db_only else _build_single_db_context(supplement_id)
         vector_context = vector_search(

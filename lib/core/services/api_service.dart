@@ -33,6 +33,7 @@ class ApiService {
     int limit = 5,
     List<String> excludeIds = const [],
     bool dbOnly = false,
+    bool bypassCache = false,
   }) async {
     final body = jsonEncode({
       'profile': _profileToJson(profile),
@@ -40,6 +41,7 @@ class ApiService {
       'limit': limit,
       'exclude_ids': excludeIds,
       'db_only': dbOnly,
+      'bypass_cache': bypassCache,
     });
 
     try {
@@ -161,6 +163,7 @@ class ApiService {
     required String supplementId,
     required String supplementName,
     bool dbOnly = false,
+    bool bypassCache = false,
   }) async {
     try {
       final response = await http
@@ -174,6 +177,7 @@ class ApiService {
               'supplement_id': supplementId,
               'supplement_name': supplementName,
               'db_only': dbOnly,
+              'bypass_cache': bypassCache,
             }),
           )
           .timeout(AppConstants.apiTimeout);

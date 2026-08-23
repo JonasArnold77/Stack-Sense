@@ -43,6 +43,7 @@ async def get_recommendations(request: RecommendationRequest) -> RecommendationR
             limit=request.limit,
             exclude_ids=request.exclude_ids,
             db_only=request.db_only,
+            bypass_cache=request.bypass_cache,
         )
         return result
     except ValueError as e:
@@ -106,6 +107,7 @@ class SupplementLookupRequest(BaseModel):
     supplement_id: str
     supplement_name: str
     db_only: bool = False
+    bypass_cache: bool = False
 
 
 @router.post("/recommendations/lookup", response_model=SupplementRecommendation)
@@ -120,6 +122,7 @@ async def get_supplement_lookup(request: SupplementLookupRequest) -> SupplementR
             supplement_id=request.supplement_id,
             supplement_name=request.supplement_name,
             db_only=request.db_only,
+            bypass_cache=request.bypass_cache,
         )
     except ValueError as e:
         raise HTTPException(status_code=502, detail=str(e))
