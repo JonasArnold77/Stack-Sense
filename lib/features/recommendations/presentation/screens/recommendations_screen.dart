@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../core/services/recommendation_local_cache.dart';
 import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../domain/models/supplement.dart';
 import '../../../stack/domain/models/stack_entry.dart' show StackEntry;
@@ -142,12 +143,21 @@ class _RecommendationsScreenState
     });
     final profile = ref.read(onboardingProvider);
     try {
-      final results = await _fetchRecommendations(
-        profile: profile,
-        goal: goal,
-        offset: 0,
-        alreadyLoadedIds: const [],
-      );
+      // Lokal gespeicherte Liste vom letzten Mal? Nur im Live-Modus relevant —
+      // Vorberechnet lädt ohnehin schon aus der Backend-Vorberechnung.
+      final cached = _precomputed
+          ? null
+          : await RecommendationLocalCache.instance.getCached(goal, _dbOnly);
+      final results = cached ??
+          await _fetchRecommendations(
+            profile: profile,
+            goal: goal,
+            offset: 0,
+            alreadyLoadedIds: const [],
+          );
+      if (cached == null && !_precomputed) {
+        RecommendationLocalCache.instance.save(goal, _dbOnly, results);
+      }
       if (mounted) {
         setState(() {
           _supplements.addAll(results);
@@ -226,6 +236,9 @@ class _RecommendationsScreenState
           _hasMore = results.length >= _pageSize;
           _isLoadingMore = false;
         });
+      }
+      if (!_precomputed) {
+        RecommendationLocalCache.instance.save(_selectedGoal!, _dbOnly, _supplements);
       }
       _loadCommunityInsights(results.map((s) => s.name).toList());
     } on AppFailure catch (e) {

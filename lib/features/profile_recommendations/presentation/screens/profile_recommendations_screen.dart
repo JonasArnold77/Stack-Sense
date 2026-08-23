@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../core/services/recommendation_local_cache.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
 import '../../../onboarding/domain/models/user_profile.dart';
@@ -219,6 +220,15 @@ class _ProfileRecommendationsScreenState
 
   bool get _bypassCache => ref.read(cacheModeProvider) == CacheMode.noCache;
 
+  /// Eigener Cache-Schlüssel pro aktiver Filter-Tag-Kombination — die aktiven
+  /// Tags verändern das gesendete Profil genauso wie ein anderes Ziel, daher
+  /// dürfen unterschiedliche Kombinationen nicht dieselbe gespeicherte Liste
+  /// teilen (sonst zeigt ein Tag-Wechsel fälschlich die alte Liste).
+  String get _cacheGoalKey {
+    final labels = _activeTags.map((t) => t.label).toList()..sort();
+    return 'Basis-Supplementierung::${labels.join(",")}';
+  }
+
   Future<List<Supplement>> _fetchRecommendations({
     required int offset,
     required List<String> alreadyLoadedIds,
@@ -251,10 +261,17 @@ class _ProfileRecommendationsScreenState
     });
 
     try {
-      final results = await _fetchRecommendations(
-        offset: 0,
-        alreadyLoadedIds: const [],
-      );
+      final cached = _precomputed
+          ? null
+          : await RecommendationLocalCache.instance.getCached(_cacheGoalKey, _dbOnly);
+      final results = cached ??
+          await _fetchRecommendations(
+            offset: 0,
+            alreadyLoadedIds: const [],
+          );
+      if (cached == null && !_precomputed) {
+        RecommendationLocalCache.instance.save(_cacheGoalKey, _dbOnly, results);
+      }
       if (mounted) {
         setState(() {
           _supplements = results;
@@ -283,6 +300,9 @@ class _ProfileRecommendationsScreenState
           _supplements.addAll(results);
           _hasMore = results.length >= _pageSize;
         });
+      }
+      if (!_precomputed) {
+        RecommendationLocalCache.instance.save(_cacheGoalKey, _dbOnly, _supplements);
       }
     } on AppFailure catch (_) {
       // Beim Nachladen stumm bleiben — kein Snackbar, kein Error-State

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../core/services/recommendation_local_cache.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
@@ -70,20 +71,27 @@ class _PhaseGoalRecommendationsScreenState
     final bypassCache = ref.read(cacheModeProvider) == CacheMode.noCache;
 
     try {
-      final results = precomputed
-          ? await ApiService.instance.getPrecomputedRecommendations(
-              profile: profile,
-              goal: def.name, // z.B. "Marathon-Vorbereitung"
-              limit: 4,
-              dbOnly: dbOnly,
-            )
-          : await ApiService.instance.getRecommendations(
-              profile: profile,
-              goal: def.name,
-              limit: 4,
-              dbOnly: dbOnly,
-              bypassCache: bypassCache,
-            );
+      final cached = precomputed
+          ? null
+          : await RecommendationLocalCache.instance.getCached(def.name, dbOnly);
+      final results = cached ??
+          (precomputed
+              ? await ApiService.instance.getPrecomputedRecommendations(
+                  profile: profile,
+                  goal: def.name, // z.B. "Marathon-Vorbereitung"
+                  limit: 4,
+                  dbOnly: dbOnly,
+                )
+              : await ApiService.instance.getRecommendations(
+                  profile: profile,
+                  goal: def.name,
+                  limit: 4,
+                  dbOnly: dbOnly,
+                  bypassCache: bypassCache,
+                ));
+      if (cached == null && !precomputed) {
+        RecommendationLocalCache.instance.save(def.name, dbOnly, results);
+      }
       if (mounted) setState(() => _supplements = results);
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());

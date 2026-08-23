@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/recommendation_local_cache.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../checkin/data/checkin_provider.dart';
@@ -276,6 +277,11 @@ class _GreetingHeader extends ConsumerWidget {
             alignment: Alignment.centerRight,
             child: _CacheModeToggle(),
           ),
+          const SizedBox(height: AppConstants.spaceXS),
+          const Align(
+            alignment: Alignment.centerRight,
+            child: _ResetSavedListsButton(),
+          ),
           const SizedBox(height: AppConstants.spaceM),
           Text(
             dateStr,
@@ -384,6 +390,68 @@ class _RecommendationSourceModeToggle extends ConsumerWidget {
             onTap: () => notifier.setMode(RecommendationSourceMode.live),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Reset-Button — löscht alle lokal gespeicherten Empfehlungslisten
+// (RecommendationLocalCache), damit sie beim nächsten Öffnen neu generiert
+// werden. Einmalige Aktion, kein Umschalter wie die Toggles oben.
+// ---------------------------------------------------------------------------
+
+class _ResetSavedListsButton extends StatelessWidget {
+  const _ResetSavedListsButton();
+
+  Future<void> _confirmAndReset(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Gespeicherte Listen löschen?'),
+        content: const Text(
+          'Alle lokal gespeicherten Supplement-Listen (Live-Modus) werden '
+          'gelöscht. Beim nächsten Öffnen wird für jedes Themenfeld neu '
+          'generiert.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await RecommendationLocalCache.instance.clearAll();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gespeicherte Listen gelöscht.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: () => _confirmAndReset(context),
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white.withOpacity(0.65),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      icon: const Icon(Icons.refresh_rounded, size: 14),
+      label: Text(
+        'Gespeicherte Listen zurücksetzen',
+        style: AppTextStyles.caption.copyWith(
+          color: Colors.white.withOpacity(0.65),
+        ),
       ),
     );
   }

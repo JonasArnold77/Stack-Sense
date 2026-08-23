@@ -56,6 +56,13 @@ class ProductLink {
         url: json['url'] as String,
         note: json['note'] as String?,
       );
+
+  Map<String, dynamic> toJson() => {
+        'label': label,
+        'shop': shop,
+        'url': url,
+        'note': note,
+      };
 }
 
 /// Eine natürliche Lebensmittelquelle für einen Nährstoff.
@@ -121,6 +128,12 @@ class SecondaryBenefit {
         'green' => EvidenceLevel.green,
         'red' => EvidenceLevel.red,
         _ => EvidenceLevel.yellow,
+      };
+
+  Map<String, dynamic> toJson() => {
+        'text': text,
+        'evidence_level': evidenceLevel.name,
+        'condition': condition,
       };
 }
 
@@ -256,4 +269,79 @@ class Supplement {
     this.foodCoverageScore = 5,
     this.relevanceScore = 75,
   });
+
+  /// Round-trip-Serialisierung fürs lokale Zwischenspeichern bereits geladener
+  /// Empfehlungslisten (siehe RecommendationLocalCache) — dasselbe Feld-Schema
+  /// wie die Backend-Antwort, damit ein und derselbe Parser beide Quellen liest.
+  factory Supplement.fromJson(Map<String, dynamic> json) {
+    final rawLinks = json['product_links'] as List<dynamic>? ?? [];
+    final rawCategories = json['categories'] as List<dynamic>? ?? [];
+    final rawWirkstoffe = json['enthaltene_wirkstoffe'] as List<dynamic>? ?? [];
+    final rawSecondary = json['secondary_benefit'] as Map<String, dynamic>?;
+
+    return Supplement(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      substanceName: json['substance_name'] as String?,
+      evidenceLevel: _parseEvidenceLevel(json['evidence_level'] as String? ?? 'yellow'),
+      substanceCategory: parseSubstanceCategory(json['substance_category'] as String?),
+      pitch: (json['pitch'] as String?) ?? '',
+      evidenceReason: (json['evidence_reason'] as String?) ?? '',
+      dosage: (json['dosage'] as String?) ?? '',
+      intakeTime: (json['intake_time'] as String?) ?? '',
+      intakeHint: json['intake_hint'] as String?,
+      drugInteraction: json['drug_interaction'] as String?,
+      interactionSeverity: _parseSeverity(json['interaction_severity'] as String?),
+      productLinks: rawLinks
+          .map((e) => ProductLink.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      categories: rawCategories.map((e) => e as String).toList(),
+      supplementType: _parseSupplementType(json['supplement_type'] as String?),
+      enthalteneWirkstoffe: rawWirkstoffe.map((e) => e as String).toList(),
+      secondaryBenefit:
+          rawSecondary != null ? SecondaryBenefit.fromJson(rawSecondary) : null,
+      foodCoverageScore: (json['food_coverage_score'] as num?)?.toInt() ?? 5,
+      relevanceScore: (json['relevance_score'] as num?)?.toInt() ?? 75,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'substance_name': substanceName,
+        'evidence_level': evidenceLevel.name,
+        'substance_category': substanceCategory?.fullLabel,
+        'pitch': pitch,
+        'evidence_reason': evidenceReason,
+        'dosage': dosage,
+        'intake_time': intakeTime,
+        'intake_hint': intakeHint,
+        'drug_interaction': drugInteraction,
+        'interaction_severity': interactionSeverity.name,
+        'product_links': productLinks.map((p) => p.toJson()).toList(),
+        'categories': categories,
+        'supplement_type': supplementType.name,
+        'enthaltene_wirkstoffe': enthalteneWirkstoffe,
+        'secondary_benefit': secondaryBenefit?.toJson(),
+        'food_coverage_score': foodCoverageScore,
+        'relevance_score': relevanceScore,
+      };
+
+  static EvidenceLevel _parseEvidenceLevel(String raw) => switch (raw) {
+        'green' => EvidenceLevel.green,
+        'yellow' => EvidenceLevel.yellow,
+        _ => EvidenceLevel.red,
+      };
+
+  static InteractionSeverity _parseSeverity(String? raw) => switch (raw) {
+        'timing' => InteractionSeverity.timing,
+        'moderate' => InteractionSeverity.moderate,
+        'high' => InteractionSeverity.high,
+        _ => InteractionSeverity.none,
+      };
+
+  static SupplementType _parseSupplementType(String? raw) => switch (raw) {
+        'group' => SupplementType.group,
+        _ => SupplementType.single,
+      };
 }
