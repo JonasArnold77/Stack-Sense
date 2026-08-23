@@ -18,10 +18,45 @@ from services.vector_service import (
     search_studies as vector_search,
     get_precomputed_ranking,
     get_precomputed_supplement_info,
+    get_supplements_by_category,
 )
 from services.rxnorm_service import RxNormService
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Themenfeld → Kategorie-Mapping für den Datenbank-Modus.
+# Ohne dieses Mapping wählt der Datenbank-Modus Kandidaten rein per
+# Embedding-Ähnlichkeit zum Zielnamen — das liefert für abstrakte Ziele wie
+# "Fokus & Konzentration" auch themenfremde Treffer (z.B. Probiotika,
+# Senolytika), weil deren Studien zufällig textlich nah am Zielnamen liegen,
+# obwohl das Supplement fachlich nichts mit dem Ziel zu tun hat. Die echte
+# `supplements.category`-Spalte grenzt den Kandidatenpool vorab sauber ein;
+# die Vektorsuche bewertet danach nur noch die Evidenztiefe INNERHALB dieses
+# Pools. Bewusst mehrere Kategorien pro Ziel — lieber ein Kandidat zu viel
+# im Pool (wird bei schwacher Evidenz ohnehin niedrig bewertet) als ein
+# fachlich einschlägiges Supplement komplett zu verpassen.
+# ---------------------------------------------------------------------------
+GOAL_CATEGORY_MAP: dict[str, list[str]] = {
+    "Mehr Energie": ["Vitamine", "Mineralstoffe", "Adaptogene", "Aminosäuren"],
+    "Besserer Schlaf": ["Schlaf", "Mineralstoffe", "Aminosäuren", "Pflanzenextrakte"],
+    "Fokus & Konzentration": ["Nootropics", "Adaptogene", "Aminosäuren"],
+    "Sport & Regeneration": ["Sport", "Protein", "Aminosäuren", "Mineralstoffe"],
+    "Immunsystem stärken": ["Immunsystem", "Vitamine", "Mineralstoffe", "Heilpilze"],
+    "Stimmung & Wohlbefinden": ["Adaptogene", "Aminosäuren", "Nootropics", "Pflanzenextrakte"],
+    "Herzgesundheit": ["Herzgesundheit", "Fettsäuren", "Antioxidantien", "Mineralstoffe"],
+    "Haut & Haare": ["Haut & Haar", "Vitamine", "Mineralstoffe", "Protein"],
+    "Gewichtsmanagement": ["Stoffwechsel", "Protein", "Darmgesundheit", "Pflanzenextrakte"],
+    "Gelenkgesundheit": ["Gelenke", "Antioxidantien", "Fettsäuren"],
+    "Frauengesundheit / Zyklus": ["Frauen", "Mineralstoffe", "Vitamine", "Pflanzenextrakte"],
+    "Hormonbalance": ["Männer", "Frauen", "Adaptogene", "Pflanzenextrakte", "Mineralstoffe"],
+    "Basis-Supplementierung": ["Vitamine", "Mineralstoffe", "Fettsäuren"],
+    "Marathon-Vorbereitung": ["Sport", "Aminosäuren", "Mineralstoffe", "Protein"],
+    "Prüfungsphase": ["Nootropics", "Adaptogene", "Aminosäuren"],
+    "Reise & Jetlag": ["Schlaf", "Immunsystem", "Pflanzenextrakte"],
+    "Erkältungssaison": ["Immunsystem", "Vitamine", "Pflanzenextrakte", "Heilpilze"],
+    "Stressige Arbeitsphase": ["Adaptogene", "Aminosäuren", "Nootropics", "Mineralstoffe"],
+}
 
 # ---------------------------------------------------------------------------
 # Einfacher In-Memory Cache für Empfehlungen
@@ -449,7 +484,13 @@ Verwende STRIKT NICHTS aus deinem Trainingswissen, auch nicht für Dosierung ode
 - secondary_benefit: immer null (kein Nutzerprofil vorhanden).
 - relevance_score: leite ihn NUR aus Menge und Stärke der im Kontext gefundenen Belege für dieses
   Supplement ab — nicht aus persönlicher Einschätzung, da kein Nutzerprofil existiert.
-- Empfehle NUR Supplements, die im Kontext unten mit Namen vorkommen.
+- Empfehle NUR Supplements, die als EIGENER Studien-/Fakten-Eintrag im Kontext stehen (erkennbar an
+  "— <slug>" hinter Studientiteln bzw. dem Supplement-Namen vor Kuratierte-Datenbanken-Einträgen).
+  NICHT empfehlen: Substanzen, die nur als Co-Intervention oder Vergleichspräparat INNERHALB des
+  Abstracts eines ANDEREN Supplements erwähnt werden (z.B. macht eine Kombi-Studie "Magnesium +
+  CoQ10 + Tryptophan bei Fibromyalgie", die unter "l-tryptophan" einsortiert ist, CoQ10 NICHT zu
+  einer eigenständigen Empfehlung — das ist Evidenz für die Kombination unter dem einsortierten
+  Supplement, nicht für die im Text miterwähnte Substanz).
 
 """
 
@@ -495,7 +536,11 @@ Sortiere absteigend nach relevance_score. Keine doppelten IDs. Generiere höchst
 _RANKING_DB_ONLY_PREFIX = """⛔ DATENBANK-MODUS — ZUSÄTZLICHE HARDREGEL:
 Die EINZIGE erlaubte Grundlage ist der Kontext unten (PubMed/Europe PMC/EFSA/NIH ODS/openFDA/DSLD) —
 kein Trainingswissen. relevance_score nur aus Menge/Stärke der im Kontext gefundenen Belege ableiten.
-Liste nur Supplements die im Kontext mit Namen vorkommen.
+Liste NUR Supplements, die als EIGENER Studien-/Fakten-Eintrag im Kontext stehen (erkennbar an
+"— <slug>" hinter Studientiteln). NICHT Substanzen, die nur als Co-Intervention/Vergleichspräparat
+INNERHALB des Abstracts eines ANDEREN Supplements erwähnt werden (z.B. macht eine Kombi-Studie
+"Magnesium + CoQ10 + Tryptophan", einsortiert unter "l-tryptophan", CoQ10 NICHT zu einer eigenen
+Rangliste-Position).
 
 """
 
@@ -1083,10 +1128,25 @@ class ClaudeService:
         )
 
         # Nur Vector-DB — kein PubMed live fetch (zu langsam, Daten bereits in Vector-DB)
-        # Im db_only-Modus mehr Treffer holen, da keine kuratierte DB als Rückgrat dient.
-        vector_context = vector_search(query_text, supplement_names=[], top_k=12 if db_only else 8) or ""
+        # Im db_only-Modus: Kandidaten zuerst per echter Kategorie-Zugehörigkeit
+        # eingrenzen (siehe GOAL_CATEGORY_MAP) — sonst wählt die Vektorsuche
+        # Kandidaten rein per Textähnlichkeit zum Zielnamen, was für abstrakte
+        # Ziele wie "Fokus & Konzentration" auch themenfremde Treffer liefert.
+        # Kein Mapping/keine Kandidaten gefunden → Fallback auf die alte
+        # ungefilterte Suche, damit kein Ziel plötzlich leer bleibt.
+        category_candidates = (
+            get_supplements_by_category(GOAL_CATEGORY_MAP.get(goal, [])) if db_only else []
+        )
+        vector_context = vector_search(
+            query_text,
+            supplement_names=category_candidates,
+            top_k=20 if db_only else 8,
+        ) or ""
         if vector_context:
-            logger.info("Vector-DB: Kontext geladen.")
+            logger.info(
+                f"Vector-DB: Kontext geladen ({len(category_candidates)} Kategorie-Kandidaten)."
+                if db_only else "Vector-DB: Kontext geladen."
+            )
         combined_study_context = vector_context
 
         user_message = _build_user_message(
@@ -1127,8 +1187,11 @@ class ClaudeService:
         logger.info(f"Ranking-Anfrage: Ziel='{goal}', db_only={db_only}, limit={limit}")
 
         db_context = "" if db_only else _build_db_context(medications=[], conditions=[])
+        category_candidates = (
+            get_supplements_by_category(GOAL_CATEGORY_MAP.get(goal, [])) if db_only else []
+        )
         vector_context = vector_search(
-            f"{goal} supplement", supplement_names=[], top_k=15 if db_only else 10,
+            f"{goal} supplement", supplement_names=category_candidates, top_k=25 if db_only else 10,
         ) or ""
 
         user_message = _build_ranking_message(goal, db_context, vector_context, limit)

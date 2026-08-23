@@ -82,20 +82,39 @@ def search_studies(query: str, supplement_names: list[str], top_k: int = 8) -> s
         cur = conn.cursor()
 
         # ── 1. PubMed Studien ────────────────────────────────────────────────
+        # Bei Kandidaten-Filter: JEDEM Kandidaten seine beste Studie garantieren
+        # (Fenster-Funktion, rn=1), statt reinem globalen Top-top_k nach
+        # Ähnlichkeit — sonst verdrängen Kandidaten mit VIELEN mittelmäßig
+        # passenden Studien andere, die fachlich genauso relevant sind, aber
+        # nur wenige, spezifischer formulierte Studien haben und dadurch
+        # schlechter auf die generische Zieltext-Query matchen.
         if supplement_names:
             placeholders = ", ".join(["%s"] * len(supplement_names))
+            # Wenige Kandidaten (z.B. 1 bei einer Einzel-Detailsuche) → viele
+            # Studien PRO Kandidat zulassen. Viele Kandidaten (z.B. 30+ bei einer
+            # Themenfeld-Rangliste) → pro Kandidat wenig/1 zulassen, damit jeder
+            # überhaupt eine faire Chance auf einen Kontext-Platz bekommt.
+            per_candidate = max(1, top_k // len(supplement_names))
+            effective_limit = min(max(top_k, len(supplement_names)), 40)
             cur.execute(
                 f"""
-                SELECT s.supplement_slug, s.title, s.abstract, s.year, s.evidence_level,
-                       1 - (s.embedding <=> %s::vector) AS similarity,
-                       COALESCE(s.source, 'pubmed') AS source
-                FROM studies s
-                WHERE s.supplement_slug IN ({placeholders})
-                  AND s.abstract IS NOT NULL
-                ORDER BY s.embedding <=> %s::vector
+                SELECT supplement_slug, title, abstract, year, evidence_level, similarity, source
+                FROM (
+                    SELECT s.supplement_slug, s.title, s.abstract, s.year, s.evidence_level,
+                           1 - (s.embedding <=> %s::vector) AS similarity,
+                           COALESCE(s.source, 'pubmed') AS source,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY s.supplement_slug ORDER BY s.embedding <=> %s::vector
+                           ) AS rn
+                    FROM studies s
+                    WHERE s.supplement_slug IN ({placeholders})
+                      AND s.abstract IS NOT NULL
+                ) ranked
+                WHERE rn <= %s
+                ORDER BY similarity DESC
                 LIMIT %s
                 """,
-                (embedding_str, *supplement_names, embedding_str, top_k),
+                (embedding_str, embedding_str, *supplement_names, per_candidate, effective_limit),
             )
         else:
             cur.execute(
@@ -117,18 +136,27 @@ def search_studies(query: str, supplement_names: list[str], top_k: int = 8) -> s
         facts_limit = max(4, top_k // 2)
         if supplement_names:
             placeholders = ", ".join(["%s"] * len(supplement_names))
+            per_candidate_facts = max(1, facts_limit // len(supplement_names))
+            effective_facts_limit = min(max(facts_limit, len(supplement_names)), 30)
             cur.execute(
                 f"""
-                SELECT f.supplement_slug, f.fact_type, f.content,
-                       1 - (f.embedding <=> %s::vector) AS similarity,
-                       COALESCE(f.source, 'manual') AS source
-                FROM supplement_facts f
-                WHERE f.supplement_slug IN ({placeholders})
-                  AND f.content IS NOT NULL
-                ORDER BY f.embedding <=> %s::vector
+                SELECT supplement_slug, fact_type, content, similarity, source
+                FROM (
+                    SELECT f.supplement_slug, f.fact_type, f.content,
+                           1 - (f.embedding <=> %s::vector) AS similarity,
+                           COALESCE(f.source, 'manual') AS source,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY f.supplement_slug ORDER BY f.embedding <=> %s::vector
+                           ) AS rn
+                    FROM supplement_facts f
+                    WHERE f.supplement_slug IN ({placeholders})
+                      AND f.content IS NOT NULL
+                ) ranked
+                WHERE rn <= %s
+                ORDER BY similarity DESC
                 LIMIT %s
                 """,
-                (embedding_str, *supplement_names, embedding_str, facts_limit),
+                (embedding_str, embedding_str, *supplement_names, per_candidate_facts, effective_facts_limit),
             )
         else:
             cur.execute(
@@ -237,6 +265,31 @@ def search_supplements(query: str, limit: int = 10) -> list[dict]:
         return [{"id": slug, "name": name, "category": category} for slug, name, category in rows]
     except Exception as e:
         logger.warning(f"Supplement-Suche fehlgeschlagen (non-fatal): {e}")
+        return []
+
+
+def get_supplements_by_category(categories: list[str]) -> list[str]:
+    """Liefert alle Supplement-Slugs deren `category` zu einer der übergebenen
+    Kategorien passt. Dient als deterministischer, garantiert themenrelevanter
+    Kandidatenpool für den Datenbank-Modus — Ersatz für die bisherige rein
+    embedding-basierte Suche, die z.B. für "Fokus & Konzentration" auch
+    themenfremde Treffer (Probiotika, Senolytika) lieferte, weil sie nur nach
+    Textähnlichkeit zum Zielnamen sucht statt nach echter Kategorie-Zugehörigkeit."""
+    if not categories or not _PSYCOPG2_AVAILABLE:
+        return []
+    try:
+        conn = _get_conn()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT slug FROM supplements WHERE category = ANY(%s)",
+            (categories,),
+        )
+        rows = [r[0] for r in cur.fetchall()]
+        cur.close()
+        conn.close()
+        return rows
+    except Exception as e:
+        logger.warning(f"Kategorie-Suche fehlgeschlagen (non-fatal): {e}")
         return []
 
 
