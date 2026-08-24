@@ -1,0 +1,57 @@
+name: Upgrade — Build APK + Deploy Backend
+
+# Manuell ausgelöst — entweder über den GitHub-Actions-Tab ("Run workflow")
+# oder per API-Dispatch vom "Upgrade"-Button auf der internen Admin-Seite
+# (backend/routers/admin_upgrade.py). Zwei unabhängige Jobs laufen parallel,
+# da ein fehlgeschlagener Build den Backend-Deploy nicht blockieren soll
+# (und umgekehrt).
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-upload:
+    name: APK bauen + nach Google Drive hochladen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: pubspec.yaml
+          channel: stable
+
+      - run: flutter pub get
+
+      - name: Release-APK bauen
+        run: flutter build apk --release
+
+      - name: Nach Google Drive hochladen
+        env:
+          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          pip install google-auth google-api-python-client
+          python .github/scripts/upload_to_drive.py \
+            build/app/outputs/flutter-apk/app-release.apk
+
+  deploy-backend:
+    name: Backend deployen (eb deploy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install awsebcli
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: eb deploy
+        working-directory: backend
+        run: eb deploy stacksense-production --timeout 20

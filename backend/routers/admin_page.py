@@ -64,6 +64,13 @@ _HTML = """<!doctype html>
 <div id="app">
   <h1>LifeLab Admin — Parteien-Verwaltung</h1>
 
+  <h2>Upgrade</h2>
+  <p>Baut eine neue Release-APK, lädt sie nach Google Drive hoch und deployt
+     das Backend — läuft als GitHub-Actions-Workflow im Hintergrund (einige
+     Minuten), diese Seite wartet nicht darauf.</p>
+  <button class="primary" onclick="triggerUpgrade()">🚀 Upgrade auslösen</button>
+  <span id="upgrade-status"></span>
+
   <h2>Parteien</h2>
   <button class="primary" onclick="openTenantDialog()">+ Neue Partei</button>
   <table id="tenant-table">
@@ -152,6 +159,17 @@ async function api(path, options) {
   }
   const text = await res.text();
   return text ? JSON.parse(text) : null;
+}
+
+async function triggerUpgrade() {
+  const status = document.getElementById("upgrade-status");
+  status.textContent = " Wird ausgelöst…";
+  try {
+    const result = await api("/admin/upgrade", { method: "POST" });
+    status.innerHTML = ` ✓ Gestartet — <a href="${result.actions_url}" target="_blank">Status auf GitHub verfolgen</a>`;
+  } catch (e) {
+    status.textContent = " Fehler: " + e.message;
+  }
 }
 
 async function loadTenants() {

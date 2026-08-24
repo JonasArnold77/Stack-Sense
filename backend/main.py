@@ -7,6 +7,7 @@ from routers.users import router as users_router
 from routers.insights import router as insights_router
 from routers.checkin import router as checkin_router
 from routers.admin_tenants import router as admin_tenants_router
+from routers.admin_upgrade import router as admin_upgrade_router
 from routers.admin_page import router as admin_page_router
 
 logging.basicConfig(
@@ -35,6 +36,7 @@ app.include_router(users_router)
 app.include_router(insights_router)
 app.include_router(checkin_router)
 app.include_router(admin_tenants_router)
+app.include_router(admin_upgrade_router)
 app.include_router(admin_page_router)
 
 

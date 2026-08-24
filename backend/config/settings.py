@@ -25,5 +25,9 @@ class Settings(BaseSettings):
     cognito_user_pool_id: str = ""        # z.B. "eu-central-1_AbCdEfGhI"
     cognito_client_id: str = ""           # App-Client-ID aus dem User Pool
 
+    # GitHub — löst den "Upgrade"-Workflow (.github/workflows/upgrade.yml) aus
+    github_token: str = ""                # Fine-grained PAT, Scope: Actions Read/Write
+    github_repo: str = "JonasArnold77/Stack-Sense"
+
 
 settings = Settings()
