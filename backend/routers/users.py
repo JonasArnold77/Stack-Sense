@@ -22,6 +22,7 @@ from database.user_repository import (
     set_user_role,
     upsert_profile,
 )
+from database.tenant_repository import assign_user_tenant, get_tenant
 from middleware.auth import get_current_user, require_admin
 
 logger = logging.getLogger(__name__)
@@ -55,15 +56,39 @@ class UserResponse(BaseModel):
     id: str
     email: str
     role: str
+    tenant_id: Optional[str] = None
+    tenant_name: Optional[str] = None
+    features: dict = {}
+    branding: dict = {}
 
 
 class RoleRequest(BaseModel):
     role: str  # 'user' | 'admin'
 
 
+class TenantAssignmentRequest(BaseModel):
+    tenant_id: Optional[str] = None  # null = Tenant-Zuweisung entfernen
+
+
 # ---------------------------------------------------------------------------
 # Hilfsfunktion
 # ---------------------------------------------------------------------------
+
+def _user_to_response(user: UserRow) -> UserResponse:
+    """Reichert die User-Antwort um die Tenant-Konfiguration an — nur wenn der
+    User einem Tenant zugewiesen ist UND dieser aktiv (veröffentlicht) ist.
+    Sonst bleiben tenant_id/tenant_name/features/branding leer und die App
+    fällt automatisch auf das LifeLab-Standardverhalten zurück."""
+    resp = UserResponse(id=user.id, email=user.email, role=user.role)
+    if user.tenant_id:
+        tenant = get_tenant(user.tenant_id)
+        if tenant and tenant.is_active:
+            resp.tenant_id = tenant.id
+            resp.tenant_name = tenant.name
+            resp.features = tenant.features
+            resp.branding = tenant.branding
+    return resp
+
 
 def _profile_to_response(p: UserProfileRow) -> ProfileResponse:
     return ProfileResponse(
@@ -87,12 +112,12 @@ async def login(user: UserRow = Depends(get_current_user)):
     Wird beim App-Start aufgerufen nachdem Amplify den Token liefert.
     Legt den User in der DB an wenn er noch nicht existiert.
     """
-    return UserResponse(id=user.id, email=user.email, role=user.role)
+    return _user_to_response(user)
 
 
 @router.get("/me", response_model=UserResponse, summary="Eigene Account-Daten")
 async def get_me(user: UserRow = Depends(get_current_user)):
-    return UserResponse(id=user.id, email=user.email, role=user.role)
+    return _user_to_response(user)
 
 
 @router.get(
@@ -148,7 +173,7 @@ async def update_my_profile(
 )
 async def get_all_users(_admin: UserRow = Depends(require_admin)):
     users = list_all_users()
-    return [UserResponse(id=u.id, email=u.email, role=u.role) for u in users]
+    return [_user_to_response(u) for u in users]
 
 
 @router.put(
@@ -173,3 +198,22 @@ async def change_role(
             detail=str(e),
         )
     return {"ok": True, "user_id": user_id, "new_role": body.role}
+
+
+@router.put(
+    "/{user_id}/tenant",
+    summary="Tenant eines Users zuweisen/entfernen (nur Admin)",
+)
+async def change_tenant(
+    user_id: str,
+    body: TenantAssignmentRequest,
+    _admin: UserRow = Depends(require_admin),
+):
+    try:
+        assign_user_tenant(user_id, body.tenant_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+    return {"ok": True, "user_id": user_id, "tenant_id": body.tenant_id}

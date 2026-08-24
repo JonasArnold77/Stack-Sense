@@ -8,6 +8,7 @@ import 'amplifyconfiguration.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/widgets/xp_reward_overlay.dart';
+import 'features/settings/data/tenant_config_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,10 +48,11 @@ class StackSenseApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final tenantConfig = ref.watch(tenantConfigProvider);
 
     return XpRewardOverlay(
       child: MaterialApp.router(
-        title: 'LifeLab',
+        title: tenantConfig.appName ?? 'LifeLab',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         routerConfig: router,

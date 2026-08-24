@@ -205,3 +205,32 @@ def init_community_tables() -> None:
         logger.info("Community-Tabellen bereit.")
     except Exception as e:
         logger.warning("Community-Tabellen konnten nicht initialisiert werden: %s", e)
+
+
+def init_tenant_tables() -> None:
+    """
+    Erstellt die tenants-Tabelle (Multi-Tenancy: Parteien mit eigenem
+    Feature-/Branding-Konfiguration) und die tenant_id-Spalte auf users.
+    Ein NULL tenant_id bedeutet unverändertes Standardverhalten (LifeLab).
+    """
+    create_sql = """
+    CREATE TABLE IF NOT EXISTS tenants (
+        id          TEXT PRIMARY KEY,
+        name        TEXT NOT NULL,
+        features    JSONB NOT NULL DEFAULT '{}',
+        branding    JSONB NOT NULL DEFAULT '{}',
+        is_active   BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id TEXT REFERENCES tenants(id);
+    CREATE INDEX IF NOT EXISTS idx_users_tenant_id ON users(tenant_id);
+    """
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(create_sql)
+        logger.info("Tenant-Tabellen bereit.")
+    except Exception as e:
+        logger.warning("Tenant-Tabellen konnten nicht initialisiert werden: %s", e)

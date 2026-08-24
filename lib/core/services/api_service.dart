@@ -624,6 +624,61 @@ class ApiService {
       throw ApiException('Lebensmittelquellen konnten nicht geladen werden.');
     }
   }
+
+  /// Eigene Account-Daten inkl. Tenant-Konfiguration (Multi-Tenancy) —
+  /// [idToken] kommt von `AuthNotifier.getIdToken()`. Liefert null bei
+  /// jedem Fehler statt zu werfen, damit ein Backend-Ausfall den Login-Flow
+  /// nicht blockiert (Tenant-Konfiguration ist rein additiv/optional).
+  Future<MeResponse?> getMe(String idToken) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl/users/me'),
+            headers: {
+              'Authorization': 'Bearer $idToken',
+              'ngrok-skip-browser-warning': 'true',
+            },
+          )
+          .timeout(AppConstants.apiTimeout);
+      if (response.statusCode != 200) return null;
+      return MeResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('getMe Fehler: $e');
+      return null;
+    }
+  }
+}
+
+/// Antwort von GET /users/me — Account-Rolle + optionale Tenant-Konfiguration
+/// (nur befüllt wenn der Nutzer einem AKTIVEN Tenant zugewiesen ist).
+class MeResponse {
+  final String id;
+  final String email;
+  final String role;
+  final String? tenantId;
+  final String? tenantName;
+  final Map<String, dynamic> features;
+  final Map<String, dynamic> branding;
+
+  const MeResponse({
+    required this.id,
+    required this.email,
+    required this.role,
+    this.tenantId,
+    this.tenantName,
+    this.features = const {},
+    this.branding = const {},
+  });
+
+  factory MeResponse.fromJson(Map<String, dynamic> json) => MeResponse(
+        id: json['id'] as String,
+        email: json['email'] as String,
+        role: json['role'] as String,
+        tenantId: json['tenant_id'] as String?,
+        tenantName: json['tenant_name'] as String?,
+        features: (json['features'] as Map<String, dynamic>?) ?? const {},
+        branding: (json['branding'] as Map<String, dynamic>?) ?? const {},
+      );
 }
 
 /// Netzwerk-/API-Fehler aus dem Backend.

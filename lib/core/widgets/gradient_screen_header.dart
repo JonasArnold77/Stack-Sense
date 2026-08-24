@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import '../../features/settings/data/tenant_config_provider.dart';
 
 /// Wiederverwendbarer Gradient-Header für alle Haupt-Screens.
 /// Stellt die visuelle Verbindung zum Welcome/Onboarding-Screen her.
 ///
 /// Wird als erstes Element in einem [Column] oder [CustomScrollView] eingesetzt.
 /// Setzt automatisch die Statusbar-Icons auf Weiß (hell auf dunkel).
-class GradientScreenHeader extends StatelessWidget {
+/// Nutzt die Partei-Primärfarbe (Multi-Tenancy) falls vorhanden, sonst den
+/// LifeLab-Standard-Gradient.
+class GradientScreenHeader extends ConsumerWidget {
   /// Haupttitel (z.B. "Entdecken")
   final String title;
 
@@ -36,8 +40,9 @@ class GradientScreenHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final topPadding = MediaQuery.of(context).padding.top;
+    final tenantGradient = ref.watch(tenantConfigProvider).primaryGradient;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -47,8 +52,8 @@ class GradientScreenHeader extends StatelessWidget {
       ),
       child: Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.primaryGradient,
+        decoration: BoxDecoration(
+          gradient: tenantGradient ?? AppColors.primaryGradient,
         ),
         padding: EdgeInsets.only(
           top: topPadding + AppConstants.spaceM,

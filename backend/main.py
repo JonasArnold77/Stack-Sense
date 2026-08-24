@@ -6,6 +6,8 @@ from routers.recommendations import router as recommendations_router
 from routers.users import router as users_router
 from routers.insights import router as insights_router
 from routers.checkin import router as checkin_router
+from routers.admin_tenants import router as admin_tenants_router
+from routers.admin_page import router as admin_page_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,16 +34,21 @@ app.include_router(recommendations_router)
 app.include_router(users_router)
 app.include_router(insights_router)
 app.include_router(checkin_router)
+app.include_router(admin_tenants_router)
+app.include_router(admin_page_router)
 
 
 @app.on_event("startup")
 async def startup_event():
     """Datenbank-Tabellen beim Start initialisieren."""
     try:
-        from database.db import init_user_tables, init_community_tables, init_checkin_tables
+        from database.db import (
+            init_user_tables, init_community_tables, init_checkin_tables, init_tenant_tables,
+        )
         init_user_tables()
         init_community_tables()
         init_checkin_tables()
+        init_tenant_tables()
     except Exception as e:
         logger.warning("DB-Init beim Start fehlgeschlagen (wird ignoriert): %s", e)
 

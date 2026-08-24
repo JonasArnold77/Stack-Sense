@@ -24,6 +24,7 @@ class UserRow:
     role: str              # 'user' | 'admin'
     created_at: datetime
     last_login_at: Optional[datetime]
+    tenant_id: Optional[str] = None
 
 
 @dataclass
@@ -53,7 +54,7 @@ def upsert_user(cognito_sub: str, email: str) -> UserRow:
     ON CONFLICT (cognito_sub) DO UPDATE
         SET last_login_at = NOW(),
             email = EXCLUDED.email
-    RETURNING id, cognito_sub, email, role, created_at, last_login_at
+    RETURNING id, cognito_sub, email, role, created_at, last_login_at, tenant_id
     """
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -66,13 +67,14 @@ def upsert_user(cognito_sub: str, email: str) -> UserRow:
         role=row[3],
         created_at=row[4],
         last_login_at=row[5],
+        tenant_id=row[6],
     )
 
 
 def get_user_by_sub(cognito_sub: str) -> Optional[UserRow]:
     """Sucht einen User anhand des Cognito Sub-Feldes."""
     sql = """
-    SELECT id, cognito_sub, email, role, created_at, last_login_at
+    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id
     FROM users WHERE cognito_sub = %s
     """
     with get_conn() as conn:
@@ -88,13 +90,14 @@ def get_user_by_sub(cognito_sub: str) -> Optional[UserRow]:
         role=row[3],
         created_at=row[4],
         last_login_at=row[5],
+        tenant_id=row[6],
     )
 
 
 def list_all_users() -> list[UserRow]:
     """Gibt alle User zurück (nur für Admin-Endpoints)."""
     sql = """
-    SELECT id, cognito_sub, email, role, created_at, last_login_at
+    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id
     FROM users ORDER BY created_at DESC
     """
     with get_conn() as conn:
@@ -104,7 +107,7 @@ def list_all_users() -> list[UserRow]:
     return [
         UserRow(
             id=str(r[0]), cognito_sub=r[1], email=r[2],
-            role=r[3], created_at=r[4], last_login_at=r[5],
+            role=r[3], created_at=r[4], last_login_at=r[5], tenant_id=r[6],
         )
         for r in rows
     ]

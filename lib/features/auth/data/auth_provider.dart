@@ -2,6 +2,8 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/services/api_service.dart';
+
 // ---------------------------------------------------------------------------
 // Auth-Status Enum
 // ---------------------------------------------------------------------------
@@ -24,12 +26,23 @@ class AuthState {
   final String? role;         // 'user' | 'admin' (aus Backend /users/me)
   final String? errorMessage;
 
+  // Multi-Tenancy — aus Backend /users/me, nur befüllt wenn einem AKTIVEN
+  // Tenant zugewiesen. null/leer = Standard-LifeLab-Verhalten.
+  final String? tenantId;
+  final String? tenantName;
+  final Map<String, dynamic> features;
+  final Map<String, dynamic> branding;
+
   const AuthState({
     this.status = AuthStatus.unknown,
     this.email,
     this.userId,
     this.role,
     this.errorMessage,
+    this.tenantId,
+    this.tenantName,
+    this.features = const {},
+    this.branding = const {},
   });
 
   bool get isAuthenticated => status == AuthStatus.authenticated;
@@ -41,6 +54,10 @@ class AuthState {
     String? userId,
     String? role,
     String? errorMessage,
+    String? tenantId,
+    String? tenantName,
+    Map<String, dynamic>? features,
+    Map<String, dynamic>? branding,
   }) =>
       AuthState(
         status: status ?? this.status,
@@ -48,6 +65,10 @@ class AuthState {
         userId: userId ?? this.userId,
         role: role ?? this.role,
         errorMessage: errorMessage,
+        tenantId: tenantId ?? this.tenantId,
+        tenantName: tenantName ?? this.tenantName,
+        features: features ?? this.features,
+        branding: branding ?? this.branding,
       );
 }
 
@@ -103,9 +124,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
         userId: sub,
         errorMessage: null,
       );
+      await _loadBackendProfile();
     } catch (e) {
       state = state.copyWith(status: AuthStatus.unauthenticated);
     }
+  }
+
+  /// Holt Rolle + Tenant-Konfiguration vom Backend (GET /users/me).
+  /// Rein additiv — schlägt der Call fehl, bleibt die App bei den bisherigen
+  /// Defaultwerten (kein Tenant, LifeLab-Standard). Blockiert den Login-Flow
+  /// nicht: wird "fire and forget" nach dem eigentlichen Login aufgerufen.
+  Future<void> _loadBackendProfile() async {
+    final token = await getIdToken();
+    if (token == null) return;
+    final me = await ApiService.instance.getMe(token);
+    if (me == null) return;
+    state = state.copyWith(
+      role: me.role,
+      tenantId: me.tenantId,
+      tenantName: me.tenantName,
+      features: me.features,
+      branding: me.branding,
+    );
   }
 
   // --- Login mit Email + Passwort ---
