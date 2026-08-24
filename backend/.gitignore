@@ -7,7 +7,10 @@ venv/
 *.egg-info/
 .DS_Store
 
-# Elastic Beanstalk Files
+# Elastic Beanstalk Files — config.yml enthält keine Secrets (nur App-Name/
+# Region/Platform), muss aber committed sein, damit `eb deploy` in GitHub
+# Actions (frisches Checkout, kein lokales `eb init`) funktioniert.
 .elasticbeanstalk/*
+!.elasticbeanstalk/config.yml
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
