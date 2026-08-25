@@ -6,6 +6,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/feature_gate.dart';
+import '../../../settings/domain/models/feature_keys.dart';
 import '../../../checkin/data/checkin_provider.dart';
 import '../../../checkin/domain/models/checkin_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart' show EvidenceLevel;
@@ -710,7 +712,9 @@ class _AddMoreSupplementsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return FeatureGate(
+      featureKey: FeatureKeys.problemfelder,
+      child: GestureDetector(
       onTap: () => context.go(AppRoutes.recommendations, extra: goalName),
       child: Container(
         width: double.infinity,
@@ -737,6 +741,7 @@ class _AddMoreSupplementsButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

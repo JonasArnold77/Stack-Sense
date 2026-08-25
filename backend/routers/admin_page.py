@@ -98,10 +98,10 @@ _HTML = """<!doctype html>
   <input id="td-color" type="color" value="#4f46e5">
   <label>Features</label>
   <div id="td-features">
-    <label class="feat"><input type="checkbox" value="phase_goals"> Phasenziele</label>
-    <label class="feat"><input type="checkbox" value="community_insights"> Community-Insights</label>
-    <label class="feat"><input type="checkbox" value="precomputed_mode"> Vorberechnet-Modus</label>
-    <label class="feat"><input type="checkbox" value="db_only_mode"> Datenbank-Modus</label>
+    <label class="feat"><input type="checkbox" value="basis_supplementierung"> Basis-Supplementierung</label>
+    <label class="feat"><input type="checkbox" value="phasenziele"> Phasenziele</label>
+    <label class="feat"><input type="checkbox" value="problemfelder"> Problemfelder</label>
+    <label class="feat"><input type="checkbox" value="insights"> Insights</label>
   </div>
   <div style="margin-top:16px">
     <button class="primary" onclick="saveTenant()">Speichern</button>

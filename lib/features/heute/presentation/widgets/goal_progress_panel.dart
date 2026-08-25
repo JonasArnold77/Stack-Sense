@@ -6,6 +6,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/feature_gate.dart';
+import '../../../settings/domain/models/feature_keys.dart';
 import '../../../goal_progress/presentation/screens/goal_progress_screen.dart'
     show goalColor;
 import '../../../phase_goals/data/phase_goals_provider.dart';
@@ -593,37 +595,46 @@ class _AddGoalSheet extends StatelessWidget {
                         .copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: AppConstants.spaceL),
-                  _SheetOption(
-                    icon: Icons.search,
-                    color: AppColors.primary,
-                    title: 'Problemfelder',
-                    subtitle: 'Schlaf, Energie, Fokus, Stress & mehr',
-                    onTap: () {
-                      Navigator.pop(context);
-                      parentContext.go(AppRoutes.recommendations);
-                    },
+                  FeatureGate(
+                    featureKey: FeatureKeys.problemfelder,
+                    child: _SheetOption(
+                      icon: Icons.search,
+                      color: AppColors.primary,
+                      title: 'Problemfelder',
+                      subtitle: 'Schlaf, Energie, Fokus, Stress & mehr',
+                      onTap: () {
+                        Navigator.pop(context);
+                        parentContext.go(AppRoutes.recommendations);
+                      },
+                    ),
                   ),
                   const SizedBox(height: AppConstants.spaceS),
-                  _SheetOption(
-                    icon: Icons.foundation,
-                    color: const Color(0xFF1565C0),
-                    title: 'Basissupplementierung',
-                    subtitle: 'Dein persönliches Profil als Grundlage',
-                    onTap: () {
-                      Navigator.pop(context);
-                      parentContext.push(AppRoutes.profileRecommendations);
-                    },
+                  FeatureGate(
+                    featureKey: FeatureKeys.basisSupplementierung,
+                    child: _SheetOption(
+                      icon: Icons.foundation,
+                      color: const Color(0xFF1565C0),
+                      title: 'Basissupplementierung',
+                      subtitle: 'Dein persönliches Profil als Grundlage',
+                      onTap: () {
+                        Navigator.pop(context);
+                        parentContext.push(AppRoutes.profileRecommendations);
+                      },
+                    ),
                   ),
                   const SizedBox(height: AppConstants.spaceS),
-                  _SheetOption(
-                    icon: Icons.flag_outlined,
-                    color: const Color(0xFF5C35CC),
-                    title: 'Phasenziele',
-                    subtitle: 'Marathon, Diät, Reise & temporäre Phasen',
-                    onTap: () {
-                      Navigator.pop(context);
-                      parentContext.push(AppRoutes.phaseGoals);
-                    },
+                  FeatureGate(
+                    featureKey: FeatureKeys.phasenziele,
+                    child: _SheetOption(
+                      icon: Icons.flag_outlined,
+                      color: const Color(0xFF5C35CC),
+                      title: 'Phasenziele',
+                      subtitle: 'Marathon, Diät, Reise & temporäre Phasen',
+                      onTap: () {
+                        Navigator.pop(context);
+                        parentContext.push(AppRoutes.phaseGoals);
+                      },
+                    ),
                   ),
                   SizedBox(height: AppConstants.spaceL + bottomInset),
                 ],

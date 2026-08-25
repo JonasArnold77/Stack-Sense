@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../settings/data/tenant_config_provider.dart';
+import '../../../settings/domain/models/feature_keys.dart';
 
 /// Shell-Screen mit Bottom Navigation.
 /// Tabs: Heute | Entdecken | Stack | Insights | Profil
-class HomeScreen extends StatelessWidget {
+/// "Entdecken" (Problemfelder) und "Insights" werden ausgegraut, wenn das
+/// jeweilige Feature für die aktuelle Partei deaktiviert ist — siehe
+/// FeatureKeys/TenantConfig. "Heute", "Stack" und "Profil" sind immer aktiv,
+/// da sie keinem der vier konfigurierbaren Features entsprechen.
+class HomeScreen extends ConsumerWidget {
   final Widget child;
 
   const HomeScreen({super.key, required this.child});
@@ -21,7 +28,8 @@ class HomeScreen extends StatelessWidget {
     return 0;
   }
 
-  void _onTap(BuildContext context, int index) {
+  void _onTap(BuildContext context, int index, Set<int> disabledIndices) {
+    if (disabledIndices.contains(index)) return;
     switch (index) {
       case 0: context.go(AppRoutes.heute);
       case 1: context.go(AppRoutes.recommendations);
@@ -32,14 +40,20 @@ class HomeScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = _selectedIndex(context);
+    final tenantConfig = ref.watch(tenantConfigProvider);
+    final disabledIndices = <int>{
+      if (!tenantConfig.featureEnabled(FeatureKeys.problemfelder)) 1,
+      if (!tenantConfig.featureEnabled(FeatureKeys.insights)) 3,
+    };
 
     return Scaffold(
       body: child,
       bottomNavigationBar: _StackSenseNavBar(
         selectedIndex: selectedIndex,
-        onTap: (i) => _onTap(context, i),
+        disabledIndices: disabledIndices,
+        onTap: (i) => _onTap(context, i, disabledIndices),
       ),
     );
   }
@@ -49,11 +63,13 @@ class HomeScreen extends StatelessWidget {
 
 class _StackSenseNavBar extends StatelessWidget {
   final int selectedIndex;
+  final Set<int> disabledIndices;
   final ValueChanged<int> onTap;
 
   const _StackSenseNavBar({
     required this.selectedIndex,
     required this.onTap,
+    this.disabledIndices = const {},
   });
 
   static const _items = [
@@ -86,8 +102,6 @@ class _StackSenseNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -109,9 +123,11 @@ class _StackSenseNavBar extends StatelessWidget {
               final index = e.key;
               final item = e.value;
               final isSelected = selectedIndex == index;
+              final isDisabled = disabledIndices.contains(index);
               return _NavBarItem(
                 item: item,
                 isSelected: isSelected,
+                isDisabled: isDisabled,
                 onTap: () => onTap(index),
               );
             }).toList(),
@@ -136,57 +152,62 @@ class _NavItem {
 class _NavBarItem extends StatelessWidget {
   final _NavItem item;
   final bool isSelected;
+  final bool isDisabled;
   final VoidCallback onTap;
 
   const _NavBarItem({
     required this.item,
     required this.isSelected,
     required this.onTap,
+    this.isDisabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.10)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                isSelected ? item.activeIcon : item.icon,
-                key: ValueKey(isSelected),
-                size: 24,
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.textTertiary,
+    final iconColor = isDisabled
+        ? AppColors.textTertiary.withOpacity(0.35)
+        : (isSelected ? AppColors.primary : AppColors.textTertiary);
+
+    return Opacity(
+      opacity: isDisabled ? 0.6 : 1.0,
+      child: GestureDetector(
+        onTap: isDisabled ? null : onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected && !isDisabled
+                ? AppColors.primary.withOpacity(0.10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  isSelected ? item.activeIcon : item.icon,
+                  key: ValueKey(isSelected),
+                  size: 24,
+                  color: iconColor,
+                ),
               ),
-            ),
-            const SizedBox(height: 3),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w400,
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.textTertiary,
+              const SizedBox(height: 3),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight:
+                      isSelected && !isDisabled ? FontWeight.w700 : FontWeight.w400,
+                  color: iconColor,
+                ),
+                child: Text(item.label),
               ),
-              child: Text(item.label),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

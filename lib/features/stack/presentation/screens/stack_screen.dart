@@ -8,6 +8,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/feature_gate.dart';
+import '../../../settings/domain/models/feature_keys.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../data/stack_provider.dart';
 import '../../domain/models/stack_entry.dart';
@@ -168,10 +170,13 @@ class StackScreen extends ConsumerWidget {
                     icon: Icons.warning_amber_rounded,
                   ),
                 const SizedBox(width: AppConstants.spaceXS),
-                GradientHeaderAction(
-                  icon: Icons.add,
-                  tooltip: 'Supplement hinzufügen',
-                  onPressed: () => context.go(AppRoutes.recommendations),
+                FeatureGate(
+                  featureKey: FeatureKeys.problemfelder,
+                  child: GradientHeaderAction(
+                    icon: Icons.add,
+                    tooltip: 'Supplement hinzufügen',
+                    onPressed: () => context.go(AppRoutes.recommendations),
+                  ),
                 ),
               ],
               bottomPadding: 0,

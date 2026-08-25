@@ -25,6 +25,8 @@ import '../../features/auth/presentation/screens/confirm_email_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/data/auth_provider.dart';
 import '../../features/onboarding/data/onboarding_provider.dart';
+import '../../features/settings/data/tenant_config_provider.dart';
+import '../../features/settings/domain/models/feature_keys.dart';
 
 /// Alle Route-Namen als Konstanten — nie Strings direkt verwenden.
 class AppRoutes {
@@ -70,6 +72,21 @@ const _publicRoutes = {
   AppRoutes.onboardingStep3,
 };
 
+// Themenfeld-Routen → zugehöriger Feature-Schlüssel (Multi-Tenancy). Greift
+// zusätzlich zum visuellen Ausgrauen der jeweiligen Buttons/Karten (siehe
+// FeatureGate) — als Netz für Direktaufrufe, die keine gegraute Schaltfläche
+// durchlaufen (Deep-Links, Browser-Zurück, o.ä.). Basis-Supplementierung ist
+// hier bewusst NICHT während des Onboardings gesperrt (siehe unten), da der
+// Onboarding-Flow selbst dorthin navigiert.
+const _featureGatedRoutes = {
+  AppRoutes.profileRecommendations: FeatureKeys.basisSupplementierung,
+  AppRoutes.phaseGoals: FeatureKeys.phasenziele,
+  AppRoutes.phaseGoalRecommendations: FeatureKeys.phasenziele,
+  AppRoutes.phaseGoalDetail: FeatureKeys.phasenziele,
+  AppRoutes.recommendations: FeatureKeys.problemfelder,
+  AppRoutes.insights: FeatureKeys.insights,
+};
+
 /// Riverpod Provider für den Router mit Auth-Redirect.
 final routerProvider = Provider<GoRouter>((ref) {
   final authListenable = ValueNotifier<int>(0);
@@ -109,12 +126,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Eingeloggt und auf Login/Register → App
+      final onboardingDone =
+          ref.read(onboardingProvider).onboardingCompletedAt != null;
       if (authState.isAuthenticated &&
           (location == AppRoutes.login || location == AppRoutes.register)) {
-        // Onboarding abgeschlossen?
-        final onboardingDone =
-            ref.read(onboardingProvider).onboardingCompletedAt != null;
         return onboardingDone ? AppRoutes.heute : AppRoutes.welcome;
+      }
+
+      // Feature-Gate: deaktivierte Themenfelder umleiten (Netz zusätzlich zum
+      // visuellen Ausgrauen der Buttons — Basis-Supplementierung bleibt
+      // während des laufenden Onboardings immer erreichbar).
+      if (authState.isAuthenticated && (onboardingDone || location != AppRoutes.profileRecommendations)) {
+        final gatedEntry = _featureGatedRoutes.entries
+            .firstWhere((e) => location.startsWith(e.key), orElse: () => const MapEntry('', ''));
+        if (gatedEntry.key.isNotEmpty) {
+          final enabled = ref.read(tenantConfigProvider).featureEnabled(gatedEntry.value);
+          if (!enabled) return AppRoutes.heute;
+        }
       }
 
       return null;

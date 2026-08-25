@@ -6,6 +6,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/feature_gate.dart';
+import '../../../settings/domain/models/feature_keys.dart';
 import '../../data/phase_goals_provider.dart';
 import '../../domain/models/phase_goal.dart';
 import 'milestone_dots.dart';
@@ -26,7 +28,9 @@ class PhaseGoalsHomePanel extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // --- Header ---
-        GestureDetector(
+        FeatureGate(
+          featureKey: FeatureKeys.phasenziele,
+          child: GestureDetector(
           onTap: () => context.push(AppRoutes.phaseGoals),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -59,6 +63,7 @@ class PhaseGoalsHomePanel extends ConsumerWidget {
                     .copyWith(color: AppColors.accent),
               ),
             ],
+          ),
           ),
         ),
         const SizedBox(height: AppConstants.spaceS),

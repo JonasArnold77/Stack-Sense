@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/recommendation_local_cache.dart';
+import '../../../../core/widgets/feature_gate.dart';
+import '../../../settings/domain/models/feature_keys.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../checkin/data/checkin_provider.dart';
@@ -170,7 +172,9 @@ class HeuteScreen extends ConsumerWidget {
                   const SizedBox(height: AppConstants.spaceL),
                   SectionTitle(
                     title: 'Dein Körper sagt',
-                    action: TextButton(
+                    action: FeatureGate(
+                      featureKey: FeatureKeys.insights,
+                      child: TextButton(
                       onPressed: () => context.go(AppRoutes.insights),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
@@ -181,6 +185,7 @@ class HeuteScreen extends ConsumerWidget {
                         'Alle Insights →',
                         style: AppTextStyles.labelSmall
                             .copyWith(color: AppColors.accent),
+                      ),
                       ),
                     ),
                   ),
