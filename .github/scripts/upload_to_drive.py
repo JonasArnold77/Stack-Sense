@@ -3,27 +3,28 @@ Lädt die gebaute Release-APK in einen Google-Drive-Ordner hoch — läuft
 ausschließlich im GitHub-Actions-Workflow (.github/workflows/upgrade.yml),
 nicht Teil der Backend-Runtime.
 
-Auth: Service-Account-JSON aus GDRIVE_SERVICE_ACCOUNT_JSON (Secret, kompletter
-JSON-Inhalt als String). Der Ziel-Ordner (GDRIVE_FOLDER_ID) muss vorher mit der
-`client_email` des Service-Accounts geteilt worden sein (Editor-Rechte) —
-ein Service-Account hat kein eigenes Speicherkontingent, kann aber in
-geteilte Ordner schreiben.
+Auth: OAuth2 als echtes Google-Konto (GDRIVE_CLIENT_ID/GDRIVE_CLIENT_SECRET/
+GDRIVE_REFRESH_TOKEN, siehe get_drive_refresh_token.py) — NICHT ein
+Service-Account. Service-Accounts haben auf normalen (Nicht-Workspace)
+Google-Konten kein eigenes Speicherkontingent und können auch in geteilte
+Ordner keine eigenen Dateien anlegen (storageQuotaExceeded), deshalb läuft
+der Upload hier als der echte Kontoinhaber.
 
 Aufruf:
     python upload_to_drive.py <pfad-zur-apk>
 """
-import json
 import os
 import re
 import sys
 from datetime import date
 from pathlib import Path
 
-from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
+TOKEN_URI = "https://oauth2.googleapis.com/token"
 
 
 def _read_pubspec_version(repo_root: Path) -> str:
@@ -42,18 +43,29 @@ def main() -> None:
         print(f"APK nicht gefunden: {apk_path}", file=sys.stderr)
         sys.exit(1)
 
-    service_account_json = os.environ.get("GDRIVE_SERVICE_ACCOUNT_JSON")
+    client_id = os.environ.get("GDRIVE_CLIENT_ID")
+    client_secret = os.environ.get("GDRIVE_CLIENT_SECRET")
+    refresh_token = os.environ.get("GDRIVE_REFRESH_TOKEN")
     folder_id = os.environ.get("GDRIVE_FOLDER_ID")
-    if not service_account_json or not folder_id:
-        print("GDRIVE_SERVICE_ACCOUNT_JSON und GDRIVE_FOLDER_ID müssen gesetzt sein.", file=sys.stderr)
+    if not all([client_id, client_secret, refresh_token, folder_id]):
+        print(
+            "GDRIVE_CLIENT_ID, GDRIVE_CLIENT_SECRET, GDRIVE_REFRESH_TOKEN und "
+            "GDRIVE_FOLDER_ID müssen gesetzt sein.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     repo_root = Path(__file__).resolve().parent.parent.parent
     version = _read_pubspec_version(repo_root)
     filename = f"LifeLab-{version}-{date.today().isoformat()}.apk"
 
-    creds = service_account.Credentials.from_service_account_info(
-        json.loads(service_account_json), scopes=SCOPES,
+    creds = Credentials(
+        token=None,
+        refresh_token=refresh_token,
+        client_id=client_id,
+        client_secret=client_secret,
+        token_uri=TOKEN_URI,
+        scopes=SCOPES,
     )
     drive = build("drive", "v3", credentials=creds)
 
