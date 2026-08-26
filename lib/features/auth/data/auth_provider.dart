@@ -323,7 +323,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return 'Der Code ist abgelaufen. Bitte neu anfordern.';
     }
     if (msg.contains('password') && msg.contains('policy')) {
-      return 'Passwort muss mind. 8 Zeichen, Groß-/Kleinbuchstaben und Zahlen enthalten.';
+      return 'Passwort muss mind. 8 Zeichen lang sein.';
     }
     if (msg.contains('network')) {
       return 'Keine Internetverbindung.';

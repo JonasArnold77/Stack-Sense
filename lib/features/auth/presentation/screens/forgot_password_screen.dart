@@ -193,7 +193,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       decoration: InputDecoration(
                         labelText: 'Neues Passwort',
                         prefixIcon: const Icon(Icons.lock_outline),
-                        helperText: 'Mind. 8 Zeichen, Groß-/Kleinbuchstaben, Zahl',
+                        helperText: 'Mind. 8 Zeichen',
                         suffixIcon: IconButton(
                           icon: Icon(_obscure
                               ? Icons.visibility_outlined

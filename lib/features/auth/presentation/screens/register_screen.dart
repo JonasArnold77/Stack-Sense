@@ -207,8 +207,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       decoration: InputDecoration(
                         labelText: 'Passwort',
                         prefixIcon: const Icon(Icons.lock_outline),
-                        helperText:
-                            'Mind. 8 Zeichen, Groß- + Kleinbuchstaben, Zahl, Sonderzeichen (!@#…)',
+                        helperText: 'Mind. 8 Zeichen',
                         suffixIcon: IconButton(
                           icon: Icon(_obscure1
                               ? Icons.visibility_outlined
@@ -220,18 +219,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       validator: (v) {
                         if (v == null || v.length < 8) {
                           return 'Mind. 8 Zeichen erforderlich';
-                        }
-                        if (!v.contains(RegExp(r'[A-Z]'))) {
-                          return 'Mind. ein Großbuchstabe erforderlich';
-                        }
-                        if (!v.contains(RegExp(r'[a-z]'))) {
-                          return 'Mind. ein Kleinbuchstabe erforderlich';
-                        }
-                        if (!v.contains(RegExp(r'[0-9]'))) {
-                          return 'Mind. eine Zahl erforderlich';
-                        }
-                        if (!v.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>\-_=+\[\]\\;~`]'))) {
-                          return 'Mind. ein Sonderzeichen erforderlich (z.B. !)';
                         }
                         return null;
                       },
