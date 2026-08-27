@@ -12,6 +12,7 @@ import '../../features/stack/presentation/screens/stack_screen.dart';
 import '../../features/checkin/presentation/screens/checkin_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/insights/presentation/screens/insights_screen.dart';
+import '../../features/insights/presentation/screens/wearable_data_screen.dart';
 import '../../features/heute/presentation/screens/heute_screen.dart';
 import '../../features/profile_recommendations/presentation/screens/profile_recommendations_screen.dart';
 import '../../features/phase_goals/presentation/screens/phase_goals_screen.dart';
@@ -52,6 +53,7 @@ class AppRoutes {
   static const String checkin = '/checkin';
   static const String profile = '/profile';
   static const String insights = '/insights';
+  static const String wearableData = '/insights/wearable-data';
   static const String profileRecommendations = '/profile-recommendations';
   static const String phaseGoals = '/phase-goals';
   static const String phaseGoalRecommendations = '/phase-goals/recommendations';
@@ -84,6 +86,7 @@ const _featureGatedRoutes = {
   AppRoutes.phaseGoalRecommendations: FeatureKeys.phasenziele,
   AppRoutes.phaseGoalDetail: FeatureKeys.phasenziele,
   AppRoutes.recommendations: FeatureKeys.problemfelder,
+  // '/insights' Präfix deckt auch AppRoutes.wearableData ab (Sub-Route).
   AppRoutes.insights: FeatureKeys.insights,
 };
 
@@ -206,6 +209,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               state.uri.queryParameters['from'] == 'onboarding';
           return ProfileRecommendationsScreen(fromOnboarding: fromOnboarding);
         },
+      ),
+
+      // --- Wearable-Daten (kein Shell) ---
+      GoRoute(
+        path: AppRoutes.wearableData,
+        name: 'wearableData',
+        builder: (context, state) => const WearableDataScreen(),
       ),
 
       // --- Phasenziele (kein Shell) ---

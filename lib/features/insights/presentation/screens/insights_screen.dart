@@ -14,6 +14,7 @@ import '../widgets/correlation_card.dart';
 import '../widgets/insights_empty_state.dart';
 import '../widgets/problem_checkin_trend_section.dart';
 import '../widgets/score_chart_card.dart';
+import '../widgets/wearable_connect_sheet.dart';
 
 // ---------------------------------------------------------------------------
 // Dimension enum — nur für Score-Chart (Energie/Schlaf/Fokus/Stimmung)
@@ -142,6 +143,17 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             title: 'Insights',
             subtitle: 'Dein Fortschritt auf einen Blick',
             actions: [
+              IconButton(
+                icon: const Icon(Icons.watch_outlined, color: Colors.white, size: 22),
+                tooltip: 'Smartwatch verbinden',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.12),
+                  shape: const CircleBorder(),
+                  padding: const EdgeInsets.all(8),
+                ),
+                onPressed: () => WearableConnectSheet.show(context),
+              ),
+              const SizedBox(width: 8),
               if (_simLoading)
                 const Padding(
                   padding: EdgeInsets.all(10),
