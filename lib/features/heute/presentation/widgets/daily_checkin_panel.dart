@@ -11,9 +11,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/wearable_compatible_fields.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/wearable_badge.dart';
 import '../../../checkin/data/problem_checkin_provider.dart';
 import '../../../checkin/domain/models/problem_checkin.dart';
 
@@ -147,6 +149,10 @@ class _ProblemFieldCheckinRow extends StatelessWidget {
                   style: AppTextStyles.labelMedium
                       .copyWith(fontWeight: FontWeight.w600),
                 ),
+                if (kWearableCompatibleFields.contains(summary.problemFieldId)) ...[
+                  const SizedBox(height: 2),
+                  const WearableBadge(),
+                ],
                 if (isDone && summary.todayAvgScore != null)
                   Row(
                     children: [

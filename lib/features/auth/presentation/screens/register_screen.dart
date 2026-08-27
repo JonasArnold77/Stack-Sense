@@ -27,7 +27,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _passCtrl.addListener(_onPasswordChanged);
+  }
+
+  void _onPasswordChanged() => setState(() {});
+
+  @override
   void dispose() {
+    _passCtrl.removeListener(_onPasswordChanged);
     _nameCtrl.dispose();
     _cityCtrl.dispose();
     _emailCtrl.dispose();
@@ -207,7 +216,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       decoration: InputDecoration(
                         labelText: 'Passwort',
                         prefixIcon: const Icon(Icons.lock_outline),
-                        helperText: 'Mind. 8 Zeichen',
                         suffixIcon: IconButton(
                           icon: Icon(_obscure1
                               ? Icons.visibility_outlined
@@ -222,6 +230,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 6),
+                    _PasswordRequirementRow(
+                      met: _passCtrl.text.length >= 8,
+                      label: 'Mindestens 8 Zeichen',
                     ),
                     const SizedBox(height: AppConstants.spaceM),
 
@@ -295,6 +308,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PasswordRequirementRow extends StatelessWidget {
+  final bool met;
+  final String label;
+
+  const _PasswordRequirementRow({required this.met, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = met ? AppColors.evidenceGreen : AppColors.textTertiary;
+    return Row(
+      children: [
+        Icon(
+          met ? Icons.check_circle : Icons.radio_button_unchecked,
+          size: 16,
+          color: color,
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: AppTextStyles.caption.copyWith(color: color)),
+      ],
     );
   }
 }

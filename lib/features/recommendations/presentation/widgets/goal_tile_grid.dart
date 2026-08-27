@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/wearable_badge.dart';
 
 // ---------------------------------------------------------------------------
 // Ziel-Daten (public — wird auch von GoalSelector genutzt)
@@ -11,21 +12,26 @@ import '../../../../core/theme/app_text_styles.dart';
 class GoalData {
   final String label;
   final IconData icon;
-  const GoalData({required this.label, required this.icon});
+  final bool wearableCompatible;
+  const GoalData({
+    required this.label,
+    required this.icon,
+    this.wearableCompatible = false,
+  });
 }
 
 const goalData = [
-  GoalData(label: 'Mehr Energie', icon: Icons.bolt_outlined),
-  GoalData(label: 'Besserer Schlaf', icon: Icons.bedtime_outlined),
+  GoalData(label: 'Mehr Energie', icon: Icons.bolt_outlined, wearableCompatible: true),
+  GoalData(label: 'Besserer Schlaf', icon: Icons.bedtime_outlined, wearableCompatible: true),
   GoalData(label: 'Fokus & Konzentration', icon: Icons.psychology_outlined),
-  GoalData(label: 'Sport & Regeneration', icon: Icons.fitness_center_outlined),
-  GoalData(label: 'Immunsystem stärken', icon: Icons.shield_outlined),
+  GoalData(label: 'Sport & Regeneration', icon: Icons.fitness_center_outlined, wearableCompatible: true),
+  GoalData(label: 'Immunsystem stärken', icon: Icons.shield_outlined, wearableCompatible: true),
   GoalData(label: 'Stimmung & Wohlbefinden', icon: Icons.mood_outlined),
-  GoalData(label: 'Herzgesundheit', icon: Icons.favorite_outline),
+  GoalData(label: 'Herzgesundheit', icon: Icons.favorite_outline, wearableCompatible: true),
   GoalData(label: 'Haut & Haare', icon: Icons.spa_outlined),
   GoalData(label: 'Gewichtsmanagement', icon: Icons.scale_outlined),
   GoalData(label: 'Gelenkgesundheit', icon: Icons.elderly_outlined),
-  GoalData(label: 'Frauengesundheit / Zyklus', icon: Icons.female),
+  GoalData(label: 'Frauengesundheit / Zyklus', icon: Icons.female, wearableCompatible: true),
   GoalData(label: 'Hormonbalance', icon: Icons.science_outlined),
 ];
 
@@ -129,7 +135,7 @@ class GoalTileGrid extends StatelessWidget {
             crossAxisCount: 2,
             mainAxisSpacing: AppConstants.spaceM,
             crossAxisSpacing: AppConstants.spaceM,
-            childAspectRatio: 1.35,
+            childAspectRatio: 1.15,
             children: goalData.map((goal) {
               return GoalTile(goal: goal, onTap: () => onSelect(goal.label));
             }).toList(),
@@ -316,6 +322,10 @@ class GoalTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (goal.wearableCompatible) ...[
+                    const SizedBox(height: 4),
+                    const WearableBadge(),
+                  ],
                 ],
               ),
             ),
