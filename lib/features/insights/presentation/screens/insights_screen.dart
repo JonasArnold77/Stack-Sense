@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../data/insights_provider.dart';
+import '../../data/wearable_health_provider.dart';
 import '../../domain/models/insight_data.dart';
 import '../../../checkin/data/checkin_provider.dart';
 import '../../../checkin/data/problem_checkin_provider.dart';
@@ -145,13 +148,25 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.watch_outlined, color: Colors.white, size: 22),
-                tooltip: 'Smartwatch verbinden',
+                tooltip: 'Smartwatch-Daten',
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white.withOpacity(0.12),
                   shape: const CircleBorder(),
                   padding: const EdgeInsets.all(8),
                 ),
-                onPressed: () => WearableConnectSheet.show(context),
+                // Nach einer erfolgreichen Verbindung direkt zum Datenscreen
+                // springen, statt jedes Mal erneut die Auswahl zu zeigen —
+                // der Auswahl-Dialog bleibt über den Datenscreen selbst
+                // erreichbar (z.B. zum erneuten Verbinden nach einem Fehler).
+                onPressed: () {
+                  final connected = ref.read(wearableHealthProvider).status ==
+                      WearableConnectionStatus.connected;
+                  if (connected) {
+                    context.push(AppRoutes.wearableData);
+                  } else {
+                    WearableConnectSheet.show(context);
+                  }
+                },
               ),
               const SizedBox(width: 8),
               if (_simLoading)

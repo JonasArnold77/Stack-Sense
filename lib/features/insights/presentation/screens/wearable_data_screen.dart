@@ -32,6 +32,11 @@ class WearableDataScreen extends ConsumerWidget {
             subtitle: 'Rohdaten aus Health Connect',
             actions: [
               IconButton(
+                icon: const Icon(Icons.sync, color: Colors.white),
+                tooltip: 'Neu verbinden',
+                onPressed: isLoading ? null : notifier.connectAndFetch,
+              ),
+              IconButton(
                 icon: const Icon(Icons.refresh, color: Colors.white),
                 tooltip: 'Aktualisieren',
                 onPressed: isLoading ? null : notifier.refresh,

@@ -13,20 +13,28 @@ import '../../data/wearable_health_provider.dart';
 /// dorthin) — Apple Watch ist deaktiviert, da das Projekt keine iOS-
 /// Plattform hat.
 class WearableConnectSheet extends ConsumerWidget {
-  const WearableConnectSheet({super.key});
+  /// Context der aufrufenden Seite (z.B. InsightsScreen) — NICHT der eigene
+  /// Sheet-Context. Der Sheet-Context wird beim Schließen des Bottom-Sheets
+  /// sofort unmounted, noch bevor der (potenziell lange) Health-Connect-
+  /// Berechtigungsdialog durchlaufen ist — Navigation danach müsste sonst
+  /// über einen bereits toten Context laufen und würde beim `mounted`-Check
+  /// stillschweigend verworfen (Ursache für "Fenster öffnet sich nicht").
+  final BuildContext parentContext;
+
+  const WearableConnectSheet({super.key, required this.parentContext});
 
   static void show(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => const WearableConnectSheet(),
+      builder: (_) => WearableConnectSheet(parentContext: context),
     );
   }
 
   Future<void> _connect(BuildContext context, WidgetRef ref) async {
     Navigator.of(context).pop();
     await ref.read(wearableHealthProvider.notifier).connectAndFetch();
-    if (context.mounted) context.push(AppRoutes.wearableData);
+    if (parentContext.mounted) parentContext.push(AppRoutes.wearableData);
   }
 
   @override
