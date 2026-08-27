@@ -60,6 +60,8 @@
     <uses-permission android:name="android.permission.health.READ_RESPIRATORY_RATE"/>
     <uses-permission android:name="android.permission.health.READ_BODY_TEMPERATURE"/>
     <uses-permission android:name="android.permission.health.READ_WEIGHT"/>
+    <!-- Erlaubt Lesezugriff auf Daten älter als 30 Tage (Health-Connect-Default-Limit) -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY"/>
 
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

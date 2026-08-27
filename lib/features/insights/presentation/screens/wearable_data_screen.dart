@@ -9,8 +9,10 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../data/wearable_health_provider.dart';
 
-/// Rohdaten-Ansicht der letzten 7 Tage aus Health Connect — zum Testen der
-/// Wearable-Anbindung, nicht die endgültige Insights-Darstellung.
+/// Rohdaten-Ansicht aus Health Connect, tageweise mit Vor/Zurück-Navigation
+/// — zum Testen der Wearable-Anbindung, nicht die endgültige
+/// Insights-Darstellung. Rückwärts ist beliebig weit blätterbar (siehe
+/// History-Berechtigung in WearableHealthNotifier.connectAndFetch).
 class WearableDataScreen extends ConsumerWidget {
   const WearableDataScreen({super.key});
 
@@ -18,6 +20,7 @@ class WearableDataScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(wearableHealthProvider);
     final notifier = ref.read(wearableHealthProvider.notifier);
+    final isLoading = state.status == WearableConnectionStatus.connecting;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -26,18 +29,64 @@ class WearableDataScreen extends ConsumerWidget {
         children: [
           GradientScreenHeader(
             title: 'Wearable-Daten',
-            subtitle: 'Letzte 7 Tage aus Health Connect',
+            subtitle: 'Rohdaten aus Health Connect',
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh, color: Colors.white),
                 tooltip: 'Aktualisieren',
-                onPressed: state.status == WearableConnectionStatus.connecting
-                    ? null
-                    : notifier.fetchLatest,
+                onPressed: isLoading ? null : notifier.refresh,
               ),
             ],
           ),
+          _DayNavigator(state: state, notifier: notifier, isLoading: isLoading),
           Expanded(child: _Body(state: state, notifier: notifier)),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayNavigator extends StatelessWidget {
+  final WearableHealthState state;
+  final WearableHealthNotifier notifier;
+  final bool isLoading;
+
+  const _DayNavigator({required this.state, required this.notifier, required this.isLoading});
+
+  String _label(DateTime day) {
+    final today = DateTime.now();
+    final yesterday = today.subtract(const Duration(days: 1));
+    bool isSameDay(DateTime a, DateTime b) =>
+        a.year == b.year && a.month == b.month && a.day == b.day;
+    if (isSameDay(day, today)) return 'Heute';
+    if (isSameDay(day, yesterday)) return 'Gestern';
+    return DateFormat('dd.MM.yyyy').format(day);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.spaceS, vertical: AppConstants.spaceS),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            tooltip: 'Vorheriger Tag',
+            onPressed: isLoading ? null : notifier.goToPreviousDay,
+          ),
+          Text(_label(state.selectedDay),
+              style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            tooltip: 'Nächster Tag',
+            onPressed: (isLoading || state.isToday) ? null : notifier.goToNextDay,
+          ),
         ],
       ),
     );
@@ -80,7 +129,7 @@ class _Body extends StatelessWidget {
           title: 'Fehler beim Laden',
           message: state.errorMessage ?? 'Unbekannter Fehler',
           actionLabel: 'Erneut versuchen',
-          onAction: notifier.fetchLatest,
+          onAction: notifier.refresh,
         );
 
       case WearableConnectionStatus.idle:
@@ -96,7 +145,7 @@ class _Body extends StatelessWidget {
             icon: Icons.inbox_outlined,
             title: 'Keine Daten',
             message:
-                'Health Connect enthält für die letzten 7 Tage keine Werte in den unterstützten Kategorien.',
+                'Health Connect enthält für diesen Tag keine Werte in den unterstützten Kategorien. Mit den Pfeilen oben weiter zurückblättern.',
           );
         }
         return _DataList(dataPoints: state.dataPoints);

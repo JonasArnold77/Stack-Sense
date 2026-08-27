@@ -38,32 +38,46 @@ class WearableHealthState {
   final WearableConnectionStatus status;
   final List<HealthDataPoint> dataPoints;
   final String? errorMessage;
+  final DateTime selectedDay;
 
-  const WearableHealthState({
+  WearableHealthState({
     this.status = WearableConnectionStatus.idle,
     this.dataPoints = const [],
     this.errorMessage,
-  });
+    DateTime? selectedDay,
+  }) : selectedDay = selectedDay ?? _startOfDay(DateTime.now());
+
+  static DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  bool get isToday => selectedDay == _startOfDay(DateTime.now());
 
   WearableHealthState copyWith({
     WearableConnectionStatus? status,
     List<HealthDataPoint>? dataPoints,
     String? errorMessage,
+    DateTime? selectedDay,
   }) {
     return WearableHealthState(
       status: status ?? this.status,
       dataPoints: dataPoints ?? this.dataPoints,
       errorMessage: errorMessage,
+      selectedDay: selectedDay ?? this.selectedDay,
     );
   }
 }
 
 /// Verbindung zu Google Health Connect — liest Wearable-Daten (Garmin,
-/// Samsung, Wear OS, … synchronisieren dorthin) für Testzwecke aus.
-/// Kein echtes Apple-HealthKit-Backend, da das Projekt keine iOS-Plattform
-/// hat (siehe Feature-Entscheidung: "Nur Health Connect").
+/// Samsung, Wear OS, … synchronisieren dorthin) tageweise aus, mit Blättern
+/// beliebig weit in die Vergangenheit. Kein echtes Apple-HealthKit-Backend,
+/// da das Projekt keine iOS-Plattform hat (siehe Feature-Entscheidung: "Nur
+/// Health Connect").
+///
+/// Health Connect erlaubt standardmäßig nur Lesezugriff auf die letzten 30
+/// Tage — für ältere Daten ist die separate "Health Data History"-
+/// Berechtigung nötig, die [connectAndFetch] direkt mit anfragt (best-effort,
+/// je nach Health-Connect-Version auf dem Gerät verfügbar).
 class WearableHealthNotifier extends StateNotifier<WearableHealthState> {
-  WearableHealthNotifier() : super(const WearableHealthState()) {
+  WearableHealthNotifier() : super(WearableHealthState()) {
     _health.configure();
   }
 
@@ -88,7 +102,20 @@ class WearableHealthNotifier extends StateNotifier<WearableHealthState> {
         state = state.copyWith(status: WearableConnectionStatus.denied);
         return;
       }
-      await fetchLatest();
+
+      // Best-effort: ohne diese Zusatzberechtigung liefert Health Connect nur
+      // die letzten 30 Tage zurück, egal wie weit man zurück blättert.
+      try {
+        if (await _health.isHealthDataHistoryAvailable() &&
+            !await _health.isHealthDataHistoryAuthorized()) {
+          await _health.requestHealthDataHistoryAuthorization();
+        }
+      } catch (_) {
+        // Ältere Health-Connect-Version ohne History-Feature — ignorieren,
+        // Abfragen bleiben dann auf die letzten 30 Tage begrenzt.
+      }
+
+      await fetchForDay(DateTime.now());
     } catch (e) {
       state = state.copyWith(
         status: WearableConnectionStatus.error,
@@ -97,14 +124,19 @@ class WearableHealthNotifier extends StateNotifier<WearableHealthState> {
     }
   }
 
-  Future<void> fetchLatest() async {
-    state = state.copyWith(status: WearableConnectionStatus.connecting);
+  Future<void> fetchForDay(DateTime day) async {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+
+    state = state.copyWith(
+      status: WearableConnectionStatus.connecting,
+      selectedDay: start,
+    );
     try {
-      final now = DateTime.now();
       final data = await _health.getHealthDataFromTypes(
         types: kWearableHealthTypes,
-        startTime: now.subtract(const Duration(days: 7)),
-        endTime: now,
+        startTime: start,
+        endTime: end,
       );
       final deduped = _health.removeDuplicates(data)
         ..sort((a, b) => b.dateTo.compareTo(a.dateTo));
@@ -119,6 +151,19 @@ class WearableHealthNotifier extends StateNotifier<WearableHealthState> {
       );
     }
   }
+
+  /// Ein Tag zurück — keine untere Grenze, so weit wie Health Connect Daten
+  /// zurückliefert (siehe History-Berechtigung oben).
+  Future<void> goToPreviousDay() =>
+      fetchForDay(state.selectedDay.subtract(const Duration(days: 1)));
+
+  /// Ein Tag vor — nicht über heute hinaus.
+  Future<void> goToNextDay() {
+    if (state.isToday) return Future.value();
+    return fetchForDay(state.selectedDay.add(const Duration(days: 1)));
+  }
+
+  Future<void> refresh() => fetchForDay(state.selectedDay);
 
   Future<void> openHealthConnectInstall() => _health.installHealthConnect();
 }
