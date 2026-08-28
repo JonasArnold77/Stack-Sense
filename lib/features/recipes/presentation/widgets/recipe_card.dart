@@ -96,6 +96,31 @@ class _RecipeCardState extends State<RecipeCard> {
               ),
             ),
 
+          if (recipe.coveredStackSupplements.isNotEmpty) ...[
+            const SizedBox(height: AppConstants.spaceM),
+            Text('Deckt aus deinem Stack ab',
+                style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _groupedCoverage(recipe).entries.map((e) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+                  ),
+                  child: Text(
+                    '${e.key}: ${e.value.toStringAsFixed(0)}%',
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.accent, fontWeight: FontWeight.w600),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
           if (nutrientEntries.isNotEmpty) ...[
             const SizedBox(height: AppConstants.spaceM),
             Text('Nährstoff-Übersicht',
@@ -123,5 +148,19 @@ class _RecipeCardState extends State<RecipeCard> {
         ],
       ),
     );
+  }
+
+  /// Pro Stack-Supplement die höchste Abdeckung (ein Supplement kann über
+  /// mehrere Nährstoffe gematcht sein, z.B. Kombipräparate) — für eine
+  /// kompakte "Name: XX%"-Anzeige statt einer Zeile pro Nährstoff.
+  Map<String, double> _groupedCoverage(GeneratedRecipe recipe) {
+    final result = <String, double>{};
+    for (final c in recipe.coveredStackSupplements) {
+      final current = result[c.stackEntryName];
+      if (current == null || c.coveragePct > current) {
+        result[c.stackEntryName] = c.coveragePct;
+      }
+    }
+    return result;
   }
 }
