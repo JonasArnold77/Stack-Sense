@@ -102,6 +102,7 @@ _HTML = """<!doctype html>
     <label class="feat"><input type="checkbox" value="phasenziele"> Phasenziele</label>
     <label class="feat"><input type="checkbox" value="problemfelder"> Problemfelder</label>
     <label class="feat"><input type="checkbox" value="insights"> Insights</label>
+    <label class="feat"><input type="checkbox" value="rezepte"> Rezepte</label>
   </div>
   <div style="margin-top:16px">
     <button class="primary" onclick="saveTenant()">Speichern</button>

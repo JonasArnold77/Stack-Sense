@@ -234,3 +234,43 @@ def init_tenant_tables() -> None:
         logger.info("Tenant-Tabellen bereit.")
     except Exception as e:
         logger.warning("Tenant-Tabellen konnten nicht initialisiert werden: %s", e)
+
+
+def init_recipe_tables() -> None:
+    """
+    Erstellt die Nährstoff-Infrastruktur für das Rezept-Feature:
+    - fdc_ingredient_cache: Cache für USDA-FoodData-Central-Lookups pro Zutat,
+      verhindert wiederholte Live-API-Calls bei jeder Rezeptgenerierung.
+    - supplement_nutrients: kuratierte (nicht LLM-generierte) Referenzwerte,
+      welcher Nährstoff in welcher Menge/Einheit in einem Supplement steckt.
+    """
+    create_sql = """
+    CREATE TABLE IF NOT EXISTS fdc_ingredient_cache (
+        id              SERIAL PRIMARY KEY,
+        query_norm      TEXT UNIQUE NOT NULL,
+        fdc_id          INTEGER,
+        fdc_description TEXT,
+        nutrients_json  JSONB NOT NULL,
+        source          TEXT NOT NULL DEFAULT 'fdc',
+        fetched_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_fdc_cache_query ON fdc_ingredient_cache(query_norm);
+
+    CREATE TABLE IF NOT EXISTS supplement_nutrients (
+        id              SERIAL PRIMARY KEY,
+        supplement_slug TEXT NOT NULL,
+        nutrient_key    TEXT NOT NULL,
+        amount          NUMERIC NOT NULL,
+        unit            TEXT NOT NULL,
+        source_note     TEXT,
+        UNIQUE(supplement_slug, nutrient_key)
+    );
+    CREATE INDEX IF NOT EXISTS idx_suppl_nutrients_slug ON supplement_nutrients(supplement_slug);
+    """
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(create_sql)
+        logger.info("Rezept-Nährstoff-Tabellen bereit.")
+    except Exception as e:
+        logger.warning("Rezept-Nährstoff-Tabellen konnten nicht initialisiert werden: %s", e)

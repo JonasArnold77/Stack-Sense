@@ -8,4 +8,5 @@ class FeatureKeys {
   static const phasenziele = 'phasenziele';
   static const problemfelder = 'problemfelder';
   static const insights = 'insights';
+  static const rezepte = 'rezepte';
 }

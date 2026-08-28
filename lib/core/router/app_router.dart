@@ -13,6 +13,7 @@ import '../../features/checkin/presentation/screens/checkin_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/insights/presentation/screens/insights_screen.dart';
 import '../../features/insights/presentation/screens/wearable_data_screen.dart';
+import '../../features/recipes/presentation/screens/recipes_screen.dart';
 import '../../features/heute/presentation/screens/heute_screen.dart';
 import '../../features/profile_recommendations/presentation/screens/profile_recommendations_screen.dart';
 import '../../features/phase_goals/presentation/screens/phase_goals_screen.dart';
@@ -52,6 +53,7 @@ class AppRoutes {
   static const String stack = '/stack';
   static const String checkin = '/checkin';
   static const String profile = '/profile';
+  static const String recipes = '/recipes';
   static const String insights = '/insights';
   static const String wearableData = '/insights/wearable-data';
   static const String profileRecommendations = '/profile-recommendations';
@@ -88,6 +90,7 @@ const _featureGatedRoutes = {
   AppRoutes.recommendations: FeatureKeys.problemfelder,
   // '/insights' Präfix deckt auch AppRoutes.wearableData ab (Sub-Route).
   AppRoutes.insights: FeatureKeys.insights,
+  AppRoutes.recipes: FeatureKeys.rezepte,
 };
 
 /// Riverpod Provider für den Router mit Auth-Redirect.
@@ -282,6 +285,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.stack,
             name: 'stack',
             builder: (context, state) => const StackScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.recipes,
+            name: 'recipes',
+            builder: (context, state) => const RecipesScreen(),
           ),
           GoRoute(
             path: AppRoutes.checkin,

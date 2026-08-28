@@ -29,5 +29,9 @@ class Settings(BaseSettings):
     github_token: str = ""                # Fine-grained PAT, Scope: Actions Read/Write
     github_repo: str = "JonasArnold77/Stack-Sense"
 
+    # USDA FoodData Central — Lebensmittel-Nährwerte für das Rezept-Feature.
+    # Kostenloser Self-Service-Key: https://fdc.nal.usda.gov/api-key-signup.html
+    fdc_api_key: str = ""
+
 
 settings = Settings()
