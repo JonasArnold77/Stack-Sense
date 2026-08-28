@@ -57,6 +57,11 @@ class SupplementRecommendation(BaseModel):
     evidence_reason: str
     secondary_benefit: Optional[SecondaryBenefit] = None
     dosage: str
+    # Strukturierte Dosis (additiv zu `dosage`, nur befüllt wenn eindeutig in
+    # einer Standardeinheit ausdrückbar) — ermöglicht z.B. dem Rezept-Feature,
+    # eine exakte reduzierte Menge statt nur einen Hinweis zu berechnen.
+    dosage_amount: Optional[float] = None
+    dosage_unit: Optional[str] = None  # "mg" | "mcg" | "IU" | "g"
     intake_time: str
     intake_hint: Optional[str]
     drug_interaction: Optional[str]

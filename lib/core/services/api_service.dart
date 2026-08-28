@@ -8,6 +8,8 @@ import '../services/url_config_service.dart';
 import '../../features/onboarding/domain/models/user_profile.dart';
 import '../../features/recommendations/domain/models/supplement.dart';
 import '../../features/community/domain/models/community_insight.dart';
+import '../../features/recipes/domain/models/generated_recipe.dart';
+import '../../features/stack/domain/models/stack_entry.dart';
 // ProductLink wird aus supplement.dart re-exportiert
 
 /// Verbindet die Flutter App mit dem FastAPI Backend.
@@ -645,6 +647,108 @@ class ApiService {
     } catch (e) {
       debugPrint('getMe Fehler: $e');
       return null;
+    }
+  }
+
+  Map<String, dynamic> _stackEntrySummaryJson(StackEntry e) => {
+        'id': e.id,
+        'name': e.name,
+        'substance_name': e.substanceName,
+        'enthaltene_wirkstoffe': e.enthalteneWirkstoffe,
+        'dosage_amount': e.dosageAmount,
+        'dosage_unit': e.dosageUnit,
+      };
+
+  /// Generiert 3-5 personalisierte Rezepte via Claude (Backend berechnet die
+  /// Nährstoff-Übersicht + Stack-Abdeckung danach deterministisch, nicht
+  /// von Claude geschätzt). Der Stack wird nur als thematischer Kontext
+  /// mitgeschickt — keine gespeicherten Standard-Präferenzen, jeder Abruf
+  /// nutzt frisch eingegebene Filter-Werte.
+  Future<List<GeneratedRecipe>> generateRecipes({
+    required DietType dietType,
+    required List<CarbBase> carbBases,
+    required List<String> allergies,
+    required int maxCookTimeMinutes,
+    required List<StackEntry> stack,
+  }) async {
+    final body = jsonEncode({
+      'diet_type': dietType.name,
+      'carb_bases': carbBases.map((c) => c.name).toList(),
+      'allergies': allergies,
+      'max_cook_time_minutes': maxCookTimeMinutes,
+      'stack': stack.map(_stackEntrySummaryJson).toList(),
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/recipes/generate'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(AppConstants.apiTimeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final list = data['recipes'] as List<dynamic>;
+        return list
+            .map((e) => GeneratedRecipe.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        debugPrint('API Fehler ${response.statusCode}: ${response.body}');
+        throw ApiException('Server-Fehler: ${response.statusCode}');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Netzwerk-Fehler: $e');
+      throw ApiException('Keine Verbindung zum Backend. Läuft start.ps1?');
+    }
+  }
+
+  /// Berechnet die Stack-Abdeckung eines gespeicherten Rezepts frisch gegen
+  /// den AKTUELLEN Stack (für "Für heute aktivieren") — nicht gegen einen
+  /// beim Speichern zwischengespeicherten Stand, der Stack kann sich seitdem
+  /// geändert haben.
+  Future<List<CoveredSupplement>> computeRecipeCoverage({
+    required List<RecipeIngredient> ingredients,
+    required List<StackEntry> stack,
+  }) async {
+    final body = jsonEncode({
+      'ingredients': ingredients.map((i) => i.toJson()).toList(),
+      'stack': stack.map(_stackEntrySummaryJson).toList(),
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/recipes/coverage'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(AppConstants.apiTimeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final list = data['covered_stack_supplements'] as List<dynamic>;
+        return list
+            .map((e) => CoveredSupplement.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else {
+        debugPrint('API Fehler ${response.statusCode}: ${response.body}');
+        throw ApiException('Server-Fehler: ${response.statusCode}');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Netzwerk-Fehler: $e');
+      throw ApiException('Keine Verbindung zum Backend. Läuft start.ps1?');
     }
   }
 }

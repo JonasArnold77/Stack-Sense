@@ -13,7 +13,10 @@ import '../../features/checkin/presentation/screens/checkin_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/insights/presentation/screens/insights_screen.dart';
 import '../../features/insights/presentation/screens/wearable_data_screen.dart';
-import '../../features/recipes/presentation/screens/recipes_screen.dart';
+import '../../features/recipes/domain/models/generated_recipe.dart';
+import '../../features/recipes/presentation/screens/recipe_filter_screen.dart';
+import '../../features/recipes/presentation/screens/recipe_library_screen.dart';
+import '../../features/recipes/presentation/screens/recipe_results_screen.dart';
 import '../../features/heute/presentation/screens/heute_screen.dart';
 import '../../features/profile_recommendations/presentation/screens/profile_recommendations_screen.dart';
 import '../../features/phase_goals/presentation/screens/phase_goals_screen.dart';
@@ -54,6 +57,8 @@ class AppRoutes {
   static const String checkin = '/checkin';
   static const String profile = '/profile';
   static const String recipes = '/recipes';
+  static const String recipeFilter = '/recipes/filter';
+  static const String recipeResults = '/recipes/results';
   static const String insights = '/insights';
   static const String wearableData = '/insights/wearable-data';
   static const String profileRecommendations = '/profile-recommendations';
@@ -221,6 +226,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const WearableDataScreen(),
       ),
 
+      // --- Rezepte: Filter + Ergebnisse (kein Shell) ---
+      GoRoute(
+        path: AppRoutes.recipeFilter,
+        name: 'recipeFilter',
+        builder: (context, state) => const RecipeFilterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.recipeResults,
+        name: 'recipeResults',
+        builder: (context, state) {
+          final recipes = state.extra as List<GeneratedRecipe>;
+          return RecipeResultsScreen(recipes: recipes);
+        },
+      ),
+
       // --- Phasenziele (kein Shell) ---
       GoRoute(
         path: AppRoutes.phaseGoals,
@@ -289,7 +309,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.recipes,
             name: 'recipes',
-            builder: (context, state) => const RecipesScreen(),
+            builder: (context, state) => const RecipeLibraryScreen(),
           ),
           GoRoute(
             path: AppRoutes.checkin,

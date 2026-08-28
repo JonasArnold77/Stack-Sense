@@ -28,6 +28,13 @@ class StackEntry {
   final EvidenceLevel evidenceLevel;
   final SubstanceCategory? substanceCategory;
   final String dosage;
+  /// Strukturierte Dosis (additiv zu [dosage]) — nur befüllt wenn Claude sie
+  /// eindeutig ausgeben konnte. Ermöglicht dem Rezept-Feature, im
+  /// "Für heute aktivieren"-Dialog eine exakte reduzierte Menge statt nur
+  /// einen Hinweis zu berechnen. Bestehende (ältere) Stack-Einträge haben
+  /// diese Felder nicht — dort bleibt nur der Freitext-Fallback möglich.
+  final double? dosageAmount;
+  final String? dosageUnit; // "mg" | "mcg" | "IU" | "g"
   final String intakeTime; // Lesbarer Text: "Morgens", "Abends vor dem Schlafen"
   final IntakeSlot intakeSlot; // Kalender-Slot (automatisch abgeleitet)
   final String? intakeHint;
@@ -60,6 +67,8 @@ class StackEntry {
     required this.evidenceLevel,
     this.substanceCategory,
     required this.dosage,
+    this.dosageAmount,
+    this.dosageUnit,
     required this.intakeTime,
     required this.intakeSlot,
     this.intakeHint,
@@ -95,6 +104,8 @@ class StackEntry {
         evidenceLevel: evidenceLevel,
         substanceCategory: substanceCategory,
         dosage: dosage,
+        dosageAmount: dosageAmount,
+        dosageUnit: dosageUnit,
         intakeTime: intakeTime,
         intakeSlot: intakeSlot,
         intakeHint: intakeHint,
@@ -119,6 +130,8 @@ class StackEntry {
         evidenceLevel: s.evidenceLevel,
         substanceCategory: s.substanceCategory,
         dosage: s.dosage,
+        dosageAmount: s.dosageAmount,
+        dosageUnit: s.dosageUnit,
         intakeTime: s.intakeTime,
         intakeSlot: _deriveSlot(s.intakeTime),
         intakeHint: s.intakeHint,
@@ -155,6 +168,8 @@ class StackEntry {
         'evidenceLevel': evidenceLevel.name,
         'substanceCategory': substanceCategory?.name,
         'dosage': dosage,
+        'dosageAmount': dosageAmount,
+        'dosageUnit': dosageUnit,
         'intakeTime': intakeTime,
         'intakeSlot': intakeSlot.name,
         'intakeHint': intakeHint,
@@ -193,6 +208,8 @@ class StackEntry {
       evidenceLevel: EvidenceLevel.values.byName(json['evidenceLevel'] as String),
       substanceCategory: _parseSubstanceCategoryName(json['substanceCategory'] as String?),
       dosage: json['dosage'] as String,
+      dosageAmount: (json['dosageAmount'] as num?)?.toDouble(),
+      dosageUnit: json['dosageUnit'] as String?,
       intakeTime: json['intakeTime'] as String,
       intakeSlot: IntakeSlot.values.byName(json['intakeSlot'] as String),
       intakeHint: json['intakeHint'] as String?,

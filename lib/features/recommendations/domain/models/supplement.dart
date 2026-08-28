@@ -231,6 +231,11 @@ class Supplement {
   final String pitch;         // Kurzer Nutzen-Satz für die Card (persönlich, ohne Fachjargon)
   final String evidenceReason;
   final String dosage;
+  /// Strukturierte Dosis (additiv zu [dosage], nur befüllt wenn eindeutig in
+  /// einer Standardeinheit ausdrückbar) — ermöglicht z.B. dem Rezept-Feature,
+  /// eine exakte reduzierte Menge statt nur einen Hinweis zu berechnen.
+  final double? dosageAmount;
+  final String? dosageUnit; // "mg" | "mcg" | "IU" | "g"
   final String intakeTime;
   final String? intakeHint;
   final String? drugInteraction;
@@ -257,6 +262,8 @@ class Supplement {
     this.pitch = '',
     required this.evidenceReason,
     required this.dosage,
+    this.dosageAmount,
+    this.dosageUnit,
     required this.intakeTime,
     this.intakeHint,
     this.drugInteraction,
@@ -288,6 +295,8 @@ class Supplement {
       pitch: (json['pitch'] as String?) ?? '',
       evidenceReason: (json['evidence_reason'] as String?) ?? '',
       dosage: (json['dosage'] as String?) ?? '',
+      dosageAmount: (json['dosage_amount'] as num?)?.toDouble(),
+      dosageUnit: json['dosage_unit'] as String?,
       intakeTime: (json['intake_time'] as String?) ?? '',
       intakeHint: json['intake_hint'] as String?,
       drugInteraction: json['drug_interaction'] as String?,
@@ -314,6 +323,8 @@ class Supplement {
         'pitch': pitch,
         'evidence_reason': evidenceReason,
         'dosage': dosage,
+        'dosage_amount': dosageAmount,
+        'dosage_unit': dosageUnit,
         'intake_time': intakeTime,
         'intake_hint': intakeHint,
         'drug_interaction': drugInteraction,

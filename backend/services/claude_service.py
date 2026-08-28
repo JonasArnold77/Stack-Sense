@@ -21,6 +21,7 @@ from services.vector_service import (
     get_supplements_by_category,
 )
 from services.rxnorm_service import RxNormService
+from services.claude_json import extract_json as _extract_json
 
 logger = logging.getLogger(__name__)
 
@@ -363,6 +364,12 @@ WICHTIGE REGELN:
    - evidence_reason: max 90 Zeichen — Studienlage präzise, Effekt als Beobachtung nicht als Tatsache
    - secondary_benefit.text: max 100 Zeichen (oder null)
    - dosage: max 40 Zeichen
+   - dosage_amount/dosage_unit: strukturierte Zusatzangabe NUR wenn die Dosierung
+     eindeutig als eine einzelne Zahl + Standardeinheit ("mg", "mcg", "IU", "g")
+     ausdrückbar ist (z.B. "2000 IU" → dosage_amount=2000, dosage_unit="IU").
+     Bei Spannen ("2.000–4.000 IE"), mehreren Wirkstoffen (supplement_type="group")
+     oder unklaren Mengen ("1-2 Kapseln nach Bedarf"): beide null lassen — das
+     Freitext-Feld `dosage` bleibt trotzdem immer befüllt.
    - intake_time: max 40 Zeichen
    - intake_hint: max 80 Zeichen (oder null)
    - drug_interaction: max 80 Zeichen (oder null)
@@ -411,6 +418,8 @@ JSON-FORMAT (exakt einhalten):
         "condition": "Hashimoto"
       },
       "dosage": "2.000–4.000 IE täglich",
+      "dosage_amount": 2000,
+      "dosage_unit": "IU",
       "intake_time": "Morgens",
       "intake_hint": "Mit fetthaltiger Mahlzeit — fettlöslich",
       "drug_interaction": null,
@@ -813,16 +822,6 @@ JSON-FORMAT:
 Falls keine Duplikate: { "duplicates": [], "reasoning": "Keine Wirkstoffüberschneidung gefunden." }"""
 
 
-def _extract_json(raw: str) -> str:
-    code_block_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", raw, re.DOTALL)
-    if code_block_match:
-        return code_block_match.group(1).strip()
-    json_match = re.search(r"\{.*\}", raw, re.DOTALL)
-    if json_match:
-        return json_match.group(0).strip()
-    return raw
-
-
 def _matches_any_candidate(name: str, candidates: list[dict]) -> bool:
     """Code-seitiges Sicherheitsnetz zusätzlich zur Prompt-Erlaubnisliste:
     Claude befolgt die Kandidaten-Einschränkung im Datenbank-Modus nicht
@@ -983,6 +982,8 @@ async def _parse_recommendation_item(item: dict, medications: list[str]) -> Supp
         evidence_reason=item["evidence_reason"],
         secondary_benefit=secondary_benefit,
         dosage=item["dosage"],
+        dosage_amount=item.get("dosage_amount"),
+        dosage_unit=item.get("dosage_unit"),
         intake_time=item["intake_time"],
         intake_hint=item.get("intake_hint"),
         drug_interaction=final_interaction,
