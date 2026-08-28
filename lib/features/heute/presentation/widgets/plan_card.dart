@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/day_key.dart';
+import '../../../stack/data/recipe_override_provider.dart';
 import '../../../stack/data/taken_provider.dart';
 import '../../../stack/domain/models/stack_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart';
@@ -40,6 +42,42 @@ class TemporaryBadgeSmall extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Rezept-Abdeckungs-Badge — "heute durch Rezept abgedeckt" (siehe
+// RecipeOverrideNotifier). Gilt nur für den aktuellen Tag, dank
+// datumsbasiertem Schlüssel automatisch zurückgesetzt am nächsten Tag.
+// ---------------------------------------------------------------------------
+
+class RecipeOverrideBadgeSmall extends StatelessWidget {
+  final RecipeOverride recipeOverride;
+  const RecipeOverrideBadgeSmall({super.key, required this.recipeOverride});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = recipeOverride.action == RecipeOverrideAction.removed
+        ? 'Heute durch Rezept abgedeckt · ${recipeOverride.recipeTitle}'
+        : 'Heute reduziert (${recipeOverride.recipeTitle})';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.restaurant_menu, size: 9, color: AppColors.accent),
+        const SizedBox(width: 3),
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.accent,
+              fontWeight: FontWeight.w600,
+              fontSize: 9,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Kompakte Supplement-Zeile im Tagesplan
 // ---------------------------------------------------------------------------
 
@@ -58,12 +96,18 @@ class CompactSupplementRow extends ConsumerWidget {
     final takenNotifier = ref.read(takenProvider.notifier);
     ref.watch(takenProvider);
     final taken = takenNotifier.isTaken(entry.id, today);
+    final override = ref.watch(recipeOverrideProvider)[dayKey(entry.id, today)];
+    final isRemoved = override?.action == RecipeOverrideAction.removed;
 
     final evidenceColor = switch (entry.evidenceLevel) {
       EvidenceLevel.green  => AppColors.evidenceGreen,
       EvidenceLevel.yellow => AppColors.evidenceYellow,
       EvidenceLevel.red    => AppColors.evidenceRed,
     };
+
+    final dosageText = override?.action == RecipeOverrideAction.reduced
+        ? '${override!.reducedToAmount!.toStringAsFixed(0)}${override.reducedToUnit ?? ''} (statt ${entry.dosage})'
+        : entry.dosage;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppConstants.spaceS),
@@ -73,7 +117,9 @@ class CompactSupplementRow extends ConsumerWidget {
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: taken ? AppColors.evidenceGreen : evidenceColor,
+              color: isRemoved
+                  ? AppColors.accent
+                  : (taken ? AppColors.evidenceGreen : evidenceColor),
               shape: BoxShape.circle,
             ),
           ),
@@ -85,39 +131,44 @@ class CompactSupplementRow extends ConsumerWidget {
                 Text(
                   entry.name,
                   style: AppTextStyles.labelMedium.copyWith(
-                    color: taken ? AppColors.textSecondary : AppColors.textPrimary,
-                    decoration: taken ? TextDecoration.lineThrough : null,
+                    color: (taken || isRemoved) ? AppColors.textSecondary : AppColors.textPrimary,
+                    decoration: (taken || isRemoved) ? TextDecoration.lineThrough : null,
                   ),
                 ),
-                Text(entry.dosage,
-                    style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary)),
-                if (entry.isTemporary && entry.phaseEndDate != null) ...[
+                if (!isRemoved)
+                  Text(dosageText,
+                      style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary)),
+                if (override != null) ...[
+                  const SizedBox(height: 3),
+                  RecipeOverrideBadgeSmall(recipeOverride: override),
+                ] else if (entry.isTemporary && entry.phaseEndDate != null) ...[
                   const SizedBox(height: 3),
                   TemporaryBadgeSmall(endDate: entry.phaseEndDate!),
                 ],
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () => takenNotifier.toggle(entry.id, today),
-            child: AnimatedContainer(
-              duration: AppConstants.animFast,
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: taken ? AppColors.evidenceGreen : AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(AppConstants.radiusS),
-                border: Border.all(
-                  color: taken ? AppColors.evidenceGreen : AppColors.border,
+          if (!isRemoved)
+            GestureDetector(
+              onTap: () => takenNotifier.toggle(entry.id, today),
+              child: AnimatedContainer(
+                duration: AppConstants.animFast,
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: taken ? AppColors.evidenceGreen : AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(AppConstants.radiusS),
+                  border: Border.all(
+                    color: taken ? AppColors.evidenceGreen : AppColors.border,
+                  ),
+                ),
+                child: Icon(
+                  Icons.check,
+                  size: 16,
+                  color: taken ? Colors.white : AppColors.border,
                 ),
               ),
-              child: Icon(
-                Icons.check,
-                size: 16,
-                color: taken ? Colors.white : AppColors.border,
-              ),
             ),
-          ),
         ],
       ),
     );
@@ -146,8 +197,15 @@ class PlanSlotSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final takenNotifier = ref.read(takenProvider.notifier);
     ref.watch(takenProvider);
-    final allTaken = supplements.every((s) => takenNotifier.isTaken(s.id, today));
-    final takenCount = supplements.where((s) => takenNotifier.isTaken(s.id, today)).length;
+    final overrides = ref.watch(recipeOverrideProvider);
+
+    // Heute durch Rezept abgedeckte Supplements zählen nicht als "offen" —
+    // ein komplett abgedeckter Tag soll nicht fälschlich unvollständig wirken.
+    final active = supplements
+        .where((s) => overrides[dayKey(s.id, today)]?.action != RecipeOverrideAction.removed)
+        .toList();
+    final allTaken = active.every((s) => takenNotifier.isTaken(s.id, today));
+    final takenCount = active.where((s) => takenNotifier.isTaken(s.id, today)).length;
 
     return Padding(
       padding: const EdgeInsets.all(AppConstants.spaceM),
@@ -180,7 +238,7 @@ class PlanSlotSection extends ConsumerWidget {
               ],
               const Spacer(),
               Text(
-                '$takenCount/${supplements.length}',
+                '$takenCount/${active.length}',
                 style: AppTextStyles.caption.copyWith(
                   color: allTaken ? AppColors.evidenceGreen : AppColors.textSecondary,
                   fontWeight: FontWeight.w600,

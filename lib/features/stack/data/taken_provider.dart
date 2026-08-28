@@ -2,24 +2,21 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/utils/day_key.dart';
+
 /// Verwaltet welche Supplements an welchen Tagen als "eingenommen" markiert wurden.
-/// Key-Format: "supplementId_yyyy-MM-dd"
+/// Key-Format: "supplementId_yyyy-MM-dd" (siehe dayKey()).
 class TakenNotifier extends StateNotifier<Set<String>> {
   TakenNotifier() : super({}) {
     _load();
   }
 
-  static String _key(String supplementId, DateTime date) =>
-      '${supplementId}_${date.year}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
-
   bool isTaken(String supplementId, DateTime date) =>
-      state.contains(_key(supplementId, date));
+      state.contains(dayKey(supplementId, date));
 
   /// Umschalten: eingenommen → nicht eingenommen und umgekehrt.
   Future<void> toggle(String supplementId, DateTime date) async {
-    final key = _key(supplementId, date);
+    final key = dayKey(supplementId, date);
     final next = Set<String>.from(state);
     if (next.contains(key)) {
       next.remove(key);

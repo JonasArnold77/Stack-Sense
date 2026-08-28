@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../data/recipe_library_provider.dart';
 import '../../domain/models/saved_recipe.dart';
+import '../widgets/recipe_activation_dialog.dart';
 import '../widgets/recipe_card.dart';
 
 /// Rezepte-Tab — persönliche Bibliothek gespeicherter Rezepte + Einstieg in
@@ -116,9 +117,7 @@ class _LibraryActions extends ConsumerWidget {
           onPressed: () => ref.read(recipeLibraryProvider.notifier).delete(saved.recipe.id),
         ),
         FilledButton.tonal(
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Bald verfügbar')),
-          ),
+          onPressed: () => RecipeActivationDialog.show(context, saved),
           child: const Text('Für heute'),
         ),
       ],
