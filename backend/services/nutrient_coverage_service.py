@@ -57,7 +57,8 @@ async def compute_recipe_nutrients(ingredients: list[dict]) -> dict[str, float]:
             logger.warning("Unbekannte Zutateneinheit '%s' für '%s' — überspringe.",
                             unit, ingredient.get("name"))
             continue
-        per_100g = await fooddata_service.lookup_ingredient(ingredient["name"])
+        query = ingredient.get("fdc_query") or ingredient["name"]
+        per_100g = await fooddata_service.lookup_ingredient(query)
         if not per_100g:
             continue
         factor = float(ingredient.get("amount", 0)) / 100.0
@@ -103,6 +104,36 @@ def _candidate_slugs(entry: dict) -> list[str]:
     for wirkstoff in entry.get("enthaltene_wirkstoffe") or []:
         candidates.append(_slugify(wirkstoff))
     return candidates
+
+
+def get_stack_target_nutrients(stack: list[dict]) -> set[str]:
+    """
+    Welche nutrient_keys lassen sich für den aktuellen Stack überhaupt
+    berechnen (Treffer in supplement_nutrients)? Wird von recipe_service.py
+    genutzt, um Claude gezielt zu bitten, nährstoffreiche Zutaten für GENAU
+    diese Nährstoffe einzubauen — ohne diesen Hinweis wählt Claude Zutaten
+    rein nach Ernährungspräferenz, die Abdeckung wäre dann ein Zufallsprodukt.
+
+    Bewusst nur die berechenbare Teilmenge: Wirkstoffe ohne USDA-Nährstoff-
+    Entsprechung (z.B. Kreatin, Ashwagandha) können hier nie auftauchen —
+    dafür gibt es keine "Lebensmittel enthält X"-Berechnungsgrundlage.
+    """
+    all_candidate_slugs: set[str] = set()
+    entry_candidates: dict[str, list[str]] = {}
+    for entry in stack:
+        candidates = _candidate_slugs(entry)
+        entry_candidates[entry.get("id", "")] = candidates
+        all_candidate_slugs.update(candidates)
+
+    nutrient_rows_by_slug = _fetch_nutrient_rows(all_candidate_slugs)
+
+    target_keys: set[str] = set()
+    for candidates in entry_candidates.values():
+        for slug in candidates:
+            if slug in nutrient_rows_by_slug:
+                target_keys.update(row["nutrient_key"] for row in nutrient_rows_by_slug[slug])
+                break
+    return target_keys
 
 
 def compute_stack_coverage(

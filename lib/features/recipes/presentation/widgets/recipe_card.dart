@@ -6,13 +6,17 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/generated_recipe.dart';
 
 /// Rezept-Karte — zeigt Titel/Kochzeit/Zutaten/Schritte (einklappbar) und
-/// Nährstoff-Übersicht. [trailing] hängt vom Kontext ab: Speichern-Button auf
-/// dem Ergebnis-Screen, Favorisieren/Löschen/Aktivieren in der Bibliothek.
+/// Nährstoff-Übersicht. [trailing] steht in der engen Titel-Zeile (nur für
+/// ein einzelnes kompaktes Element gedacht, z.B. den Speichern-Button).
+/// [bottomAction], falls gesetzt, bekommt die volle Kartenbreite am Ende —
+/// für breitere Inhalte wie mehrere Bibliotheks-Aktionen, die in der engen
+/// Titel-Zeile nicht sicher Platz hätten.
 class RecipeCard extends StatefulWidget {
   final GeneratedRecipe recipe;
   final Widget? trailing;
+  final Widget? bottomAction;
 
-  const RecipeCard({super.key, required this.recipe, this.trailing});
+  const RecipeCard({super.key, required this.recipe, this.trailing, this.bottomAction});
 
   @override
   State<RecipeCard> createState() => _RecipeCardState();
@@ -46,7 +50,14 @@ class _RecipeCardState extends State<RecipeCard> {
                 child: Text(recipe.title,
                     style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w700)),
               ),
-              if (widget.trailing != null) widget.trailing!,
+              // IntrinsicWidth: FilledButton (im Gegensatz zu einem simplen
+              // IconButton) misst seinen Text-/Icon-Inhalt zur Selbstgrößen-
+              // bestimmung — bekommt es in dieser Row (innerhalb einer
+              // ListView, z.B. während einer Seitenübergangs-Relayout-Passage)
+              // unbegrenzte Breite, wirft es "BoxConstraints forces an
+              // infinite width". IntrinsicWidth erzwingt stattdessen eine
+              // begrenzte, am Inhalt orientierte Breite.
+              if (widget.trailing != null) IntrinsicWidth(child: widget.trailing!),
             ],
           ),
           const SizedBox(height: 4),
@@ -144,6 +155,11 @@ class _RecipeCardState extends State<RecipeCard> {
                 );
               }).toList(),
             ),
+          ],
+
+          if (widget.bottomAction != null) ...[
+            const SizedBox(height: AppConstants.spaceM),
+            widget.bottomAction!,
           ],
         ],
       ),

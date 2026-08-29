@@ -54,16 +54,27 @@ class RecipeIngredient {
   final String name;
   final double amount;
   final String unit; // "g" | "ml"
+  // Englischer USDA-Suchbegriff (z.B. "pumpkin seeds" für "Kürbiskerne") — nur
+  // fürs Backend relevant (Nährwert-Lookup), hier nur durchgereicht, damit er
+  // beim "Für heute aktivieren"-Flow (POST /recipes/coverage) erhalten bleibt.
+  final String? fdcQuery;
 
-  const RecipeIngredient({required this.name, required this.amount, required this.unit});
+  const RecipeIngredient({
+    required this.name,
+    required this.amount,
+    required this.unit,
+    this.fdcQuery,
+  });
 
   factory RecipeIngredient.fromJson(Map<String, dynamic> json) => RecipeIngredient(
         name: json['name'] as String,
         amount: (json['amount'] as num).toDouble(),
         unit: json['unit'] as String,
+        fdcQuery: json['fdc_query'] as String?,
       );
 
-  Map<String, dynamic> toJson() => {'name': name, 'amount': amount, 'unit': unit};
+  Map<String, dynamic> toJson() =>
+      {'name': name, 'amount': amount, 'unit': unit, 'fdc_query': fdcQuery};
 }
 
 /// Ergebnis der Stack-Abdeckungsberechnung (backend nutrient_coverage_service) —

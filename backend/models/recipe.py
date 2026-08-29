@@ -23,6 +23,13 @@ class RecipeIngredient(BaseModel):
     name: str
     amount: float
     unit: str  # ausschließlich "g" oder "ml" — siehe SYSTEM_PROMPT_RECIPE
+    # Englischer, generischer USDA-FoodData-Central-Suchbegriff (z.B. "pumpkin
+    # seeds" für "Kürbiskerne") — FDC versteht keine deutschen Zutatennamen,
+    # ohne dieses Feld liefert die Freitextsuche fast immer Zufallstreffer
+    # (z.B. "Eier" -> "McFlurry"). Von Claude mitgeliefert (reine Übersetzung,
+    # keine Nährwert-Schätzung — verletzt nicht die Nur-Python-Berechnungsregel),
+    # optional damit alte gespeicherte Rezepte ohne dieses Feld weiter laden.
+    fdc_query: Optional[str] = None
 
 
 class GeneratedRecipe(BaseModel):

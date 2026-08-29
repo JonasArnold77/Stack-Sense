@@ -81,7 +81,8 @@ class _RecipeLibraryScreenState extends ConsumerState<RecipeLibraryScreen> {
                     children: visible
                         .map((saved) => RecipeCard(
                               recipe: saved.recipe,
-                              trailing: _LibraryActions(saved: saved),
+                              trailing: _FavoriteDeleteActions(saved: saved),
+                              bottomAction: _ActivateTodayButton(saved: saved),
                             ))
                         .toList(),
                   ),
@@ -92,10 +93,14 @@ class _RecipeLibraryScreenState extends ConsumerState<RecipeLibraryScreen> {
   }
 }
 
-class _LibraryActions extends ConsumerWidget {
+/// Nur die beiden Icon-Buttons — kompakt genug für die enge Titel-Zeile der
+/// RecipeCard (siehe [RecipeCard.trailing]-Dokumentation zur Größenfragilität
+/// dort). "Für heute aktivieren" bekommt eine eigene volle Zeile (siehe
+/// [_ActivateTodayButton] / [RecipeCard.bottomAction]).
+class _FavoriteDeleteActions extends ConsumerWidget {
   final SavedRecipe saved;
 
-  const _LibraryActions({required this.saved});
+  const _FavoriteDeleteActions({required this.saved});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -116,11 +121,24 @@ class _LibraryActions extends ConsumerWidget {
           tooltip: 'Löschen',
           onPressed: () => ref.read(recipeLibraryProvider.notifier).delete(saved.recipe.id),
         ),
-        FilledButton.tonal(
-          onPressed: () => RecipeActivationDialog.show(context, saved),
-          child: const Text('Für heute'),
-        ),
       ],
+    );
+  }
+}
+
+class _ActivateTodayButton extends StatelessWidget {
+  final SavedRecipe saved;
+
+  const _ActivateTodayButton({required this.saved});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.tonal(
+        onPressed: () => RecipeActivationDialog.show(context, saved),
+        child: const Text('Für heute aktivieren'),
+      ),
     );
   }
 }
