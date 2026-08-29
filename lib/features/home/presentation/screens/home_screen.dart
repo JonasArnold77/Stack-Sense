@@ -8,8 +8,10 @@ import '../../../settings/data/tenant_config_provider.dart';
 import '../../../settings/domain/models/feature_keys.dart';
 
 /// Shell-Screen mit Bottom Navigation.
-/// Tabs: Heute | Entdecken | Stack | Rezepte | Insights | Profil
-/// "Entdecken" (Problemfelder), "Rezepte" und "Insights" werden ausgegraut,
+/// Tabs: Heute | Stack | Rezepte | Insights | Profil
+/// "Entdecken" (Problemfelder) hat keinen eigenen Tab mehr — erreichbar über
+/// den "Was möchtest du hinzufügen?"-Dialog auf dem Heute-Screen
+/// (siehe GoalProgressPanel). "Rezepte" und "Insights" werden ausgegraut,
 /// wenn das jeweilige Feature für die aktuelle Partei deaktiviert ist — siehe
 /// FeatureKeys/TenantConfig. "Heute", "Stack" und "Profil" sind immer aktiv,
 /// da sie keinem der konfigurierbaren Features entsprechen.
@@ -21,11 +23,10 @@ class HomeScreen extends ConsumerWidget {
   int _selectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith(AppRoutes.heute)) return 0;
-    if (location.startsWith(AppRoutes.recommendations)) return 1;
-    if (location.startsWith(AppRoutes.stack)) return 2;
-    if (location.startsWith(AppRoutes.recipes)) return 3;
-    if (location.startsWith(AppRoutes.insights)) return 4;
-    if (location.startsWith(AppRoutes.profile)) return 5;
+    if (location.startsWith(AppRoutes.stack)) return 1;
+    if (location.startsWith(AppRoutes.recipes)) return 2;
+    if (location.startsWith(AppRoutes.insights)) return 3;
+    if (location.startsWith(AppRoutes.profile)) return 4;
     return 0;
   }
 
@@ -33,11 +34,10 @@ class HomeScreen extends ConsumerWidget {
     if (disabledIndices.contains(index)) return;
     switch (index) {
       case 0: context.go(AppRoutes.heute);
-      case 1: context.go(AppRoutes.recommendations);
-      case 2: context.go(AppRoutes.stack);
-      case 3: context.go(AppRoutes.recipes);
-      case 4: context.go(AppRoutes.insights);
-      case 5: context.go(AppRoutes.profile);
+      case 1: context.go(AppRoutes.stack);
+      case 2: context.go(AppRoutes.recipes);
+      case 3: context.go(AppRoutes.insights);
+      case 4: context.go(AppRoutes.profile);
     }
   }
 
@@ -46,9 +46,8 @@ class HomeScreen extends ConsumerWidget {
     final selectedIndex = _selectedIndex(context);
     final tenantConfig = ref.watch(tenantConfigProvider);
     final disabledIndices = <int>{
-      if (!tenantConfig.featureEnabled(FeatureKeys.problemfelder)) 1,
-      if (!tenantConfig.featureEnabled(FeatureKeys.rezepte)) 3,
-      if (!tenantConfig.featureEnabled(FeatureKeys.insights)) 4,
+      if (!tenantConfig.featureEnabled(FeatureKeys.rezepte)) 2,
+      if (!tenantConfig.featureEnabled(FeatureKeys.insights)) 3,
     };
 
     return Scaffold(
@@ -80,11 +79,6 @@ class _StackSenseNavBar extends StatelessWidget {
       icon: Icons.home_outlined,
       activeIcon: Icons.home_rounded,
       label: 'Heute',
-    ),
-    _NavItem(
-      icon: Icons.search_outlined,
-      activeIcon: Icons.search_rounded,
-      label: 'Entdecken',
     ),
     _NavItem(
       icon: Icons.layers_outlined,

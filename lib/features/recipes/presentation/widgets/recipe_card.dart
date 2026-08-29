@@ -24,6 +24,7 @@ class RecipeCard extends StatefulWidget {
 
 class _RecipeCardState extends State<RecipeCard> {
   bool _stepsExpanded = false;
+  bool _nutrientsExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -109,13 +110,14 @@ class _RecipeCardState extends State<RecipeCard> {
 
           if (recipe.coveredStackSupplements.isNotEmpty) ...[
             const SizedBox(height: AppConstants.spaceM),
-            Text('Deckt aus deinem Stack ab',
+            Text('Ersetzt aus deinem Stack',
                 style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: _groupedCoverage(recipe).entries.map((e) {
+                final full = e.value >= 100;
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -123,7 +125,7 @@ class _RecipeCardState extends State<RecipeCard> {
                     borderRadius: BorderRadius.circular(AppConstants.radiusRound),
                   ),
                   child: Text(
-                    '${e.key}: ${e.value.toStringAsFixed(0)}%',
+                    full ? '${e.key}: komplett' : '${e.key}: ${e.value.toStringAsFixed(0)}%',
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.accent, fontWeight: FontWeight.w600),
                   ),
@@ -134,27 +136,38 @@ class _RecipeCardState extends State<RecipeCard> {
 
           if (nutrientEntries.isNotEmpty) ...[
             const SizedBox(height: AppConstants.spaceM),
-            Text('Nährstoff-Übersicht',
-                style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: nutrientEntries.map((e) {
-                final (label, unit) = kNutrientDisplay[e.key]!;
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusRound),
-                  ),
-                  child: Text(
-                    '$label: ${e.value.toStringAsFixed(e.value < 10 ? 1 : 0)}$unit',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.primary),
-                  ),
-                );
-              }).toList(),
+            InkWell(
+              onTap: () => setState(() => _nutrientsExpanded = !_nutrientsExpanded),
+              child: Row(
+                children: [
+                  Text('Nährstoff-Details',
+                      style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w700)),
+                  Icon(_nutrientsExpanded ? Icons.expand_less : Icons.expand_more,
+                      size: 18, color: AppColors.textTertiary),
+                ],
+              ),
             ),
+            if (_nutrientsExpanded) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: nutrientEntries.map((e) {
+                  final (label, unit) = kNutrientDisplay[e.key]!;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+                    ),
+                    child: Text(
+                      '$label: ${e.value.toStringAsFixed(e.value < 10 ? 1 : 0)}$unit',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.primary),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
           ],
 
           if (widget.bottomAction != null) ...[
