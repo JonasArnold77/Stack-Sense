@@ -67,18 +67,18 @@ async def compute_recipe_nutrients(ingredients: list[dict]) -> dict[str, float]:
     return totals
 
 
-def _fetch_nutrient_rows(slugs: set[str]) -> dict[str, list[dict]]:
-    """supplement_slug -> Liste von {nutrient_key, amount, unit} aus supplement_nutrients."""
-    if not slugs:
-        return {}
+def _fetch_all_nutrient_rows() -> dict[str, list[dict]]:
+    """
+    supplement_slug -> Liste von {nutrient_key, amount, unit}, für ALLE 27
+    kuratierten Supplements (kleine Tabelle, kein WHERE nötig). Ein gezieltes
+    `WHERE supplement_slug = ANY(kandidaten)` würde Präfix-Fallback-Matching
+    (siehe _resolve_slug) unmöglich machen, da dafür die komplette Menge der
+    kuratierten Slugs bekannt sein muss, nicht nur exakte Kandidaten-Treffer.
+    """
     try:
         with get_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT supplement_slug, nutrient_key, amount, unit "
-                    "FROM supplement_nutrients WHERE supplement_slug = ANY(%s)",
-                    (list(slugs),),
-                )
+                cur.execute("SELECT supplement_slug, nutrient_key, amount, unit FROM supplement_nutrients")
                 rows: dict[str, list[dict]] = {}
                 for slug, nutrient_key, amount, unit in cur.fetchall():
                     rows.setdefault(slug, []).append(
@@ -88,6 +88,29 @@ def _fetch_nutrient_rows(slugs: set[str]) -> dict[str, list[dict]]:
     except Exception as e:
         logger.warning("supplement_nutrients-Lookup fehlgeschlagen: %s", e)
         return {}
+
+
+def _resolve_slug(candidate: str, curated_slugs: set[str]) -> str | None:
+    """
+    Matcht einen Kandidaten-Slug gegen die kuratierten supplement_nutrients-
+    Slugs. Exakter Treffer zuerst, sonst Präfix-Fallback: reale Supplement-
+    Namen/Wirkstoffbezeichnungen tragen fast immer die konkrete Verbindung
+    im Namen (z.B. "Magnesium Bisglycinat", "Eisen (Fe2+ / Fe3+)", "Zink
+    (verschiedene Formen)") statt des bloßen Mineralnamens — ohne diesen
+    Fallback matcht praktisch kein echter Stack-Eintrag exakt, und die
+    Rezept-Abdeckung bliebe für alle Nutzer leer. Bei mehreren Präfix-
+    Treffern gewinnt der längste (spezifischste) kuratierte Slug, z.B.
+    "magnesium-l-threonat" vor "magnesium" für einen exakt passenden
+    Kandidaten.
+    """
+    if candidate in curated_slugs:
+        return candidate
+    best: str | None = None
+    for slug in curated_slugs:
+        if candidate.startswith(slug + "-") or candidate.startswith(slug + "("):
+            if best is None or len(slug) > len(best):
+                best = slug
+    return best
 
 
 def _candidate_slugs(entry: dict) -> list[str]:
@@ -118,20 +141,15 @@ def get_stack_target_nutrients(stack: list[dict]) -> set[str]:
     Entsprechung (z.B. Kreatin, Ashwagandha) können hier nie auftauchen —
     dafür gibt es keine "Lebensmittel enthält X"-Berechnungsgrundlage.
     """
-    all_candidate_slugs: set[str] = set()
-    entry_candidates: dict[str, list[str]] = {}
-    for entry in stack:
-        candidates = _candidate_slugs(entry)
-        entry_candidates[entry.get("id", "")] = candidates
-        all_candidate_slugs.update(candidates)
-
-    nutrient_rows_by_slug = _fetch_nutrient_rows(all_candidate_slugs)
+    nutrient_rows_by_slug = _fetch_all_nutrient_rows()
+    curated_slugs = set(nutrient_rows_by_slug.keys())
 
     target_keys: set[str] = set()
-    for candidates in entry_candidates.values():
-        for slug in candidates:
-            if slug in nutrient_rows_by_slug:
-                target_keys.update(row["nutrient_key"] for row in nutrient_rows_by_slug[slug])
+    for entry in stack:
+        for candidate in _candidate_slugs(entry):
+            resolved = _resolve_slug(candidate, curated_slugs)
+            if resolved:
+                target_keys.update(row["nutrient_key"] for row in nutrient_rows_by_slug[resolved])
                 break
     return target_keys
 
@@ -156,21 +174,16 @@ def compute_stack_coverage(
     schlicht keine Abdeckungs-Kandidatur — kein Fehler, keine Warnung an den
     Nutzer (siehe Plan Abschnitt A5).
     """
-    all_candidate_slugs: set[str] = set()
-    entry_candidates: dict[str, list[str]] = {}
-    for entry in stack:
-        candidates = _candidate_slugs(entry)
-        entry_candidates[entry["id"]] = candidates
-        all_candidate_slugs.update(candidates)
-
-    nutrient_rows_by_slug = _fetch_nutrient_rows(all_candidate_slugs)
+    nutrient_rows_by_slug = _fetch_all_nutrient_rows()
+    curated_slugs = set(nutrient_rows_by_slug.keys())
 
     results: list[CoveredSupplement] = []
     for entry in stack:
         matched_rows: list[dict] = []
-        for slug in entry_candidates[entry["id"]]:
-            if slug in nutrient_rows_by_slug:
-                matched_rows.extend(nutrient_rows_by_slug[slug])
+        for candidate in _candidate_slugs(entry):
+            resolved = _resolve_slug(candidate, curated_slugs)
+            if resolved:
+                matched_rows.extend(nutrient_rows_by_slug[resolved])
                 break  # erster Treffer in Prioritätsreihenfolge gewinnt
 
         own_amount = entry.get("dosage_amount")
