@@ -240,7 +240,15 @@ class _TimeSlotSection extends StatelessWidget {
 String _fmtAmount(double value) =>
     value == value.roundToDouble() ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
 
-final _freetextDoseRegex = RegExp(r'^\s*([\d]+(?:[.,]\d+)?)\s*([a-zA-ZÀ-ÖØ-öø-ÿ]+)');
+// Sucht Zahl + bekannte Dosis-Einheit IRGENDWO im Freitext, nicht nur am
+// Anfang — reale Dosistexte fangen selten direkt mit der Zahl an ("Abends
+// 500mg", "1x täglich 400mg"). Einheit ist bewusst eine Whitelist statt
+// "beliebige Buchstaben": sonst würde z.B. bei "3x täglich, 200mg" das "x"
+// aus "3x" fälschlich als Einheit erkannt statt der eigentlichen "200mg".
+final _freetextDoseRegex = RegExp(
+  r'([\d]+(?:[.,]\d+)?)\s*(mcg|µg|μg|mg|kg|g|ml|l|ie|iu|kapseln?|tabletten?|tropfen|stück|st\.?)',
+  caseSensitive: false,
+);
 
 /// Menge + Einheit für die Teil-Einnahme-Anzeige: strukturierte Dosis
 /// bevorzugt (dosageAmount/dosageUnit), sonst aus dem Freitext-Dosisfeld
