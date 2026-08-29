@@ -240,6 +240,64 @@ class _TimeSlotSection extends StatelessWidget {
 String _fmtAmount(double value) =>
     value == value.roundToDouble() ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
 
+final _freetextDoseRegex = RegExp(r'^\s*([\d]+(?:[.,]\d+)?)\s*([a-zA-ZÀ-ÖØ-öø-ÿ]+)');
+
+/// Menge + Einheit für die Teil-Einnahme-Anzeige: strukturierte Dosis
+/// bevorzugt (dosageAmount/dosageUnit), sonst aus dem Freitext-Dosisfeld
+/// geparst (z.B. "500mg" oder "3 Kapseln"). Nur wenn beides fehlschlägt
+/// (z.B. "nach Bedarf") bleibt die Einnahme rein binär.
+({double amount, String unit})? _trackableDose(StackEntry entry) {
+  if (entry.dosageAmount != null && entry.dosageUnit != null) {
+    return (amount: entry.dosageAmount!, unit: entry.dosageUnit!);
+  }
+  final match = _freetextDoseRegex.firstMatch(entry.dosage);
+  if (match == null) return null;
+  final amount = double.tryParse(match.group(1)!.replaceAll(',', '.'));
+  if (amount == null || amount <= 0) return null;
+  return (amount: amount, unit: match.group(2)!);
+}
+
+/// Balken + Text "genommene Menge / Gesamtmenge" — zählt Rezept-Abdeckung
+/// UND manuell eingecheckte Menge zusammen, damit z.B. "die Hälfte schon
+/// durchs Rezept, den Rest manuell genommen" korrekt als 100% ankommt.
+class _DoseProgressBar extends StatelessWidget {
+  final double covered;
+  final double total;
+  final String unit;
+
+  const _DoseProgressBar({required this.covered, required this.total, required this.unit});
+
+  @override
+  Widget build(BuildContext context) {
+    final fraction = total <= 0 ? 0.0 : (covered / total).clamp(0.0, 1.0);
+    final complete = covered >= total;
+    final color = complete ? AppColors.evidenceGreen : AppColors.primary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppConstants.radiusRound),
+          child: LinearProgressIndicator(
+            value: fraction,
+            minHeight: 6,
+            backgroundColor: color.withOpacity(0.12),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          '${_fmtAmount(covered)} von ${_fmtAmount(total)}$unit',
+          style: AppTextStyles.caption.copyWith(
+            color: complete ? AppColors.evidenceGreen : AppColors.textTertiary,
+            fontWeight: complete ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 Future<double?> _promptAmount(
   BuildContext context, {
   required String unit,
@@ -300,22 +358,33 @@ class _CalendarSupplementTile extends ConsumerWidget {
     final recipeOverride = ref.watch(recipeOverrideProvider)[dayKey(entry.id, selectedDay)];
     final isRecipeCovered = recipeOverride?.action == RecipeOverrideAction.removed;
 
-    final hasStructuredDose = entry.dosageAmount != null && entry.dosageUnit != null;
-    final unit = entry.dosageUnit;
+    // Menge + Einheit — strukturiert bevorzugt, sonst aus Freitext geparst
+    // (siehe _trackableDose). Nur wenn beides fehlschlägt bleibt es binär.
+    final dose = _trackableDose(entry);
+    final hasTrackableDose = dose != null;
+    final totalDose = dose?.amount ?? 0.0;
+    final unit = dose?.unit ?? '';
 
-    // Ziel für die manuelle Einnahme heute: die volle Dosis, oder — falls ein
-    // Rezept heute schon einen Teil abdeckt — nur der verbleibende Rest.
-    double? target = entry.dosageAmount;
-    if (hasStructuredDose &&
-        recipeOverride?.action == RecipeOverrideAction.reduced &&
-        recipeOverride!.reducedToUnit == unit) {
-      target = recipeOverride.reducedToAmount;
-    }
+    // Wie viel deckt ein heute aktiviertes Rezept bereits ab? "reduced" kann
+    // laut recipe_activation_dialog.dart nur entstehen wenn dosageAmount
+    // strukturiert vorhanden ist — totalDose entspricht dann exakt dosageAmount.
+    final recipeCovered = !hasTrackableDose
+        ? 0.0
+        : isRecipeCovered
+            ? totalDose
+            : (recipeOverride?.action == RecipeOverrideAction.reduced
+                ? (totalDose - (recipeOverride!.reducedToAmount ?? totalDose)).clamp(0.0, totalDose)
+                : 0.0);
 
-    final takenAmount = hasStructuredDose ? takenNotifier.amountTaken(entry.id, selectedDay) : 0.0;
-    final remaining = hasStructuredDose ? (target! - takenAmount).clamp(0, target).toDouble() : 0.0;
+    // Was der Nutzer selbst noch abdecken muss/kann (Rest nach Rezept).
+    final remainingManualTarget = hasTrackableDose ? (totalDose - recipeCovered).clamp(0.0, totalDose) : 0.0;
+
+    final manuallyTaken = hasTrackableDose ? takenNotifier.amountTaken(entry.id, selectedDay) : 0.0;
+    final totalCovered = hasTrackableDose ? (recipeCovered + manuallyTaken).clamp(0.0, totalDose) : 0.0;
+    final remaining = hasTrackableDose ? (totalDose - totalCovered).clamp(0.0, totalDose) : 0.0;
+
     final fullyDone = isRecipeCovered ||
-        (hasStructuredDose ? remaining <= 0 : takenNotifier.isTaken(entry.id, selectedDay));
+        (hasTrackableDose ? remaining <= 0 : takenNotifier.isTaken(entry.id, selectedDay));
     final taken = fullyDone;
     final evidenceColor = _evidenceColor(entry.evidenceLevel);
 
@@ -369,43 +438,32 @@ class _CalendarSupplementTile extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
-                                  hasStructuredDose
-                                      ? 'Ziel: ${_fmtAmount(entry.dosageAmount!)}$unit'
-                                      : entry.dosage,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                if (isRecipeCovered) ...[
-                                  const SizedBox(height: 2),
+                                if (!hasTrackableDose)
                                   Text(
-                                    '🍽 Heute komplett durch Rezept abgedeckt',
-                                    style: AppTextStyles.caption
-                                        .copyWith(color: AppColors.evidenceGreen, fontWeight: FontWeight.w600),
-                                  ),
-                                ] else if (hasStructuredDose) ...[
-                                  if (recipeOverride?.action == RecipeOverrideAction.reduced)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: Text(
-                                        '🍽 ${_fmtAmount(entry.dosageAmount! - target!)}$unit durch Rezept abgedeckt',
-                                        style: AppTextStyles.caption.copyWith(color: AppColors.accent),
-                                      ),
+                                    entry.dosage,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.textSecondary,
                                     ),
+                                  )
+                                else ...[
                                   Padding(
-                                    padding: const EdgeInsets.only(top: 2),
-                                    child: Text(
-                                      remaining <= 0
-                                          ? '✓ Vollständig eingenommen'
-                                          : 'Noch ${_fmtAmount(remaining.toDouble())}$unit nötig'
-                                              '${takenAmount > 0 ? ' (${_fmtAmount(takenAmount)}$unit bereits genommen)' : ''}',
-                                      style: AppTextStyles.caption.copyWith(
-                                        color: remaining <= 0 ? AppColors.evidenceGreen : AppColors.textTertiary,
-                                        fontWeight: remaining <= 0 ? FontWeight.w600 : FontWeight.w400,
-                                      ),
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: _DoseProgressBar(
+                                      covered: totalCovered,
+                                      total: totalDose,
+                                      unit: unit,
                                     ),
                                   ),
+                                  if (recipeCovered > 0)
+                                    Text(
+                                      isRecipeCovered
+                                          ? '🍽 Heute komplett durch Rezept abgedeckt'
+                                          : '🍽 ${_fmtAmount(recipeCovered)}$unit durch Rezept abgedeckt',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.evidenceGreen,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                 ],
                               ],
                             ),
@@ -467,9 +525,9 @@ class _CalendarSupplementTile extends ConsumerWidget {
                       const SizedBox(height: AppConstants.spaceM),
 
                       // Einnahme-Aktionen
-                      if (isRecipeCovered)
+                      if (isRecipeCovered || (hasTrackableDose && remainingManualTarget <= 0))
                         const SizedBox.shrink()
-                      else if (hasStructuredDose)
+                      else if (hasTrackableDose)
                         Row(
                           children: [
                             Expanded(
@@ -493,7 +551,8 @@ class _CalendarSupplementTile extends ConsumerWidget {
                                     )
                                   : FilledButton.icon(
                                       onPressed: () async {
-                                        await takenNotifier.setAmount(entry.id, selectedDay, target!);
+                                        await takenNotifier.setAmount(
+                                            entry.id, selectedDay, remainingManualTarget);
                                         await _awardXpIfNewlyComplete(ref, false, true);
                                       },
                                       icon: const Icon(Icons.check, size: 16),
@@ -515,12 +574,12 @@ class _CalendarSupplementTile extends ConsumerWidget {
                                 final wasComplete = remaining <= 0;
                                 final entered = await _promptAmount(
                                   context,
-                                  unit: unit!,
-                                  initial: takenAmount,
+                                  unit: unit,
+                                  initial: manuallyTaken,
                                 );
                                 if (entered == null) return;
                                 await takenNotifier.setAmount(entry.id, selectedDay, entered);
-                                await _awardXpIfNewlyComplete(ref, wasComplete, entered >= target!);
+                                await _awardXpIfNewlyComplete(ref, wasComplete, entered >= remainingManualTarget);
                               },
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
