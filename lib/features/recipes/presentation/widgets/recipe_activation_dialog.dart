@@ -14,6 +14,10 @@ import '../../domain/models/saved_recipe.dart';
 
 enum _Choice { keep, remove, reduce }
 
+/// Absolute Mengen statt Prozent anzeigen (z.B. "111 von 400mg") — Prozentwerte
+/// sagen dem Nutzer nicht, wie viel er konkret noch supplementieren muss.
+String _fmtAmount(double value) => value.toStringAsFixed(value < 10 ? 1 : 0);
+
 /// Zeigt beim "Für heute aktivieren" eines Rezepts, welche Stack-Supplements
 /// dadurch (teilweise) abgedeckt werden, und lässt den Nutzer pro Supplement
 /// wählen: entfernen, Dosis reduzieren (falls berechenbar) oder beibehalten.
@@ -200,7 +204,9 @@ class _SupplementChoiceRow extends StatelessWidget {
     final maxCoverage = covered.map((c) => c.coveragePct).reduce((a, b) => a > b ? a : b);
     final canReduce = stackEntry.dosageAmount != null && maxCoverage < 100;
     final coverageLabels = covered
-        .map((c) => '${kNutrientDisplay[c.nutrientKey]?.$1 ?? c.nutrientKey}: ${c.coveragePct.toStringAsFixed(0)}%')
+        .map((c) =>
+            '${kNutrientDisplay[c.nutrientKey]?.$1 ?? c.nutrientKey}: '
+            '${_fmtAmount(c.recipeAmount)} von ${_fmtAmount(c.stackDoseAmount)}${c.unit}')
         .join(', ');
 
     return Container(

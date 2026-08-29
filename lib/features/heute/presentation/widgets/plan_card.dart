@@ -10,6 +10,10 @@ import '../../../stack/data/taken_provider.dart';
 import '../../../stack/domain/models/stack_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 
+/// Absolute Restmenge statt Prozent anzeigen (z.B. "Noch 30mg heute nötig") —
+/// ein Prozentwert sagt dem Nutzer nicht, wie viel er konkret noch nehmen muss.
+String _fmtAmount(double value) => value.toStringAsFixed(value < 10 ? 1 : 0);
+
 // ---------------------------------------------------------------------------
 // Temporär-Badge
 // ---------------------------------------------------------------------------
@@ -55,7 +59,7 @@ class RecipeOverrideBadgeSmall extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = recipeOverride.action == RecipeOverrideAction.removed
         ? 'Heute durch Rezept abgedeckt · ${recipeOverride.recipeTitle}'
-        : 'Heute reduziert (${recipeOverride.recipeTitle})';
+        : 'Teilweise durch Rezept abgedeckt · ${recipeOverride.recipeTitle}';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -106,7 +110,7 @@ class CompactSupplementRow extends ConsumerWidget {
     };
 
     final dosageText = override?.action == RecipeOverrideAction.reduced
-        ? '${override!.reducedToAmount!.toStringAsFixed(0)}${override.reducedToUnit ?? ''} (statt ${entry.dosage})'
+        ? 'Noch ${_fmtAmount(override!.reducedToAmount!)}${override.reducedToUnit ?? ''} heute nötig'
         : entry.dosage;
 
     return Padding(
