@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/dose_parser.dart';
 import '../../../stack/data/recipe_override_provider.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/domain/models/stack_entry.dart';
@@ -101,16 +102,18 @@ class _RecipeActivationDialogState extends ConsumerState<RecipeActivationDialog>
           today,
           RecipeOverride(action: RecipeOverrideAction.removed, recipeTitle: widget.saved.recipe.title),
         );
-      } else if (choice == _Choice.reduce && stackEntry.dosageAmount != null) {
+      } else if (choice == _Choice.reduce) {
+        final dose = trackableDoseFor(stackEntry);
+        if (dose == null) continue;
         final maxCoverage = _maxCoverage(entry.value);
-        final newAmount = stackEntry.dosageAmount! * (1 - maxCoverage / 100);
+        final newAmount = dose.amount * (1 - maxCoverage / 100);
         await notifier.setOverride(
           entry.key,
           today,
           RecipeOverride(
             action: RecipeOverrideAction.reduced,
             reducedToAmount: newAmount,
-            reducedToUnit: stackEntry.dosageUnit,
+            reducedToUnit: dose.unit,
             recipeTitle: widget.saved.recipe.title,
           ),
         );
@@ -202,7 +205,8 @@ class _SupplementChoiceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maxCoverage = covered.map((c) => c.coveragePct).reduce((a, b) => a > b ? a : b);
-    final canReduce = stackEntry.dosageAmount != null && maxCoverage < 100;
+    final dose = trackableDoseFor(stackEntry);
+    final canReduce = dose != null && maxCoverage < 100;
     final coverageLabels = covered
         .map((c) =>
             '${kNutrientDisplay[c.nutrientKey]?.$1 ?? c.nutrientKey}: '
@@ -231,7 +235,7 @@ class _SupplementChoiceRow extends StatelessWidget {
               _choiceChip('Entfernen', _Choice.remove, choice, onChanged),
               if (canReduce)
                 _choiceChip(
-                  'Reduzieren auf ${(stackEntry.dosageAmount! * (1 - maxCoverage / 100)).toStringAsFixed(0)}${stackEntry.dosageUnit}',
+                  'Reduzieren auf ${(dose.amount * (1 - maxCoverage / 100)).toStringAsFixed(0)}${dose.unit}',
                   _Choice.reduce,
                   choice,
                   onChanged,

@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/day_key.dart';
+import '../../../../core/utils/dose_parser.dart';
 import '../../../../core/widgets/xp_reward_overlay.dart';
 import '../../data/recipe_override_provider.dart';
 import '../../data/stack_provider.dart';
@@ -240,30 +241,6 @@ class _TimeSlotSection extends StatelessWidget {
 String _fmtAmount(double value) =>
     value == value.roundToDouble() ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
 
-// Sucht Zahl + bekannte Dosis-Einheit IRGENDWO im Freitext, nicht nur am
-// Anfang — reale Dosistexte fangen selten direkt mit der Zahl an ("Abends
-// 500mg", "1x täglich 400mg"). Einheit ist bewusst eine Whitelist statt
-// "beliebige Buchstaben": sonst würde z.B. bei "3x täglich, 200mg" das "x"
-// aus "3x" fälschlich als Einheit erkannt statt der eigentlichen "200mg".
-final _freetextDoseRegex = RegExp(
-  r'([\d]+(?:[.,]\d+)?)\s*(mcg|µg|μg|mg|kg|g|ml|l|ie|iu|kapseln?|tabletten?|tropfen|stück|st\.?)',
-  caseSensitive: false,
-);
-
-/// Menge + Einheit für die Teil-Einnahme-Anzeige: strukturierte Dosis
-/// bevorzugt (dosageAmount/dosageUnit), sonst aus dem Freitext-Dosisfeld
-/// geparst (z.B. "500mg" oder "3 Kapseln"). Nur wenn beides fehlschlägt
-/// (z.B. "nach Bedarf") bleibt die Einnahme rein binär.
-({double amount, String unit})? _trackableDose(StackEntry entry) {
-  if (entry.dosageAmount != null && entry.dosageUnit != null) {
-    return (amount: entry.dosageAmount!, unit: entry.dosageUnit!);
-  }
-  final match = _freetextDoseRegex.firstMatch(entry.dosage);
-  if (match == null) return null;
-  final amount = double.tryParse(match.group(1)!.replaceAll(',', '.'));
-  if (amount == null || amount <= 0) return null;
-  return (amount: amount, unit: match.group(2)!);
-}
 
 /// Balken + Text "genommene Menge / Gesamtmenge" — zählt Rezept-Abdeckung
 /// UND manuell eingecheckte Menge zusammen, damit z.B. "die Hälfte schon
@@ -368,7 +345,7 @@ class _CalendarSupplementTile extends ConsumerWidget {
 
     // Menge + Einheit — strukturiert bevorzugt, sonst aus Freitext geparst
     // (siehe _trackableDose). Nur wenn beides fehlschlägt bleibt es binär.
-    final dose = _trackableDose(entry);
+    final dose = trackableDoseFor(entry);
     final hasTrackableDose = dose != null;
     final totalDose = dose?.amount ?? 0.0;
     final unit = dose?.unit ?? '';
