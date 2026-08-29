@@ -577,25 +577,34 @@ class _CalendarSupplementTile extends ConsumerWidget {
                                     ),
                             ),
                             const SizedBox(width: AppConstants.spaceS),
-                            OutlinedButton(
-                              onPressed: () async {
-                                final wasComplete = remaining <= 0;
-                                final entered = await _promptAmount(
-                                  context,
-                                  unit: unit,
-                                  initial: manuallyTaken,
-                                );
-                                if (entered == null) return;
-                                await takenNotifier.setAmount(entry.id, selectedDay, entered);
-                                await _awardXpIfNewlyComplete(ref, wasComplete, entered >= remainingManualTarget);
-                              },
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                            // IntrinsicWidth: ein self-measuring Button (im
+                            // Gegensatz zu z.B. einem IconButton) als NICHT-
+                            // Expanded Row-Kind innerhalb einer scrollbaren
+                            // Ansicht kann bei bestimmten Relayout-Durchläufen
+                            // unbegrenzte Breite bekommen ("BoxConstraints
+                            // forces an infinite width") — siehe recipe_card.dart
+                            // für den identischen, bereits einmal gefundenen Bug.
+                            IntrinsicWidth(
+                              child: OutlinedButton(
+                                onPressed: () async {
+                                  final wasComplete = remaining <= 0;
+                                  final entered = await _promptAmount(
+                                    context,
+                                    unit: unit,
+                                    initial: manuallyTaken,
+                                  );
+                                  if (entered == null) return;
+                                  await takenNotifier.setAmount(entry.id, selectedDay, entered);
+                                  await _awardXpIfNewlyComplete(ref, wasComplete, entered >= remainingManualTarget);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                                  ),
                                 ),
+                                child: const Icon(Icons.edit_outlined, size: 16),
                               ),
-                              child: const Icon(Icons.edit_outlined, size: 16),
                             ),
                           ],
                         )
