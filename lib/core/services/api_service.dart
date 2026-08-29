@@ -751,6 +751,23 @@ class ApiService {
       throw ApiException('Keine Verbindung zum Backend. Läuft start.ps1?');
     }
   }
+
+  /// Welche Supplement-Slugs kuratierte Nährstoffdaten haben (unabhängig vom
+  /// Rezept-Feature) — fürs "Durch Ernährung abdeckbar"-Badge auf Supplement-
+  /// Karten, siehe lib/core/utils/slug_match.dart. Ändert sich nur bei
+  /// manueller Kuration, daher unkritisch bei Fehlschlag (Badge bleibt
+  /// einfach aus statt die Karte zum Absturz zu bringen).
+  Future<Set<String>> getNutrientMappableSlugs() async {
+    final response = await http
+        .get(Uri.parse('$_baseUrl/recipes/nutrient-mappable-slugs'))
+        .timeout(AppConstants.apiTimeout);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return (data['slugs'] as List<dynamic>).cast<String>().toSet();
+    }
+    throw ApiException('Server-Fehler: ${response.statusCode}');
+  }
 }
 
 /// Antwort von GET /users/me — Account-Rolle + optionale Tenant-Konfiguration

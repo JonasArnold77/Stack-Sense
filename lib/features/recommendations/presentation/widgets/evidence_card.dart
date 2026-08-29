@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../core/widgets/nutrient_coverable_badge.dart';
 import '../../domain/models/supplement.dart';
 import '../screens/supplement_detail_screen.dart';
 import '../../../community/domain/models/community_insight.dart';
@@ -451,6 +452,14 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
                               ),
                             ),
                           ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppConstants.spaceXS),
+                          child: NutrientCoverableBadge(
+                            name: supplement.name,
+                            substanceName: supplement.substanceName,
+                            enthalteneWirkstoffe: supplement.enthalteneWirkstoffe,
+                          ),
+                        ),
                       ],
                     ),
                   ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/widgets/nutrient_coverable_badge.dart';
 import '../../domain/models/stack_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../../recommendations/presentation/widgets/supplement_category_badge.dart';
@@ -128,6 +129,12 @@ class StackSupplementCard extends StatelessWidget {
                           color: _evidenceDot(),
                           fontWeight: FontWeight.w600,
                         ),
+                      ),
+                      const SizedBox(height: 2),
+                      NutrientCoverableBadge(
+                        name: entry.name,
+                        substanceName: entry.substanceName,
+                        enthalteneWirkstoffe: entry.enthalteneWirkstoffe,
                       ),
                       if (entry.isTemporary && entry.phaseEndDate != null) ...[
                         const SizedBox(height: 4),
