@@ -139,7 +139,11 @@ List<Object> _buildGroupedItems(List<StackEntry> stack) {
 /// Mein Stack — zeigt alle aktiven Supplements und den Einnahme-Kalender.
 /// Header zeigt Aufmerksamkeits-Count wenn Warnungen vorhanden.
 class StackScreen extends ConsumerWidget {
-  const StackScreen({super.key});
+  /// 0 = Supplements-Tab, 1 = Kalender-Tab — z.B. per `/stack?tab=calendar`
+  /// direkt in den Kalender springen (siehe Heute-Screen Schnellzugriff).
+  final int initialTabIndex;
+
+  const StackScreen({super.key, this.initialTabIndex = 0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -154,6 +158,7 @@ class StackScreen extends ConsumerWidget {
 
     return DefaultTabController(
       length: 2,
+      initialIndex: initialTabIndex,
       child: Scaffold(
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

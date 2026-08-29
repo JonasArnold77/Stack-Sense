@@ -304,7 +304,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.stack,
             name: 'stack',
-            builder: (context, state) => const StackScreen(),
+            builder: (context, state) => StackScreen(
+              initialTabIndex: state.uri.queryParameters['tab'] == 'calendar' ? 1 : 0,
+            ),
           ),
           GoRoute(
             path: AppRoutes.recipes,

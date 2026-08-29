@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/day_key.dart';
 import '../../../../core/widgets/xp_reward_overlay.dart';
+import '../../data/recipe_override_provider.dart';
 import '../../data/stack_provider.dart';
 import '../../data/taken_provider.dart';
 import '../../domain/models/stack_entry.dart';
@@ -231,6 +234,48 @@ class _TimeSlotSection extends StatelessWidget {
   }
 }
 
+/// Rundet auf eine sinnvolle Nachkommastellenzahl — ganze Zahlen ohne
+/// Nachkommastellen, kleinere Mengen (z.B. Vitamin-D-IE oder Bruchteile
+/// eines Gramms) mit einer Nachkommastelle.
+String _fmtAmount(double value) =>
+    value == value.roundToDouble() ? value.toStringAsFixed(0) : value.toStringAsFixed(1);
+
+Future<double?> _promptAmount(
+  BuildContext context, {
+  required String unit,
+  required double initial,
+}) {
+  final controller = TextEditingController(
+    text: initial > 0 ? _fmtAmount(initial) : '',
+  );
+  return showDialog<double>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Menge eingeben'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d*'))],
+        decoration: InputDecoration(suffixText: unit),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('Abbrechen'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final parsed = double.tryParse(controller.text.replaceAll(',', '.'));
+            Navigator.of(ctx).pop(parsed);
+          },
+          child: const Text('Speichern'),
+        ),
+      ],
+    ),
+  );
+}
+
 class _CalendarSupplementTile extends ConsumerWidget {
   final StackEntry entry;
   final DateTime selectedDay;
@@ -240,12 +285,38 @@ class _CalendarSupplementTile extends ConsumerWidget {
     required this.selectedDay,
   });
 
+  Future<void> _awardXpIfNewlyComplete(WidgetRef ref, bool wasComplete, bool isComplete) async {
+    if (wasComplete || !isComplete) return;
+    ref.read(xpProvider.notifier).addXp(15);
+    ref.read(xpRewardProvider.notifier).state =
+        XpRewardEvent(amount: 15, id: DateTime.now().microsecondsSinceEpoch);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // watch löst Rebuild aus wenn sich der Set ändert
+    // watch löst Rebuild aus wenn sich Einnahme- oder Rezept-Status ändert
     ref.watch(takenProvider);
     final takenNotifier = ref.read(takenProvider.notifier);
-    final taken = takenNotifier.isTaken(entry.id, selectedDay);
+    final recipeOverride = ref.watch(recipeOverrideProvider)[dayKey(entry.id, selectedDay)];
+    final isRecipeCovered = recipeOverride?.action == RecipeOverrideAction.removed;
+
+    final hasStructuredDose = entry.dosageAmount != null && entry.dosageUnit != null;
+    final unit = entry.dosageUnit;
+
+    // Ziel für die manuelle Einnahme heute: die volle Dosis, oder — falls ein
+    // Rezept heute schon einen Teil abdeckt — nur der verbleibende Rest.
+    double? target = entry.dosageAmount;
+    if (hasStructuredDose &&
+        recipeOverride?.action == RecipeOverrideAction.reduced &&
+        recipeOverride!.reducedToUnit == unit) {
+      target = recipeOverride.reducedToAmount;
+    }
+
+    final takenAmount = hasStructuredDose ? takenNotifier.amountTaken(entry.id, selectedDay) : 0.0;
+    final remaining = hasStructuredDose ? (target! - takenAmount).clamp(0, target).toDouble() : 0.0;
+    final fullyDone = isRecipeCovered ||
+        (hasStructuredDose ? remaining <= 0 : takenNotifier.isTaken(entry.id, selectedDay));
+    final taken = fullyDone;
     final evidenceColor = _evidenceColor(entry.evidenceLevel);
 
     return AnimatedContainer(
@@ -299,11 +370,43 @@ class _CalendarSupplementTile extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  entry.dosage,
+                                  hasStructuredDose
+                                      ? 'Ziel: ${_fmtAmount(entry.dosageAmount!)}$unit'
+                                      : entry.dosage,
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
                                 ),
+                                if (isRecipeCovered) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '🍽 Heute komplett durch Rezept abgedeckt',
+                                    style: AppTextStyles.caption
+                                        .copyWith(color: AppColors.evidenceGreen, fontWeight: FontWeight.w600),
+                                  ),
+                                ] else if (hasStructuredDose) ...[
+                                  if (recipeOverride?.action == RecipeOverrideAction.reduced)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(
+                                        '🍽 ${_fmtAmount(entry.dosageAmount! - target!)}$unit durch Rezept abgedeckt',
+                                        style: AppTextStyles.caption.copyWith(color: AppColors.accent),
+                                      ),
+                                    ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      remaining <= 0
+                                          ? '✓ Vollständig eingenommen'
+                                          : 'Noch ${_fmtAmount(remaining.toDouble())}$unit nötig'
+                                              '${takenAmount > 0 ? ' (${_fmtAmount(takenAmount)}$unit bereits genommen)' : ''}',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: remaining <= 0 ? AppColors.evidenceGreen : AppColors.textTertiary,
+                                        fontWeight: remaining <= 0 ? FontWeight.w600 : FontWeight.w400,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -363,60 +466,126 @@ class _CalendarSupplementTile extends ConsumerWidget {
 
                       const SizedBox(height: AppConstants.spaceM),
 
-                      // Einnahme-Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: taken
-                            ? OutlinedButton.icon(
-                                onPressed: () =>
-                                    takenNotifier.toggle(entry.id, selectedDay),
-                                icon: const Icon(Icons.check_circle,
-                                    size: 16,
-                                    color: AppColors.evidenceGreen),
-                                label: Text(
-                                  'Eingenommen',
-                                  style: AppTextStyles.labelMedium.copyWith(
-                                      color: AppColors.evidenceGreen),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(
-                                      color: AppColors.evidenceGreen
-                                          .withOpacity(0.5)),
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        AppConstants.radiusM),
-                                  ),
-                                ),
-                              )
-                            : FilledButton.icon(
-                                onPressed: () async {
-                                  await takenNotifier.toggle(entry.id, selectedDay);
-                                  // 15 XP vergeben + Belohnungsanimation auslösen
-                                  ref.read(xpProvider.notifier).addXp(15);
-                                  ref.read(xpRewardProvider.notifier).state =
-                                      XpRewardEvent(
-                                    amount: 15,
-                                    id: DateTime.now().microsecondsSinceEpoch,
-                                  );
-                                },
-                                icon: const Icon(Icons.check, size: 16),
-                                label: const Text('Als eingenommen markieren'),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor:
-                                      AppColors.primary.withOpacity(0.1),
-                                  foregroundColor: AppColors.primary,
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        AppConstants.radiusM),
-                                  ),
+                      // Einnahme-Aktionen
+                      if (isRecipeCovered)
+                        const SizedBox.shrink()
+                      else if (hasStructuredDose)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: remaining <= 0
+                                  ? OutlinedButton.icon(
+                                      onPressed: () =>
+                                          takenNotifier.uncheck(entry.id, selectedDay),
+                                      icon: const Icon(Icons.check_circle,
+                                          size: 16, color: AppColors.evidenceGreen),
+                                      label: Text('Eingenommen',
+                                          style: AppTextStyles.labelMedium
+                                              .copyWith(color: AppColors.evidenceGreen)),
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(
+                                            color: AppColors.evidenceGreen.withOpacity(0.5)),
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                                        ),
+                                      ),
+                                    )
+                                  : FilledButton.icon(
+                                      onPressed: () async {
+                                        await takenNotifier.setAmount(entry.id, selectedDay, target!);
+                                        await _awardXpIfNewlyComplete(ref, false, true);
+                                      },
+                                      icon: const Icon(Icons.check, size: 16),
+                                      label: const Text('Alles einchecken'),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                                        foregroundColor: AppColors.primary,
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(width: AppConstants.spaceS),
+                            OutlinedButton(
+                              onPressed: () async {
+                                final wasComplete = remaining <= 0;
+                                final entered = await _promptAmount(
+                                  context,
+                                  unit: unit!,
+                                  initial: takenAmount,
+                                );
+                                if (entered == null) return;
+                                await takenNotifier.setAmount(entry.id, selectedDay, entered);
+                                await _awardXpIfNewlyComplete(ref, wasComplete, entered >= target!);
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(AppConstants.radiusM),
                                 ),
                               ),
-                      ),
+                              child: const Icon(Icons.edit_outlined, size: 16),
+                            ),
+                          ],
+                        )
+                      else
+                        SizedBox(
+                          width: double.infinity,
+                          child: taken
+                              ? OutlinedButton.icon(
+                                  onPressed: () =>
+                                      takenNotifier.toggle(entry.id, selectedDay),
+                                  icon: const Icon(Icons.check_circle,
+                                      size: 16,
+                                      color: AppColors.evidenceGreen),
+                                  label: Text(
+                                    'Eingenommen',
+                                    style: AppTextStyles.labelMedium.copyWith(
+                                        color: AppColors.evidenceGreen),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                        color: AppColors.evidenceGreen
+                                            .withOpacity(0.5)),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          AppConstants.radiusM),
+                                    ),
+                                  ),
+                                )
+                              : FilledButton.icon(
+                                  onPressed: () async {
+                                    await takenNotifier.toggle(entry.id, selectedDay);
+                                    // 15 XP vergeben + Belohnungsanimation auslösen
+                                    ref.read(xpProvider.notifier).addXp(15);
+                                    ref.read(xpRewardProvider.notifier).state =
+                                        XpRewardEvent(
+                                      amount: 15,
+                                      id: DateTime.now().microsecondsSinceEpoch,
+                                    );
+                                  },
+                                  icon: const Icon(Icons.check, size: 16),
+                                  label: const Text('Als eingenommen markieren'),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor:
+                                        AppColors.primary.withOpacity(0.1),
+                                    foregroundColor: AppColors.primary,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          AppConstants.radiusM),
+                                    ),
+                                  ),
+                                ),
+                        ),
                     ],
                   ),
                 ),
