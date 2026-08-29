@@ -3,12 +3,17 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from models.recipe import (
+    NutrientMappableSlugsResponse,
     RecipeCoverageRequest,
     RecipeCoverageResponse,
     RecipeGenerationRequest,
     RecipeGenerationResponse,
 )
-from services.nutrient_coverage_service import compute_recipe_nutrients, compute_stack_coverage
+from services.nutrient_coverage_service import (
+    compute_recipe_nutrients,
+    compute_stack_coverage,
+    get_curated_slugs,
+)
 from services.recipe_service import RecipeService
 
 router = APIRouter(prefix="/api/v1", tags=["Rezepte"])
@@ -28,6 +33,19 @@ async def generate_recipes(request: RecipeGenerationRequest) -> RecipeGeneration
     except Exception as e:
         logger.error("Fehler bei Rezeptgenerierung: %s", e)
         raise HTTPException(status_code=500, detail="Rezeptgenerierung fehlgeschlagen.")
+
+
+@router.get("/recipes/nutrient-mappable-slugs", response_model=NutrientMappableSlugsResponse)
+async def nutrient_mappable_slugs() -> NutrientMappableSlugsResponse:
+    """Welche Supplement-Slugs kuratierte Nährstoffdaten haben (siehe
+    supplement_nutrients) — unabhängig vom Rezept-Feature, fürs "Durch
+    Ernährung abdeckbar"-Badge auf Supplement-Karten. Statisch genug für
+    langes Client-Caching (ändert sich nur bei manueller Kuration)."""
+    try:
+        return NutrientMappableSlugsResponse(slugs=get_curated_slugs())
+    except Exception as e:
+        logger.error("Fehler beim Laden der kuratierten Slugs: %s", e)
+        raise HTTPException(status_code=500, detail="Konnte kuratierte Supplements nicht laden.")
 
 
 @router.post("/recipes/coverage", response_model=RecipeCoverageResponse)

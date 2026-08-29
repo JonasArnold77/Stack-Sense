@@ -78,3 +78,10 @@ class RecipeCoverageRequest(BaseModel):
 
 class RecipeCoverageResponse(BaseModel):
     covered_stack_supplements: list[CoveredSupplement]
+
+
+class NutrientMappableSlugsResponse(BaseModel):
+    """Welche kuratierten Supplement-Slugs überhaupt einer Lebensmittel-
+    Nährstoffkategorie entsprechen — fürs "Durch Ernährung abdeckbar"-Badge
+    im Frontend, unabhängig vom Rezept-Feature."""
+    slugs: list[str]

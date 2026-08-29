@@ -129,6 +129,17 @@ def _candidate_slugs(entry: dict) -> list[str]:
     return candidates
 
 
+def get_curated_slugs() -> list[str]:
+    """
+    Alle kuratierten supplement_slug-Werte aus supplement_nutrients — genutzt
+    vom Frontend, um pro Supplement (unabhängig vom Rezept-Feature) anzuzeigen
+    "Durch Ernährung abdeckbar". Die App spiegelt _resolve_slug() lokal in
+    Dart, um nicht pro angezeigtem Supplement einen Netzwerk-Call zu brauchen —
+    diese Liste wird einmal geladen und gecacht.
+    """
+    return sorted(_fetch_all_nutrient_rows().keys())
+
+
 def get_stack_target_nutrients(stack: list[dict]) -> set[str]:
     """
     Welche nutrient_keys lassen sich für den aktuellen Stack überhaupt
