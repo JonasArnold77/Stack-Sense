@@ -283,10 +283,27 @@ class _DoseProgressBar extends StatelessWidget {
   }
 }
 
+/// Verhindert direkt beim Tippen, dass ein Wert über [max] eingegeben wird —
+/// unvollständige Zwischenzustände ("12," mitten im Tippen) lässt der
+/// Formatter durch, nur ein bereits vollständig geparster Wert über max wird
+/// abgelehnt (Edit wird verworfen, alter Text bleibt stehen).
+class _MaxValueInputFormatter extends TextInputFormatter {
+  final double max;
+  const _MaxValueInputFormatter(this.max);
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final parsed = double.tryParse(newValue.text.replaceAll(',', '.'));
+    if (parsed != null && parsed > max) return oldValue;
+    return newValue;
+  }
+}
+
 Future<double?> _promptAmount(
   BuildContext context, {
   required String unit,
   required double initial,
+  required double max,
 }) {
   final controller = TextEditingController(
     text: initial > 0 ? _fmtAmount(initial) : '',
@@ -299,8 +316,14 @@ Future<double?> _promptAmount(
         controller: controller,
         autofocus: true,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d*'))],
-        decoration: InputDecoration(suffixText: unit),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d*')),
+          _MaxValueInputFormatter(max),
+        ],
+        decoration: InputDecoration(
+          suffixText: unit,
+          helperText: 'Maximal ${_fmtAmount(max)}$unit',
+        ),
       ),
       actions: [
         TextButton(
@@ -569,6 +592,7 @@ class _CalendarSupplementTile extends ConsumerWidget {
                                     context,
                                     unit: unit,
                                     initial: manuallyTaken,
+                                    max: remainingManualTarget,
                                   );
                                   if (entered == null) return;
                                   await takenNotifier.setAmount(entry.id, selectedDay, entered);
