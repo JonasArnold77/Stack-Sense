@@ -299,19 +299,25 @@ class _MaxValueInputFormatter extends TextInputFormatter {
   }
 }
 
-Future<double?> _promptAmount(
+/// null insgesamt = Dialog abgebrochen. `reset: true` = auf 0 zurücksetzen
+/// (addAmount dann irrelevant). Sonst `addAmount` = was zur bereits
+/// erfassten Menge hinzugerechnet werden soll.
+typedef _AmountDialogResult = ({double addAmount, bool reset});
+
+/// Additiv statt absolut: der eingegebene Wert wird zur bereits erfassten
+/// Menge HINZUGERECHNET (nicht ersetzt) — z.B. schon 1g erfasst + hier 0,5g
+/// eingegeben = 1,5g gesamt. [max] ist deshalb der noch verfügbare Rest
+/// (Zielmenge minus bereits Erfasstem), nicht die volle Zielmenge.
+Future<_AmountDialogResult?> _promptAmount(
   BuildContext context, {
   required String unit,
-  required double initial,
   required double max,
 }) {
-  final controller = TextEditingController(
-    text: initial > 0 ? _fmtAmount(initial) : '',
-  );
-  return showDialog<double>(
+  final controller = TextEditingController();
+  return showDialog<_AmountDialogResult>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Menge eingeben'),
+      title: const Text('Menge hinzufügen'),
       content: TextField(
         controller: controller,
         autofocus: true,
@@ -322,10 +328,15 @@ Future<double?> _promptAmount(
         ],
         decoration: InputDecoration(
           suffixText: unit,
-          helperText: 'Maximal ${_fmtAmount(max)}$unit',
+          helperText: 'Wird zur bisherigen Menge addiert · maximal noch ${_fmtAmount(max)}$unit',
+          helperMaxLines: 2,
         ),
       ),
       actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop((addAmount: 0.0, reset: true)),
+          child: const Text('Zurücksetzen'),
+        ),
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(),
           child: const Text('Abbrechen'),
@@ -333,9 +344,10 @@ Future<double?> _promptAmount(
         FilledButton(
           onPressed: () {
             final parsed = double.tryParse(controller.text.replaceAll(',', '.'));
-            Navigator.of(ctx).pop(parsed);
+            if (parsed == null) return;
+            Navigator.of(ctx).pop((addAmount: parsed, reset: false));
           },
-          child: const Text('Speichern'),
+          child: const Text('Hinzufügen'),
         ),
       ],
     ),
@@ -588,15 +600,21 @@ class _CalendarSupplementTile extends ConsumerWidget {
                               child: OutlinedButton(
                                 onPressed: () async {
                                   final wasComplete = remaining <= 0;
-                                  final entered = await _promptAmount(
+                                  final result = await _promptAmount(
                                     context,
                                     unit: unit,
-                                    initial: manuallyTaken,
-                                    max: remainingManualTarget,
+                                    max: (remainingManualTarget - manuallyTaken).clamp(0.0, remainingManualTarget),
                                   );
-                                  if (entered == null) return;
-                                  await takenNotifier.setAmount(entry.id, selectedDay, entered);
-                                  await _awardXpIfNewlyComplete(ref, wasComplete, entered >= remainingManualTarget);
+                                  if (result == null) return;
+                                  if (result.reset) {
+                                    await takenNotifier.setAmount(entry.id, selectedDay, 0);
+                                    return;
+                                  }
+                                  final newManualTotal =
+                                      (manuallyTaken + result.addAmount).clamp(0.0, remainingManualTarget);
+                                  await takenNotifier.setAmount(entry.id, selectedDay, newManualTotal);
+                                  await _awardXpIfNewlyComplete(
+                                      ref, wasComplete, newManualTotal >= remainingManualTarget);
                                 },
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
