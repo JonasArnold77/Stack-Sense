@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/supplement.dart';
 import '../../../stack/data/stack_provider.dart';
+import 'safety_warning_dialog.dart';
 
 /// Sticky-Button am unteren Bildschirmrand — fügt das Supplement zum Stack
 /// hinzu oder entfernt es. Wenn bereits im Stack, zeigt einen
@@ -61,7 +62,19 @@ class StickyStackButton extends ConsumerWidget {
             )
           : FilledButton.icon(
               key: const ValueKey('add_stack'),
-              onPressed: () {
+              onPressed: () async {
+                // Gleicher Sicherheits-Check wie in den drei Empfehlungs-
+                // Feeds (recommendations/phase_goal/profile_recommendations
+                // _screen.dart) — dieser Button wurde bisher übersprungen,
+                // z.B. beim Öffnen eines Supplements über die Home-Screen-
+                // Suche, wo dieser Screen der einzige Weg zum Stack ist.
+                final safetyConfirmed = await confirmSupplementSafetyIfNeeded(
+                  context,
+                  supplementId: supplement.id,
+                  supplementName: supplement.name,
+                );
+                if (!context.mounted || !safetyConfirmed) return;
+
                 ref.read(stackProvider.notifier).add(supplement);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
