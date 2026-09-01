@@ -10,15 +10,54 @@ import '../domain/models/stack_entry.dart';
 import 'stack_provider.dart';
 
 /// Jedes aktive Optimization-Supplement zählt für die Balken-Füllung +10
-/// Prozentpunkte (100-130%-Bereich), gedeckelt bei 130% — ab 3 aktiven
+/// Prozentpunkte (100-150%-Bereich), gedeckelt bei 150% — ab 5 aktiven
 /// Supplements ist der Balken voll, die tatsächliche Zahl wird trotzdem immer
 /// als Text angezeigt. Bewusst einfacher, leicht anpassbarer Parameter, da
 /// keine exakte Formel vorgegeben war.
 const double kOptimizationPctPerSupplement = 10.0;
-const double kOptimizationBarCap = 130.0;
+const double kOptimizationBarCap = 150.0;
 
-/// Deutsche Anzeigenamen für die Foundation-Referenzliste — muss zu den
-/// Slugs in kSupplementThresholds passen.
+/// Kleine "das braucht praktisch jeder"-Basis (Mangel in der Allgemein-
+/// bevölkerung sehr verbreitet) — erscheint bei JEDEM Nutzer, unabhängig vom
+/// Profil. Alles andere kommt ausschließlich über konkrete Profil-Signale
+/// dazu (siehe _kConditionTriggers/_kGoalTriggers/Alter/Geschlecht/Schwanger-
+/// schaft unten) — deshalb ist die Foundation-Liste pro Nutzer unterschiedlich.
+const Set<String> _kBaselineSlugs = {'vitamin-d3', 'omega-3', 'magnesium'};
+
+/// Erkrankung (exakte Chip-Strings aus onboarding_step2_screen.dart) →
+/// zusätzlich essenzielle Nährstoffe.
+const Map<String, List<String>> _kConditionTriggers = {
+  'Hashimoto': ['selen', 'iodine', 'vitamin-d3'],
+  'Schilddrüsenunterfunktion': ['selen', 'iodine', 'vitamin-d3'],
+  'Anämie (Eisenmangel)': ['eisen', 'vitamin-c'],
+  'Osteoporose': ['calcium', 'vitamin-d3', 'vitamin-k2', 'magnesium'],
+  'Diabetes Typ 2': ['magnesium', 'chromium', 'vitamin-d3'],
+  'Bluthochdruck': ['magnesium', 'omega-3'],
+  'PCOS': ['magnesium', 'vitamin-d3', 'omega-3'],
+  'Depressionen / Burnout': ['omega-3', 'vitamin-d3', 'magnesium'],
+  'Migräne': ['magnesium'],
+  'Arthritis': ['omega-3', 'vitamin-d3'],
+  'Schlafstörungen': ['magnesium'],
+};
+
+/// Ziel (exakte Chip-Strings aus onboarding_step3_screen.dart) → zusätzlich
+/// essenzielle Nährstoffe.
+const Map<String, List<String>> _kGoalTriggers = {
+  'Mehr Energie': ['vitamin-b12', 'eisen', 'magnesium'],
+  'Besserer Schlaf': ['magnesium'],
+  'Fokus & Konzentration': ['omega-3', 'eisen', 'vitamin-b12'],
+  'Sport & Regeneration': ['magnesium', 'vitamin-d3', 'eisen'],
+  'Immunsystem stärken': ['vitamin-d3', 'zink', 'vitamin-c'],
+  'Stimmung & Wohlbefinden': ['omega-3', 'vitamin-d3', 'magnesium'],
+  'Herzgesundheit': ['omega-3', 'magnesium'],
+  'Haut & Haare': ['biotin', 'zink', 'vitamin-c'],
+  'Gelenkgesundheit': ['vitamin-d3', 'omega-3'],
+  'Frauengesundheit / Zyklus': ['eisen', 'magnesium', 'vitamin-b6'],
+  'Hormonbalance': ['vitamin-d3', 'magnesium', 'zink'],
+};
+
+/// Deutsche Anzeigenamen — muss jeden Slug abdecken, der über Basis,
+/// Bedingungs- oder Ziel-Trigger auftauchen kann.
 const Map<String, String> _kFoundationLabels = {
   'vitamin-d3': 'Vitamin D3',
   'vitamin-b12': 'Vitamin B12',
@@ -30,48 +69,58 @@ const Map<String, String> _kFoundationLabels = {
   'selen': 'Selen',
   'calcium': 'Calcium',
   'vitamin-k2': 'Vitamin K2',
+  'vitamin-c': 'Vitamin C',
+  'vitamin-b6': 'Vitamin B6',
+  'zink': 'Zink',
+  'biotin': 'Biotin',
+  'chromium': 'Chrom',
 };
 
-/// Basis-7 + eng begründete profilabhängige Erweiterung (siehe Plan) — nur
-/// bei konkretem Profil-Signal, nicht pauschal alle nährstoffbasierten
-/// Supplements.
-Set<String> foundationReferenceSlugs(UserProfile profile) {
-  final slugs = {
-    'vitamin-d3', 'vitamin-b12', 'omega-3', 'magnesium', 'eisen', 'iodine', 'folsaeure',
-  };
+/// Alle Nährstoffe, die durch ein KONKRETES Profil-Signal (Erkrankung, Ziel,
+/// Alter, Geschlecht, Schwangerschaft) zusätzlich essenziell werden — ohne
+/// die kleine Allgemein-Basis. Zwei Nutzer mit unterschiedlichem Profil
+/// bekommen dadurch unterschiedliche Ergebnisse.
+Set<String> _profileTriggeredSlugs(UserProfile profile) {
+  final slugs = <String>{};
 
-  final hasThyroidCondition = profile.conditions
-      .any((c) => c == 'Hashimoto' || c == 'Schilddrüsenunterfunktion');
-  if (hasThyroidCondition) slugs.add('selen');
+  for (final condition in profile.conditions) {
+    final triggered = _kConditionTriggers[condition];
+    if (triggered != null) slugs.addAll(triggered);
+  }
+  for (final goal in profile.goals) {
+    final triggered = _kGoalTriggers[goal];
+    if (triggered != null) slugs.addAll(triggered);
+  }
 
-  final boneRisk = profile.conditions.contains('Osteoporose') ||
-      (profile.age != null && profile.age! >= 65);
-  if (boneRisk) {
-    slugs.add('calcium');
-    slugs.add('vitamin-k2');
+  if (profile.isPregnant) {
+    slugs.addAll(['folsaeure', 'eisen', 'omega-3', 'vitamin-d3']);
+  }
+  if (profile.gender == Gender.female && profile.age != null && profile.age! < 51) {
+    slugs.add('eisen');
+  }
+  if (profile.age != null && profile.age! >= 50) {
+    slugs.add('vitamin-b12');
+  }
+  if (profile.age != null && profile.age! >= 65) {
+    slugs.addAll(['calcium', 'vitamin-d3', 'vitamin-k2']);
   }
 
   return slugs;
 }
 
-/// "Besonders wichtig"-Hinweis für Foundation-Items, die durch ein konkretes
-/// Profil-Signal zusätzlich priorisiert sind (auch wenn sie schon in der
-/// Basis-7 sind, z.B. Eisen/Folsäure bei Schwangerschaft).
-bool _isPriorityForProfile(String slug, UserProfile profile) {
-  if (profile.isPregnant && (slug == 'folsaeure' || slug == 'eisen' || slug == 'omega-3')) {
-    return true;
-  }
-  if (slug == 'eisen' && profile.conditions.contains('Anämie (Eisenmangel)')) return true;
-  if (slug == 'selen' &&
-      profile.conditions.any((c) => c == 'Hashimoto' || c == 'Schilddrüsenunterfunktion')) {
-    return true;
-  }
-  if ((slug == 'calcium' || slug == 'vitamin-k2') &&
-      (profile.conditions.contains('Osteoporose') ||
-          (profile.age != null && profile.age! >= 65))) {
-    return true;
-  }
-  return false;
+/// Foundation-Referenzliste = kleine Allgemein-Basis + alle profilspezifisch
+/// getriggerten Nährstoffe. Pro Nutzer einzigartig (siehe _profileTriggeredSlugs).
+Set<String> foundationReferenceSlugs(UserProfile profile) =>
+    _kBaselineSlugs.union(_profileTriggeredSlugs(profile));
+
+/// Ist dieser Stack-Eintrag "aus einem Problemfeld gewählt"? Das ist der
+/// Fall, wenn er einem Phasenziel zugeordnet ist (goalIds) ODER einen
+/// konkreten Themen-/Zielkontext trägt (addedFromGoals) — mit Ausnahme des
+/// generischen "Basissupplementierung"-Labels aus profile_recommendations_
+/// screen.dart, das explizit KEINEM spezifischen Problemfeld entspricht.
+bool _isFromProblemfeld(StackEntry entry) {
+  if (entry.goalIds.isNotEmpty) return true;
+  return entry.addedFromGoals.any((g) => g != 'Basissupplementierung');
 }
 
 enum FoundationMatchState { missing, unknownAmount, matched }
@@ -83,7 +132,8 @@ class FoundationItemStatus {
   final FoundationMatchState matchState;
   final DoseZone? zone;
   final double coveragePct; // 0-100, für die Aggregation
-  final bool priorityForProfile;
+  final bool isBaseline; // Teil der kleinen Allgemein-Basis
+  final bool priorityForProfile; // durch ein konkretes Profil-Signal getriggert
 
   const FoundationItemStatus({
     required this.slug,
@@ -92,6 +142,7 @@ class FoundationItemStatus {
     required this.matchState,
     this.zone,
     required this.coveragePct,
+    required this.isBaseline,
     required this.priorityForProfile,
   });
 }
@@ -119,7 +170,8 @@ class FoundationOptimizationResult {
 
 FoundationOptimizationResult _compute(List<StackEntry> stack, UserProfile profile) {
   final referenceSlugs = foundationReferenceSlugs(profile);
-  final allSlugs = kSupplementThresholds.keys.toSet();
+  final profileTriggered = _profileTriggeredSlugs(profile);
+  final allThresholdSlugs = kSupplementThresholds.keys.toSet();
 
   // Jeden Stack-Eintrag EINMAL auf seinen best passenden kuratierten Slug
   // auflösen (exakt, sonst Präfix-Fallback — siehe resolveToSlug), statt das
@@ -130,7 +182,7 @@ FoundationOptimizationResult _compute(List<StackEntry> stack, UserProfile profil
         name: e.name,
         substanceName: e.substanceName,
         enthalteneWirkstoffe: e.enthalteneWirkstoffe,
-        curatedSlugs: allSlugs,
+        curatedSlugs: allThresholdSlugs,
       ),
   };
 
@@ -140,7 +192,8 @@ FoundationOptimizationResult _compute(List<StackEntry> stack, UserProfile profil
     if (threshold == null) continue; // sollte nicht vorkommen, defensiv
 
     final matched = stack.where((e) => entrySlugs[e.id] == slug).firstOrNull;
-    final priority = _isPriorityForProfile(slug, profile);
+    final isBaseline = _kBaselineSlugs.contains(slug);
+    final priority = profileTriggered.contains(slug);
 
     if (matched == null) {
       foundationItems.add(FoundationItemStatus(
@@ -148,6 +201,7 @@ FoundationOptimizationResult _compute(List<StackEntry> stack, UserProfile profil
         label: _kFoundationLabels[slug] ?? slug,
         matchState: FoundationMatchState.missing,
         coveragePct: 0,
+        isBaseline: isBaseline,
         priorityForProfile: priority,
       ));
       continue;
@@ -161,6 +215,7 @@ FoundationOptimizationResult _compute(List<StackEntry> stack, UserProfile profil
         matchedEntry: matched,
         matchState: FoundationMatchState.unknownAmount,
         coveragePct: 0,
+        isBaseline: isBaseline,
         priorityForProfile: priority,
       ));
       continue;
@@ -179,6 +234,7 @@ FoundationOptimizationResult _compute(List<StackEntry> stack, UserProfile profil
       matchState: FoundationMatchState.matched,
       zone: zone,
       coveragePct: coveragePct,
+      isBaseline: isBaseline,
       priorityForProfile: priority,
     ));
   }
@@ -187,20 +243,13 @@ FoundationOptimizationResult _compute(List<StackEntry> stack, UserProfile profil
       ? 0.0
       : foundationItems.map((i) => i.coveragePct).reduce((a, b) => a + b) / foundationItems.length;
 
-  // Optimization-Liste: JEDER Stack-Eintrag (nicht nur Referenzliste), dessen
-  // Dosis in die Optimization-Zone fällt — deckt sowohl über-optimal
-  // dosierte Foundation-Stoffe als auch reine Optimization-Substanzen ab.
-  final activeOptimizationEntries = <StackEntry>[];
-  for (final entry in stack) {
-    final slug = entrySlugs[entry.id];
-    if (slug == null) continue;
-    final threshold = kSupplementThresholds[slug]!;
-    final dose = trackableDoseFor(entry);
-    if (dose == null || !unitsMatch(dose.unit, threshold.unit)) continue;
-    if (classifyDose(dose.amount, threshold) == DoseZone.optimization) {
-      activeOptimizationEntries.add(entry);
-    }
-  }
+  // Optimization-Liste: ALLE Supplements, die aus einem Problemfeld gewählt
+  // wurden — unabhängig von Dosis/Schwellenwerten. Ein Supplement kann
+  // gleichzeitig Foundation-relevant UND aus einem Problemfeld gewählt sein
+  // (z.B. Vitamin D3 profilbedingt essenziell, aber über "Immunsystem
+  // stärken" hinzugefügt) — beide Listen beleuchten unterschiedliche Fragen
+  // und schließen sich nicht gegenseitig aus.
+  final activeOptimizationEntries = stack.where(_isFromProblemfeld).toList();
 
   final optimizationBarPct =
       (100 + activeOptimizationEntries.length * kOptimizationPctPerSupplement)

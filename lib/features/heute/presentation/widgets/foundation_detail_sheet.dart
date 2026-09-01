@@ -8,6 +8,9 @@ import '../../../stack/data/foundation_optimization_provider.dart';
 
 /// Liste aller Foundation-Referenz-Nährstoffe mit individuellem
 /// Abdeckungsgrad — geöffnet per Tap auf den Teal-Bereich des Balkens.
+/// Zweigeteilt: die kleine "das braucht praktisch jeder"-Basis zuerst, dann
+/// alles, was speziell durch das Profil des Nutzers essenziell wird — damit
+/// beim Öffnen sofort ersichtlich ist, was allgemein und was persönlich ist.
 class FoundationDetailSheet extends StatelessWidget {
   final List<FoundationItemStatus> items;
 
@@ -26,6 +29,9 @@ class FoundationDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseline = items.where((i) => i.isBaseline).toList();
+    final personal = items.where((i) => !i.isBaseline).toList();
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.spaceL),
@@ -44,16 +50,55 @@ class FoundationDetailSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spaceM),
             Flexible(
-              child: ListView.separated(
+              child: ListView(
                 shrinkWrap: true,
-                itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppConstants.spaceS),
-                itemBuilder: (context, i) => _FoundationItemRow(item: items[i]),
+                children: [
+                  if (baseline.isNotEmpty) ...[
+                    _SectionHeader(
+                      title: 'Allgemeine Basis',
+                      subtitle: 'Für praktisch jeden relevant — Mangel ist in der Allgemeinbevölkerung verbreitet.',
+                    ),
+                    const SizedBox(height: AppConstants.spaceS),
+                    ...baseline.map((i) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppConstants.spaceS),
+                          child: _FoundationItemRow(item: i),
+                        )),
+                  ],
+                  if (personal.isNotEmpty) ...[
+                    if (baseline.isNotEmpty) const SizedBox(height: AppConstants.spaceM),
+                    _SectionHeader(
+                      title: 'Speziell für dein Profil',
+                      subtitle: 'Aus deinen Angaben (Alter, Erkrankungen, Ziele) als wichtig abgeleitet.',
+                    ),
+                    const SizedBox(height: AppConstants.spaceS),
+                    ...personal.map((i) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppConstants.spaceS),
+                          child: _FoundationItemRow(item: i),
+                        )),
+                  ],
+                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  const _SectionHeader({required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.primary)),
+        Text(subtitle, style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary)),
+      ],
     );
   }
 }
@@ -76,7 +121,7 @@ class _FoundationItemRow extends StatelessWidget {
           case DoseZone.foundation:
             return (color: AppColors.evidenceGreen, label: '${item.coveragePct.round()}% abgedeckt');
           case DoseZone.optimization:
-            return (color: const Color(0xFFFFA000), label: 'Über Optimal · zählt zu Optimization');
+            return (color: const Color(0xFFFFA000), label: 'Über Optimal-Niveau');
         }
     }
   }
