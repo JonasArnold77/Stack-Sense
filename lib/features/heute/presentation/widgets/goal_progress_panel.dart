@@ -21,7 +21,7 @@ import '../../../stack/domain/models/stack_entry.dart';
 
 const _stageLabels = ['Gestartet', 'Aktiv', 'Wirkung', 'Erreicht'];
 
-int _stageForEntries(List<StackEntry> entries) {
+int stageForEntries(List<StackEntry> entries) {
   if (entries.isEmpty) return 1;
   final first = entries.map((e) => e.addedAt).reduce((a, b) => a.isBefore(b) ? a : b);
   final weeks = DateTime.now().difference(first).inDays / 7.0;
@@ -138,10 +138,10 @@ class GoalProgressPanel extends ConsumerWidget {
                       e.phaseGoalId == null &&
                       e.addedFromGoals.contains(goal))
                   .toList();
-              final stage = _stageForEntries(entries);
+              final stage = stageForEntries(entries);
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppConstants.spaceM),
-                child: _NormalGoalCard(
+                child: NormalGoalCard(
                   goalName: goal,
                   supplementCount: entries.length,
                   stage: stage,
@@ -185,13 +185,14 @@ class GoalProgressPanel extends ConsumerWidget {
 // Normales Ziel: Problemfeld / Basis — 4-Stufen Progress
 // ---------------------------------------------------------------------------
 
-class _NormalGoalCard extends StatelessWidget {
+class NormalGoalCard extends StatelessWidget {
   final String goalName;
   final int supplementCount;
   final int stage; // 1–4
   final VoidCallback onTap;
 
-  const _NormalGoalCard({
+  const NormalGoalCard({
+    super.key,
     required this.goalName,
     required this.supplementCount,
     required this.stage,
