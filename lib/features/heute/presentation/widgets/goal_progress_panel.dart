@@ -60,15 +60,11 @@ class GoalProgressPanel extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1A3A6B), Color(0xFF0D2040)],
-        ),
+        gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(AppConstants.radiusM + 4),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0D2040).withOpacity(0.35),
+            color: AppColors.primaryDark.withOpacity(0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

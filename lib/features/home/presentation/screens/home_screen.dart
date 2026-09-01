@@ -109,7 +109,7 @@ class _StackSenseNavBar extends StatelessWidget {
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1B3A6B).withOpacity(0.08),
+            color: AppColors.primaryDark.withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),

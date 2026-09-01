@@ -24,7 +24,7 @@ class ProgressCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppConstants.spaceL),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.panelTintSage,
           borderRadius: BorderRadius.circular(AppConstants.radiusL),
           border: Border.all(color: AppColors.border),
         ),

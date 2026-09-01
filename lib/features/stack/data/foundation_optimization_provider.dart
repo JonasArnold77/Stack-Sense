@@ -9,13 +9,69 @@ import '../../recommendations/domain/models/supplement_thresholds.dart';
 import '../domain/models/stack_entry.dart';
 import 'stack_provider.dart';
 
-/// Jedes aktive Optimization-Supplement zählt für die Balken-Füllung +10
-/// Prozentpunkte (100-150%-Bereich), gedeckelt bei 150% — ab 5 aktiven
-/// Supplements ist der Balken voll, die tatsächliche Zahl wird trotzdem immer
-/// als Text angezeigt. Bewusst einfacher, leicht anpassbarer Parameter, da
-/// keine exakte Formel vorgegeben war.
-const double kOptimizationPctPerSupplement = 10.0;
-const double kOptimizationBarCap = 150.0;
+/// Level-Namen — Index 0 = Level 1.
+const List<String> kFoundationLevelNames = ['Beginner', 'Building', 'Solid', 'Strong', 'Complete'];
+const List<String> kOptimizationLevelNames = ['Explorer', 'Active', 'Advanced', 'Performance', 'Elite'];
+
+/// Untere Prozent-Schwelle pro Foundation-Level (Index 0 = Level 1s Startwert).
+/// 100% ist erst Level 5 "Complete" — vollständige Abdeckung.
+const List<double> _kFoundationLevelThresholds = [0, 20, 40, 60, 100];
+
+/// Untere Anzahl-Schwelle pro Optimization-Level (aktive Problemfeld-
+/// Supplements) — bewusst eng gestuft, da "viele" Optimization-Supplements
+/// realistisch selten zweistellig werden.
+const List<int> _kOptimizationLevelThresholds = [0, 1, 2, 4, 6];
+
+class LevelInfo {
+  final int level; // 1-5
+  final String name;
+  final double progressToNext; // 0.0-1.0, 1.0 wenn Level 5 (kein "nächstes" mehr)
+  final bool isMax;
+
+  const LevelInfo({
+    required this.level,
+    required this.name,
+    required this.progressToNext,
+    required this.isMax,
+  });
+}
+
+LevelInfo _levelFor({
+  required double value,
+  required List<double> thresholds,
+  required List<String> names,
+}) {
+  var levelIndex = 0;
+  for (var i = thresholds.length - 1; i >= 0; i--) {
+    if (value >= thresholds[i]) {
+      levelIndex = i;
+      break;
+    }
+  }
+  final isMax = levelIndex == thresholds.length - 1;
+  final progress = isMax
+      ? 1.0
+      : ((value - thresholds[levelIndex]) / (thresholds[levelIndex + 1] - thresholds[levelIndex]))
+          .clamp(0.0, 1.0);
+  return LevelInfo(
+    level: levelIndex + 1,
+    name: names[levelIndex],
+    progressToNext: progress,
+    isMax: isMax,
+  );
+}
+
+LevelInfo foundationLevelFor(double scorePct) => _levelFor(
+      value: scorePct,
+      thresholds: _kFoundationLevelThresholds,
+      names: kFoundationLevelNames,
+    );
+
+LevelInfo optimizationLevelFor(int activeCount) => _levelFor(
+      value: activeCount.toDouble(),
+      thresholds: _kOptimizationLevelThresholds.map((e) => e.toDouble()).toList(),
+      names: kOptimizationLevelNames,
+    );
 
 /// Kleine "das braucht praktisch jeder"-Basis (Mangel in der Allgemein-
 /// bevölkerung sehr verbreitet) — erscheint bei JEDEM Nutzer, unabhängig vom
@@ -151,20 +207,20 @@ class FoundationOptimizationResult {
   final double foundationScorePct;
   final List<FoundationItemStatus> foundationItems;
   final List<StackEntry> activeOptimizationEntries;
-  final double optimizationBarPct;
 
   const FoundationOptimizationResult({
     required this.foundationScorePct,
     required this.foundationItems,
     required this.activeOptimizationEntries,
-    required this.optimizationBarPct,
   });
+
+  LevelInfo get foundationLevel => foundationLevelFor(foundationScorePct);
+  LevelInfo get optimizationLevel => optimizationLevelFor(activeOptimizationEntries.length);
 
   static const empty = FoundationOptimizationResult(
     foundationScorePct: 0,
     foundationItems: [],
     activeOptimizationEntries: [],
-    optimizationBarPct: 100,
   );
 }
 
@@ -251,15 +307,10 @@ FoundationOptimizationResult _compute(List<StackEntry> stack, UserProfile profil
   // und schließen sich nicht gegenseitig aus.
   final activeOptimizationEntries = stack.where(_isFromProblemfeld).toList();
 
-  final optimizationBarPct =
-      (100 + activeOptimizationEntries.length * kOptimizationPctPerSupplement)
-          .clamp(100.0, kOptimizationBarCap);
-
   return FoundationOptimizationResult(
     foundationScorePct: foundationScorePct,
     foundationItems: foundationItems,
     activeOptimizationEntries: activeOptimizationEntries,
-    optimizationBarPct: optimizationBarPct,
   );
 }
 

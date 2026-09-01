@@ -23,7 +23,7 @@ import '../../../stack/data/taken_provider.dart';
 import '../widgets/calendar_quick_access_card.dart';
 import '../widgets/checkin_summary_card.dart';
 import '../widgets/doctor_consultation_banner.dart';
-import '../widgets/foundation_optimization_bar.dart';
+import '../widgets/foundation_optimization_levels.dart';
 import '../widgets/daily_insights_panel.dart';
 import '../widgets/goal_progress_panel.dart';
 import '../widgets/insight_snippet_card.dart';
@@ -115,7 +115,7 @@ class HeuteScreen extends ConsumerWidget {
                 // irgendwas anderes den Blick ablenkt.
                 const DoctorConsultationBanner(),
 
-                const FoundationOptimizationBar(),
+                const FoundationOptimizationLevels(),
                 const SizedBox(height: AppConstants.spaceL),
 
                 // Heutiger Einnahmeplan
@@ -243,11 +243,7 @@ class _GreetingHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1A3A6B), Color(0xFF0D2040)],
-        ),
+        gradient: AppColors.primaryGradient,
       ),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + AppConstants.spaceL,
@@ -547,13 +543,13 @@ class _ModeSegment extends StatelessWidget {
             Icon(
               icon,
               size: 13,
-              color: selected ? const Color(0xFF1A3A6B) : Colors.white.withOpacity(0.75),
+              color: selected ? AppColors.primary : Colors.white.withOpacity(0.75),
             ),
             const SizedBox(width: 4),
             Text(
               label,
               style: AppTextStyles.caption.copyWith(
-                color: selected ? const Color(0xFF1A3A6B) : Colors.white.withOpacity(0.75),
+                color: selected ? AppColors.primary : Colors.white.withOpacity(0.75),
                 fontWeight: FontWeight.w700,
               ),
             ),

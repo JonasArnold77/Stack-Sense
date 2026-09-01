@@ -10,11 +10,11 @@ import '../../../phase_goals/data/phase_goals_provider.dart';
 // Farb-Konstanten
 // ---------------------------------------------------------------------------
 
-const _kGradientStart = Color(0xFF0D2580);
-const _kGradientEnd   = Color(0xFF1967D2);
-const _kChipBg        = Color(0xFFE8F0FE);
-const _kChipText      = Color(0xFF1A56CC);
-const _kArrow         = Color(0xFF1967D2);
+const _kGradientStart = AppColors.primaryDark;
+const _kGradientEnd   = AppColors.primaryLight;
+const _kChipBg        = AppColors.panelTintEmerald;
+const _kChipText      = AppColors.primary;
+const _kArrow         = AppColors.primaryLight;
 
 // ---------------------------------------------------------------------------
 // Goal-Chip
@@ -64,9 +64,9 @@ class PhaseGoalsCard extends ConsumerWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.panelTintEmerald,
           borderRadius: BorderRadius.circular(AppConstants.radiusL),
-          border: Border.all(color: const Color(0xFFBBD6F7)),
+          border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
               color: _kGradientEnd.withOpacity(0.15),
