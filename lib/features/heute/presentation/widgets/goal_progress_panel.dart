@@ -534,7 +534,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Problemfelder, Basissupplementierung\noder Phasenziele',
+              'Problemfelder oder Phasenziele',
               style: AppTextStyles.caption.copyWith(
                 color: Colors.white.withOpacity(0.40),
               ),
@@ -605,20 +605,6 @@ class _AddGoalSheet extends StatelessWidget {
                       onTap: () {
                         Navigator.pop(context);
                         parentContext.go(AppRoutes.recommendations);
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: AppConstants.spaceS),
-                  FeatureGate(
-                    featureKey: FeatureKeys.basisSupplementierung,
-                    child: _SheetOption(
-                      icon: Icons.foundation,
-                      color: const Color(0xFF1565C0),
-                      title: 'Basissupplementierung',
-                      subtitle: 'Dein persönliches Profil als Grundlage',
-                      onTap: () {
-                        Navigator.pop(context);
-                        parentContext.push(AppRoutes.profileRecommendations);
                       },
                     ),
                   ),

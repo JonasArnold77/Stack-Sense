@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/feature_gate.dart';
+import '../../../settings/domain/models/feature_keys.dart';
 import '../../../stack/data/foundation_optimization_provider.dart';
 import 'foundation_detail_sheet.dart';
 import 'optimization_detail_sheet.dart';
@@ -42,7 +46,29 @@ class FoundationOptimizationBar extends ConsumerWidget {
             'Gesundheitsbasis',
             style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: AppConstants.spaceS),
+          const SizedBox(height: AppConstants.spaceM),
+          // Labels über den Segmenten — gleiches Flex-Verhältnis (10:3) wie
+          // der Balken darunter, damit sie exakt über ihrem Segment stehen.
+          Row(
+            children: [
+              Expanded(
+                flex: 10,
+                child: Text(
+                  'Solltest du nehmen',
+                  style: AppTextStyles.caption.copyWith(color: _teal, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  'Zur Optimierung',
+                  style: AppTextStyles.caption.copyWith(color: _amber, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppConstants.radiusRound),
             child: SizedBox(
@@ -88,6 +114,30 @@ class FoundationOptimizationBar extends ConsumerWidget {
             'Foundation: ${result.foundationScorePct.round()}% · '
             '$optimizationCount Optimization-Supplement${optimizationCount == 1 ? '' : 'e'} aktiv',
             style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: AppConstants.spaceM),
+          // Führt zur bestehenden "Basis-Supplementierung"-Empfehlungsliste
+          // (profile_recommendations_screen.dart) — die einzige verbleibende
+          // Einstiegsstelle dorthin außer Profil-Tab/Onboarding-Abschluss,
+          // seit sie aus "Entdecken" und "Meine Ziele" entfernt wurde.
+          FeatureGate(
+            featureKey: FeatureKeys.basisSupplementierung,
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => context.push(AppRoutes.profileRecommendations),
+                icon: const Icon(Icons.foundation, size: 18),
+                label: const Text('Basissupplementierung ansehen'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.evidenceGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
