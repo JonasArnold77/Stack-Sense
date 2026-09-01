@@ -42,7 +42,11 @@ const Map<String, SupplementSafetyWarning> kSupplementSafetyWarnings = {
         'über längere Zeit können zu einer Selenose führen. Lass deinen Bedarf '
         'vorher per Bluttest ärztlich abklären.',
   ),
-  'jod': SupplementSafetyWarning(
+  // Kanonischer Slug ist "iodine" (siehe backend/data/supplement_knowledge.json
+  // und backend/data/supplement_nutrients_seed.json) — nicht "jod". War hier
+  // vorher falsch eingetragen, wodurch diese Warnung nie für echte
+  // Jod-Stack-Einträge (Supplement.id == "iodine") gefeuert hat.
+  'iodine': SupplementSafetyWarning(
     message:
         'Zu viel Jod kann die Schilddrüsenfunktion aus dem Gleichgewicht '
         'bringen. Lass deinen Jodstatus und deine Schilddrüsenwerte vorher '

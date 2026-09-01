@@ -29,10 +29,34 @@ bool isNutrientMappable({
   required Set<String> curatedSlugs,
 }) {
   if (curatedSlugs.isEmpty) return false;
+  return resolveToSlug(
+        name: name,
+        substanceName: substanceName,
+        enthalteneWirkstoffe: enthalteneWirkstoffe,
+        curatedSlugs: curatedSlugs,
+      ) !=
+      null;
+}
+
+/// Wie [isNutrientMappable], gibt aber den getroffenen Slug selbst zurück
+/// statt nur ja/nein — z.B. fürs Foundation-&-Optimization-Feature, das
+/// wissen muss WELCHE Referenz-Substanz ein Stack-Eintrag ist, um die
+/// passenden Schwellenwerte (kSupplementThresholds) nachzuschlagen.
+String? resolveToSlug({
+  required String name,
+  String? substanceName,
+  List<String> enthalteneWirkstoffe = const [],
+  required Set<String> curatedSlugs,
+}) {
+  if (curatedSlugs.isEmpty) return null;
   final candidates = <String>[
     if (substanceName != null && substanceName.isNotEmpty) slugify(substanceName),
     slugify(name),
     ...enthalteneWirkstoffe.map(slugify),
   ];
-  return candidates.any((c) => _resolveSlug(c, curatedSlugs) != null);
+  for (final c in candidates) {
+    final hit = _resolveSlug(c, curatedSlugs);
+    if (hit != null) return hit;
+  }
+  return null;
 }

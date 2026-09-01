@@ -23,6 +23,7 @@ import '../../../stack/data/taken_provider.dart';
 import '../widgets/calendar_quick_access_card.dart';
 import '../widgets/checkin_summary_card.dart';
 import '../widgets/doctor_consultation_banner.dart';
+import '../widgets/foundation_optimization_bar.dart';
 import '../widgets/daily_insights_panel.dart';
 import '../widgets/goal_progress_panel.dart';
 import '../widgets/insight_snippet_card.dart';
@@ -113,6 +114,9 @@ class HeuteScreen extends ConsumerWidget {
                 // Ärztliche Rücksprache nötig — auffällig, ganz oben, bevor
                 // irgendwas anderes den Blick ablenkt.
                 const DoctorConsultationBanner(),
+
+                const FoundationOptimizationBar(),
+                const SizedBox(height: AppConstants.spaceL),
 
                 // Heutiger Einnahmeplan
                 SectionTitle(
