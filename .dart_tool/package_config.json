@@ -146,6 +146,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "carp_serializable",
+      "rootUri": "file:///C:/Users/jonas/AppData/Local/Pub/Cache/hosted/pub.dev/carp_serializable-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
       "name": "characters",
       "rootUri": "file:///C:/Users/jonas/AppData/Local/Pub/Cache/hosted/pub.dev/characters-1.4.1",
       "packageUri": "lib/",
@@ -336,6 +342,12 @@
       "rootUri": "file:///C:/Users/jonas/AppData/Local/Pub/Cache/hosted/pub.dev/graphs-2.3.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "health",
+      "rootUri": "file:///C:/Users/jonas/AppData/Local/Pub/Cache/hosted/pub.dev/health-13.3.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
     },
     {
       "name": "hooks",

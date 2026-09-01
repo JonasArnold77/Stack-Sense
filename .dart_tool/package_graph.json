@@ -10,6 +10,7 @@
         "amplify_auth_cognito",
         "amplify_flutter",
         "audioplayers",
+        "collection",
         "cupertino_icons",
         "flutter",
         "flutter_dotenv",
@@ -17,7 +18,9 @@
         "gap",
         "go_router",
         "google_sign_in",
+        "health",
         "http",
+        "intl",
         "shared_preferences",
         "url_launcher"
       ],
@@ -49,6 +52,31 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "collection",
+      "version": "1.19.1",
+      "dependencies": []
+    },
+    {
+      "name": "intl",
+      "version": "0.20.3",
+      "dependencies": [
+        "clock",
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "health",
+      "version": "13.3.2",
+      "dependencies": [
+        "carp_serializable",
+        "device_info_plus",
+        "flutter",
+        "intl",
+        "json_annotation"
       ]
     },
     {
@@ -218,11 +246,6 @@
       "dependencies": []
     },
     {
-      "name": "collection",
-      "version": "1.19.1",
-      "dependencies": []
-    },
-    {
       "name": "leak_tracker_flutter_testing",
       "version": "3.0.10",
       "dependencies": [
@@ -287,6 +310,38 @@
         "stream_channel",
         "string_scanner",
         "term_glyph"
+      ]
+    },
+    {
+      "name": "carp_serializable",
+      "version": "3.0.0",
+      "dependencies": [
+        "flutter",
+        "json_annotation",
+        "meta",
+        "uuid"
+      ]
+    },
+    {
+      "name": "json_annotation",
+      "version": "4.12.0",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "device_info_plus",
+      "version": "13.2.0",
+      "dependencies": [
+        "device_info_plus_platform_interface",
+        "ffi",
+        "file",
+        "flutter",
+        "flutter_web_plugins",
+        "meta",
+        "web",
+        "win32",
+        "win32_registry"
       ]
     },
     {
@@ -782,6 +837,40 @@
       ]
     },
     {
+      "name": "win32_registry",
+      "version": "3.0.3",
+      "dependencies": [
+        "collection",
+        "ffi",
+        "ffi_leak_tracker",
+        "meta",
+        "win32"
+      ]
+    },
+    {
+      "name": "win32",
+      "version": "6.4.0",
+      "dependencies": [
+        "ffi",
+        "ffi_leak_tracker",
+        "meta"
+      ]
+    },
+    {
+      "name": "ffi",
+      "version": "2.2.0",
+      "dependencies": []
+    },
+    {
+      "name": "device_info_plus_platform_interface",
+      "version": "8.1.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
       "name": "google_identity_services_web",
       "version": "0.3.3+1",
       "dependencies": [
@@ -822,22 +911,6 @@
       "dependencies": []
     },
     {
-      "name": "json_annotation",
-      "version": "4.12.0",
-      "dependencies": [
-        "meta"
-      ]
-    },
-    {
-      "name": "intl",
-      "version": "0.20.3",
-      "dependencies": [
-        "clock",
-        "meta",
-        "path"
-      ]
-    },
-    {
       "name": "graphs",
       "version": "2.3.2",
       "dependencies": [
@@ -873,26 +946,6 @@
         "stream_channel",
         "stream_transform",
         "web"
-      ]
-    },
-    {
-      "name": "win32_registry",
-      "version": "3.0.3",
-      "dependencies": [
-        "collection",
-        "ffi",
-        "ffi_leak_tracker",
-        "meta",
-        "win32"
-      ]
-    },
-    {
-      "name": "win32",
-      "version": "6.4.0",
-      "dependencies": [
-        "ffi",
-        "ffi_leak_tracker",
-        "meta"
       ]
     },
     {
@@ -956,11 +1009,6 @@
     {
       "name": "fixnum",
       "version": "1.1.1",
-      "dependencies": []
-    },
-    {
-      "name": "ffi",
-      "version": "2.2.0",
       "dependencies": []
     },
     {
@@ -1044,21 +1092,6 @@
         "path",
         "web",
         "win32"
-      ]
-    },
-    {
-      "name": "device_info_plus",
-      "version": "13.2.0",
-      "dependencies": [
-        "device_info_plus_platform_interface",
-        "ffi",
-        "file",
-        "flutter",
-        "flutter_web_plugins",
-        "meta",
-        "web",
-        "win32",
-        "win32_registry"
       ]
     },
     {
@@ -1192,15 +1225,6 @@
         "path",
         "typed_data",
         "web"
-      ]
-    },
-    {
-      "name": "device_info_plus_platform_interface",
-      "version": "8.1.0",
-      "dependencies": [
-        "flutter",
-        "meta",
-        "plugin_platform_interface"
       ]
     },
     {

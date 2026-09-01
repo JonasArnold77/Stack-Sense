@@ -1,0 +1,1 @@
+ C:\\Github\\Stack\ Sense\\Stack-Sense\\.dart_tool\\flutter_build\\ed17fb173c226ffebc80746a8dd10c79\\native_assets.json C:\\Github\\Stack\ Sense\\Stack-Sense\\build\\app\\intermediates\\flutter\\debug\\native_assets\\jniLibs\\lib\\arm64-v8a\\libsqlite3.so:  C:\\Github\\Stack\ Sense\\Stack-Sense\\.dart_tool\\hooks_runner\\shared\\sqlite3\\build\\download-0c2d3bfc\\libsqlite3.so
