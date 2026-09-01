@@ -190,6 +190,11 @@ class NormalGoalCard extends StatelessWidget {
   final int supplementCount;
   final int stage; // 1–4
   final VoidCallback onTap;
+  /// Überschreibt die sonst per-Thema unterschiedliche goalColor() (z.B.
+  /// Blau für "Besserer Schlaf") — nötig wenn diese Karte auf einem eigenen
+  /// farbigen Hintergrund landet (z.B. der Optimization-Kachel), wo die
+  /// Themenfarbe mit dem Kachel-Grün zusammenstößt statt sich einzufügen.
+  final Color? accentColorOverride;
 
   const NormalGoalCard({
     super.key,
@@ -197,11 +202,12 @@ class NormalGoalCard extends StatelessWidget {
     required this.supplementCount,
     required this.stage,
     required this.onTap,
+    this.accentColorOverride,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = goalColor(goalName);
+    final color = accentColorOverride ?? goalColor(goalName);
 
     return GestureDetector(
       onTap: onTap,

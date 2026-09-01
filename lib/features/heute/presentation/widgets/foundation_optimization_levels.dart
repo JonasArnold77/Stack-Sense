@@ -107,6 +107,7 @@ class FoundationOptimizationLevels extends ConsumerWidget {
                         supplementCount: entries.length,
                         stage: stageForEntries(entries),
                         onTap: () => context.push(AppRoutes.goalProgress, extra: goal),
+                        accentColorOverride: Colors.white,
                       ),
                     );
                   }).toList(),
