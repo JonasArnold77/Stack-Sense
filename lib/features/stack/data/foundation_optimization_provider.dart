@@ -74,6 +74,20 @@ LevelInfo optimizationLevelFor(int activeCount) => _levelFor(
       names: kOptimizationLevelNames,
     );
 
+/// Wie [optimizationLevelFor], nur mit dem rohen (nicht gerundeten) Zwischen-
+/// wert — für die Level-up-Zähl-Animation in LevelUpOverlay. Die Thresholds
+/// [0, 1, 2, 4, 6] sind alle ganze Zahlen; würde man den animierten
+/// Zwischenwert vor dem Lookup runden (wie zuvor), läge der gerundete Count
+/// bei jedem Ein-Supplement-Schritt (0→1, 1→2, ...) exakt AUF der nächsten
+/// Levelgrenze und progressToNext wäre die gesamte Animation über 0% — der
+/// Balken hätte sich nie sichtbar bewegt. Mit dem rohen Zwischenwert bleibt
+/// der Fortschritt fraktional und der Balken füllt sich sichtbar.
+LevelInfo optimizationLevelForRaw(double rawCount) => _levelFor(
+      value: rawCount,
+      thresholds: _kOptimizationLevelThresholds.map((e) => e.toDouble()).toList(),
+      names: kOptimizationLevelNames,
+    );
+
 /// Kleine "das braucht praktisch jeder"-Basis (Mangel in der Allgemein-
 /// bevölkerung sehr verbreitet) — erscheint bei JEDEM Nutzer, unabhängig vom
 /// Profil. Alles andere kommt ausschließlich über konkrete Profil-Signale

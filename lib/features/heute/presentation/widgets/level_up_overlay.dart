@@ -149,7 +149,7 @@ class _LevelUpOverlayState extends ConsumerState<LevelUpOverlay> {
                           colorDark: FoundationOptimizationLevels.optimizationColorDark,
                           fromRaw: lastShown.optimizationCount.toDouble(),
                           toRaw: current.optimizationCount.toDouble(),
-                          levelFor: (v) => optimizationLevelFor(v.round()),
+                          levelFor: optimizationLevelForRaw,
                           duration: _animDuration,
                         ),
                       const SizedBox(height: AppConstants.spaceL),
