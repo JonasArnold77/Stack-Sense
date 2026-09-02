@@ -112,23 +112,46 @@ class FoundationOptimizationLevels extends ConsumerWidget {
                     );
                   }).toList(),
                 ),
-          footer: FeatureGate(
-            featureKey: FeatureKeys.problemfelder,
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => context.go(AppRoutes.recommendations),
-                icon: const Icon(Icons.search, size: 18, color: Colors.white),
-                label: const Text('Problemfelder', style: TextStyle(color: Colors.white)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white, width: 1.2),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppConstants.radiusM),
+          footer: Column(
+            children: [
+              FeatureGate(
+                featureKey: FeatureKeys.problemfelder,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.go(AppRoutes.recommendations),
+                    icon: const Icon(Icons.search, size: 18, color: Colors.white),
+                    label: const Text('Problemfelder', style: TextStyle(color: Colors.white)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white, width: 1.2),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(height: AppConstants.spaceS),
+              FeatureGate(
+                featureKey: FeatureKeys.phasenziele,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push(AppRoutes.phaseGoals),
+                    icon: const Icon(Icons.flag_outlined, size: 18, color: Colors.white),
+                    label: const Text('Phasenziele', style: TextStyle(color: Colors.white)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white, width: 1.2),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],

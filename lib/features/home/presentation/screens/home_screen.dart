@@ -15,10 +15,46 @@ import '../../../settings/domain/models/feature_keys.dart';
 /// wenn das jeweilige Feature für die aktuelle Partei deaktiviert ist — siehe
 /// FeatureKeys/TenantConfig. "Heute", "Stack" und "Profil" sind immer aktiv,
 /// da sie keinem der konfigurierbaren Features entsprechen.
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   final Widget child;
 
   const HomeScreen({super.key, required this.child});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
+  // HomeScreen wird von ShellRoute.builder direkt im ROOT-Navigator gebaut
+  // (bevor der Shell-eigene, innere Navigator für Heute/Rezepte/Insights/...
+  // beginnt) — ModalRoute.of(context) liefert hier also genau die Seite, auf
+  // der Push-Routen wie Basissupplementierung/Phasenziele landen. Darüber
+  // hält shellCoveredProvider fest, ob die ganze Shell (inkl. Heute-Screen
+  // darunter) gerade verdeckt ist — siehe LevelUpOverlay.
+  PageRoute<dynamic>? _subscribedRoute;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic> && route != _subscribedRoute) {
+      if (_subscribedRoute != null) routeObserver.unsubscribe(this);
+      _subscribedRoute = route;
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPushNext() => ref.read(shellCoveredProvider.notifier).state = true;
+
+  @override
+  void didPopNext() => ref.read(shellCoveredProvider.notifier).state = false;
 
   int _selectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
@@ -42,7 +78,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final selectedIndex = _selectedIndex(context);
     final tenantConfig = ref.watch(tenantConfigProvider);
     final disabledIndices = <int>{
@@ -51,7 +87,7 @@ class HomeScreen extends ConsumerWidget {
     };
 
     return Scaffold(
-      body: child,
+      body: widget.child,
       bottomNavigationBar: _StackSenseNavBar(
         selectedIndex: selectedIndex,
         disabledIndices: disabledIndices,

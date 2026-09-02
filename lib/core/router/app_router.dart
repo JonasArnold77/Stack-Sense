@@ -98,6 +98,22 @@ const _featureGatedRoutes = {
   AppRoutes.recipes: FeatureKeys.rezepte,
 };
 
+/// Globaler RouteObserver — genutzt von LevelUpOverlay (siehe
+/// level_up_overlay.dart), damit die Feier-Animation weiß, ob der
+/// Heute-Screen gerade tatsächlich sichtbar ist. Push-Routen wie
+/// Basissupplementierung/Phasenziele lassen den Heute-Screen darunter
+/// weiter gemountet (nur verdeckt) — ohne diese Info würde die Animation
+/// dort lautlos im Hintergrund ablaufen und wäre beim Zurückkommen schon
+/// "verbraucht", ohne dass der Nutzer sie je gesehen hat.
+final routeObserver = RouteObserver<PageRoute<dynamic>>();
+
+/// True, während eine Vollbild-Route (Basissupplementierung, Phasenziele, ...)
+/// über der Bottom-Nav-Shell liegt — von HomeScreen über [routeObserver]
+/// aktuell gehalten (siehe home_screen.dart). LevelUpOverlay nutzt das, um
+/// die Feier-Animation zu pausieren, solange der darunterliegende
+/// Heute-Screen nur verdeckt (nicht wirklich unmounted) weiterläuft.
+final shellCoveredProvider = StateProvider<bool>((ref) => false);
+
 /// Riverpod Provider für den Router mit Auth-Redirect.
 final routerProvider = Provider<GoRouter>((ref) {
   final authListenable = ValueNotifier<int>(0);
@@ -119,6 +135,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.login,
     debugLogDiagnostics: true,
     refreshListenable: authListenable,
+    observers: [routeObserver],
 
     // ---------------------------------------------------------------------------
     // Auth-Redirect: nicht eingeloggte User zu Login schicken

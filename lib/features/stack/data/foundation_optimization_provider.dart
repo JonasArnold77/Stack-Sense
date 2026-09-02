@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/utils/dose_parser.dart';
 import '../../../core/utils/slug_match.dart';
@@ -340,11 +341,44 @@ class LevelSnapshot {
   const LevelSnapshot({required this.foundationScorePct, required this.optimizationCount});
 }
 
-class LastShownLevelsNotifier extends StateNotifier<LevelSnapshot?> {
-  LastShownLevelsNotifier() : super(null);
-  void markShown(LevelSnapshot snapshot) => state = snapshot;
+/// Persistiert in SharedPreferences (nicht nur im Speicher) — sonst würde
+/// ein App-Neustart, bevor die Feier tatsächlich gesehen wurde (z.B. weil
+/// der Nutzer die App direkt nach dem Hinzufügen eines Supplements schließt),
+/// den zuletzt gezeigten Stand stillschweigend auf den neuen Wert setzen und
+/// die fällige Animation für immer verlieren. State ist bewusst
+/// AsyncValue<LevelSnapshot?> statt nur LevelSnapshot? — der Unterschied
+/// zwischen "lädt noch" und "wirklich noch nie gezeigt" ist entscheidend:
+/// ohne ihn würde JEDER Kaltstart den allerersten Frame (state ist synchron
+/// immer erst null, bevor SharedPreferences geantwortet hat) fälschlich als
+/// "nie gezeigt" werten und den echten, geladenen Stand sofort überschreiben.
+class LastShownLevelsNotifier extends StateNotifier<AsyncValue<LevelSnapshot?>> {
+  LastShownLevelsNotifier() : super(const AsyncValue.loading()) {
+    _load();
+  }
+
+  static const _keyFoundationPct = 'last_shown_foundation_score_pct';
+  static const _keyOptimizationCount = 'last_shown_optimization_count';
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pct = prefs.getDouble(_keyFoundationPct);
+    final count = prefs.getInt(_keyOptimizationCount);
+    state = AsyncValue.data(
+      (pct != null && count != null)
+          ? LevelSnapshot(foundationScorePct: pct, optimizationCount: count)
+          : null,
+    );
+  }
+
+  Future<void> markShown(LevelSnapshot snapshot) async {
+    state = AsyncValue.data(snapshot);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_keyFoundationPct, snapshot.foundationScorePct);
+    await prefs.setInt(_keyOptimizationCount, snapshot.optimizationCount);
+  }
 }
 
-final lastShownLevelsProvider = StateNotifierProvider<LastShownLevelsNotifier, LevelSnapshot?>(
+final lastShownLevelsProvider =
+    StateNotifierProvider<LastShownLevelsNotifier, AsyncValue<LevelSnapshot?>>(
   (ref) => LastShownLevelsNotifier(),
 );

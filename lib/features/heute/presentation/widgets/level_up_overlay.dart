@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/router/app_router.dart' show shellCoveredProvider;
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../stack/data/foundation_optimization_provider.dart';
 import 'foundation_optimization_levels.dart';
@@ -25,33 +26,63 @@ class LevelUpOverlay extends ConsumerStatefulWidget {
 }
 
 class _LevelUpOverlayState extends ConsumerState<LevelUpOverlay> {
-  bool _dismissed = false;
   bool _autoDismissScheduled = false;
+  // Der Stand, für den bereits (bewusst weggetippt oder automatisch nach
+  // Ablauf) "gezeigt" abgehakt wurde — Vergleich per Feldwert statt eines
+  // simplen Einweg-"dismissed"-Flags, damit eine ZWEITE Änderung (Zyklus:
+  // weg → etwas hinzufügen → zurück) korrekt wieder als neu erkannt wird,
+  // auch wenn die vorherige Feier schon einmal quittiert war.
+  LevelSnapshot? _dismissedFor;
 
   // Halb so schnell wie ursprünglich (1400ms) — damit man den Balken beim
   // Hochzählen tatsächlich in Ruhe verfolgen kann statt ihn nur zucken zu sehen.
   static const _animDuration = Duration(milliseconds: 2800);
   static const _holdAfter = Duration(milliseconds: 900);
 
+  bool _sameSnapshot(LevelSnapshot? a, LevelSnapshot b) =>
+      a != null && a.foundationScorePct == b.foundationScorePct && a.optimizationCount == b.optimizationCount;
+
   void _dismiss(LevelSnapshot current) {
-    if (_dismissed) return;
-    setState(() => _dismissed = true);
+    if (_sameSnapshot(_dismissedFor, current)) return;
+    setState(() {
+      _dismissedFor = current;
+      _autoDismissScheduled = false;
+    });
     ref.read(lastShownLevelsProvider.notifier).markShown(current);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Heute-Screen bleibt hinter push-Routen (Basissupplementierung,
+    // Phasenziele) gemountet, nur verdeckt (siehe shellCoveredProvider,
+    // von HomeScreen über routeObserver aktuell gehalten) — ohne diese
+    // Prüfung würde die Feier dort lautlos ablaufen und beim Zurückkommen
+    // wäre nichts mehr zu sehen, weil der Auto-Dismiss-Timer den neuen
+    // Stand längst als "gezeigt" markiert hätte, während der Nutzer ihn
+    // nie sah. Deshalb hier auch bewusst KEIN neuer Timer-Start, solange
+    // verdeckt.
+    final isCovered = ref.watch(shellCoveredProvider);
+
+    final lastShownAsync = ref.watch(lastShownLevelsProvider);
     final result = ref.watch(foundationOptimizationProvider);
-    final lastShown = ref.watch(lastShownLevelsProvider);
     final optimizationCount = result.activeOptimizationEntries.length;
     final current = LevelSnapshot(
       foundationScorePct: result.foundationScorePct,
       optimizationCount: optimizationCount,
     );
 
-    // Nichts zu feiern: entweder noch nie ein Stand gemerkt (App-Kaltstart —
-    // dann erst mal nur den Ist-Stand als Basislinie setzen, ohne Feier),
-    // oder unverändert seit dem letzten Anzeigen.
+    if (isCovered) return const SizedBox.shrink();
+
+    // Persistenter Stand lädt noch (App-Kaltstart, SharedPreferences-Zugriff
+    // ist async) — NICHT als "nie gezeigt" werten, sonst würde der echte,
+    // gespeicherte Stand hier überschrieben werden bevor er überhaupt gelesen
+    // wurde.
+    if (lastShownAsync.isLoading) return const SizedBox.shrink();
+    final lastShown = lastShownAsync.asData?.value;
+
+    // Nichts zu feiern: entweder wirklich noch nie ein Stand gemerkt (allererster
+    // App-Start — dann erst mal nur den Ist-Stand als Basislinie setzen, ohne
+    // Feier), oder unverändert seit dem letzten Anzeigen.
     if (lastShown == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) ref.read(lastShownLevelsProvider.notifier).markShown(current);
@@ -62,14 +93,22 @@ class _LevelUpOverlayState extends ConsumerState<LevelUpOverlay> {
     final foundationChanged = lastShown.foundationScorePct != current.foundationScorePct;
     final optimizationChanged = lastShown.optimizationCount != current.optimizationCount;
 
-    if (_dismissed || (!foundationChanged && !optimizationChanged)) {
+    if (_sameSnapshot(_dismissedFor, current) || (!foundationChanged && !optimizationChanged)) {
       return const SizedBox.shrink();
     }
 
     if (!_autoDismissScheduled) {
       _autoDismissScheduled = true;
       Future.delayed(_animDuration + _holdAfter, () {
-        if (mounted) _dismiss(current);
+        if (!mounted) return;
+        if (ref.read(shellCoveredProvider)) {
+          // Zwischenzeitlich verdeckt worden, bevor der Timer ablief — nicht
+          // stillschweigend konsumieren, sondern beim nächsten Sichtbarwerden
+          // (isCovered wird dann wieder false) neu einplanen lassen.
+          _autoDismissScheduled = false;
+          return;
+        }
+        _dismiss(current);
       });
     }
 
