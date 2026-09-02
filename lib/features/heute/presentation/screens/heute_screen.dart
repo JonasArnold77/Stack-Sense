@@ -12,6 +12,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../checkin/data/checkin_provider.dart';
 import '../../../gamification/data/xp_provider.dart';
 import '../../../insights/data/insights_provider.dart';
+import '../../../onboarding/data/onboarding_provider.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../settings/data/recommendation_source_mode_provider.dart';
@@ -304,6 +305,11 @@ class _GreetingHeader extends ConsumerWidget {
             alignment: Alignment.centerRight,
             child: _ResetSavedListsButton(),
           ),
+          const SizedBox(height: AppConstants.spaceXS),
+          const Align(
+            alignment: Alignment.centerRight,
+            child: _ResetProfileButton(),
+          ),
           const SizedBox(height: AppConstants.spaceM),
           Text(
             dateStr,
@@ -471,6 +477,63 @@ class _ResetSavedListsButton extends StatelessWidget {
       icon: const Icon(Icons.refresh_rounded, size: 14),
       label: Text(
         'Gespeicherte Listen zurücksetzen',
+        style: AppTextStyles.caption.copyWith(
+          color: Colors.white.withOpacity(0.65),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Reset-Button — löscht das gespeicherte Profil (Alter, Geschlecht,
+// Erkrankungen, Ziele, ...) und schickt zurück zum Onboarding-Start, damit
+// der Nutzer die Angaben bewusst neu einstellen kann.
+// ---------------------------------------------------------------------------
+
+class _ResetProfileButton extends ConsumerWidget {
+  const _ResetProfileButton();
+
+  Future<void> _confirmAndReset(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Profil zurücksetzen?'),
+        content: const Text(
+          'Alter, Geschlecht, Erkrankungen, Ziele und weitere Angaben werden '
+          'gelöscht. Du durchläufst danach das Onboarding erneut.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Zurücksetzen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await ref.read(onboardingProvider.notifier).resetProfile();
+    if (context.mounted) context.go(AppRoutes.welcome);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return TextButton.icon(
+      onPressed: () => _confirmAndReset(context, ref),
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white.withOpacity(0.65),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      icon: const Icon(Icons.person_off_outlined, size: 14),
+      label: Text(
+        'Profil zurücksetzen',
         style: AppTextStyles.caption.copyWith(
           color: Colors.white.withOpacity(0.65),
         ),

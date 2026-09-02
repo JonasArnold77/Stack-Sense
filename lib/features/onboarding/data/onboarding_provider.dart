@@ -8,7 +8,19 @@ import '../../../core/constants/app_constants.dart';
 /// Riverpod StateNotifier — verwaltet das UserProfile während Onboarding.
 /// Persistiert automatisch in SharedPreferences.
 class OnboardingNotifier extends StateNotifier<UserProfile> {
-  OnboardingNotifier() : super(const UserProfile());
+  OnboardingNotifier() : super(const UserProfile()) {
+    _load();
+  }
+
+  /// Beim Erzeugen des Providers (App-Start) das gespeicherte Profil laden —
+  /// ohne diesen Aufruf blieb loadFromPrefs() bisher komplett ungenutzt und
+  /// jeder App-Start begann mit einem leeren Profil, obwohl längst eines
+  /// gespeichert war (onboardingCompletedAt dadurch immer null → App
+  /// verlangte bei jedem Start erneut das komplette Onboarding).
+  Future<void> _load() async {
+    final saved = await loadFromPrefs();
+    if (saved != null) state = saved;
+  }
 
   // Profil schrittweise aufbauen
   void updateAge(int age) => state = state.copyWith(age: age);
@@ -58,6 +70,16 @@ class OnboardingNotifier extends StateNotifier<UserProfile> {
       jsonEncode(profile.toJson()),
     );
     await prefs.setBool(AppConstants.keyOnboardingComplete, true);
+  }
+
+  /// Setzt das Profil komplett zurück (Alter, Geschlecht, Erkrankungen,
+  /// Ziele, ...) und löscht den gespeicherten Stand — damit der Nutzer das
+  /// Onboarding bewusst noch einmal von vorne durchlaufen kann.
+  Future<void> resetProfile() async {
+    state = const UserProfile();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(AppConstants.keyUserProfile);
+    await prefs.remove(AppConstants.keyOnboardingComplete);
   }
 
   /// Gespeichertes Profil laden (beim App-Start)

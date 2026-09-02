@@ -107,6 +107,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     authListenable.value++;
   });
 
+  // Router auch neu evaluieren wenn sich das Profil ändert (z.B. Laden aus
+  // SharedPreferences beim App-Start ist async — ohne diesen Listener könnte
+  // ein Redirect kurz vor Abschluss des Ladens auf einem veralteten Stand
+  // laufen; sowie bei resetProfile() über den Reset-Button auf Heute).
+  ref.listen(onboardingProvider, (_, __) {
+    authListenable.value++;
+  });
+
   return GoRouter(
     initialLocation: AppRoutes.login,
     debugLogDiagnostics: true,

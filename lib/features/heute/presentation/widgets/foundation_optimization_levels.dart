@@ -65,13 +65,12 @@ class FoundationOptimizationLevels extends ConsumerWidget {
             featureKey: FeatureKeys.basisSupplementierung,
             child: SizedBox(
               width: double.infinity,
-              child: FilledButton.icon(
+              child: OutlinedButton.icon(
                 onPressed: () => context.push(AppRoutes.profileRecommendations),
-                icon: const Icon(Icons.add_circle_outline, size: 18),
-                label: const Text('Basissupplementierung'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.evidenceGreen,
-                  foregroundColor: Colors.white,
+                icon: const Icon(Icons.add_circle_outline, size: 18, color: Colors.white),
+                label: const Text('Basissupplementierung', style: TextStyle(color: Colors.white)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white, width: 1.2),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppConstants.radiusM),
