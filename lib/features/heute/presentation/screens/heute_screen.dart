@@ -27,6 +27,7 @@ import '../widgets/foundation_optimization_levels.dart';
 import '../widgets/daily_insights_panel.dart';
 import '../widgets/goal_progress_panel.dart';
 import '../widgets/insight_snippet_card.dart';
+import '../widgets/level_up_overlay.dart';
 import '../widgets/plan_card.dart';
 import '../widgets/profile_recommendations_banner.dart';
 import '../widgets/progress_card.dart';
@@ -80,7 +81,9 @@ class HeuteScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
+      body: Stack(
+        children: [
+          CustomScrollView(
         slivers: [
           // ----------------------------------------------------------------
           // Greeting header
@@ -216,6 +219,9 @@ class HeuteScreen extends ConsumerWidget {
               ]),
             ),
           ),
+        ],
+          ),
+          const LevelUpOverlay(),
         ],
       ),
     );

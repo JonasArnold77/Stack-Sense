@@ -319,3 +319,32 @@ final foundationOptimizationProvider = Provider<FoundationOptimizationResult>((r
   final profile = ref.watch(onboardingProvider);
   return _compute(stack, profile);
 });
+
+/// Merkt sich den zuletzt ANGEZEIGTEN Foundation-/Optimization-Stand.
+///
+/// foundationOptimizationProvider selbst hat kein Gedächtnis an einen
+/// "vorherigen" Wert — es berechnet bei jedem Aufruf nur den aktuellen Stand
+/// aus dem Stack. Die Heute-Seite hängt aber an einem einfachen ShellRoute
+/// (siehe app_router.dart), das seine Kinder bei jedem Tab-Wechsel neu baut —
+/// fügt der Nutzer also z.B. über "Problemfelder" ein Supplement hinzu und
+/// kehrt zu "Heute" zurück, entsteht FoundationOptimizationLevels komplett
+/// neu, mit dem bereits aktualisierten Wert direkt im ersten Frame. Ohne
+/// diesen Provider gäbe es also nichts, wovon aus die Level-Karte hoch-
+/// animieren könnte — der Sprung wäre unsichtbar statt ein Erlebnis.
+/// Dieser Provider lebt unabhängig vom Widget-Baum und merkt sich deshalb
+/// zuverlässig, was zuletzt gezeigt wurde, damit die nächste Anzeige davon
+/// aus hochzählen kann.
+class LevelSnapshot {
+  final double foundationScorePct;
+  final int optimizationCount;
+  const LevelSnapshot({required this.foundationScorePct, required this.optimizationCount});
+}
+
+class LastShownLevelsNotifier extends StateNotifier<LevelSnapshot?> {
+  LastShownLevelsNotifier() : super(null);
+  void markShown(LevelSnapshot snapshot) => state = snapshot;
+}
+
+final lastShownLevelsProvider = StateNotifierProvider<LastShownLevelsNotifier, LevelSnapshot?>(
+  (ref) => LastShownLevelsNotifier(),
+);

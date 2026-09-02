@@ -21,19 +21,21 @@ import 'optimization_detail_sheet.dart';
 /// Supplements aktiv sind, Level 1 Explorer bis 5 Elite) sind komplett
 /// unabhängig — Optimization kann steigen ohne dass Foundation
 /// abgeschlossen ist. Tap auf eine Kachel öffnet die jeweilige Detailliste;
-/// die Basissupplementierung-/Problemfelder-Buttons sitzen jetzt INNERHALB
-/// der jeweiligen Kachel statt darunter.
+/// die Basissupplementierung-/Problemfelder-Buttons sitzen INNERHALB der
+/// jeweiligen Kachel. Zeigt immer den AKTUELLEN, statischen Stand — die
+/// hochzählende Feier-Animation bei einer Änderung übernimmt LevelUpOverlay
+/// (siehe level_up_overlay.dart), separat über dieser Karte eingeblendet.
 class FoundationOptimizationLevels extends ConsumerWidget {
   const FoundationOptimizationLevels({super.key});
 
   // Foundation: tiefes Teal-Grün (an die Markenfarbe angelehnt).
-  static const _foundationColor = Color(0xFF0F7A5D);
-  static const _foundationColorDark = Color(0xFF083D2E);
+  static const foundationColor = Color(0xFF0F7A5D);
+  static const foundationColorDark = Color(0xFF083D2E);
   // Optimization: warmes Oliv-Grün — bleibt in der Grün-Familie, aber
   // deutlich wärmer/gelber, damit beide Kacheln trotz gemeinsamer
   // Grün-Markenfarbe klar unterscheidbar bleiben.
-  static const _optimizationColor = Color(0xFF7C8A1E);
-  static const _optimizationColorDark = Color(0xFF454E0F);
+  static const optimizationColor = Color(0xFF7C8A1E);
+  static const optimizationColorDark = Color(0xFF454E0F);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -53,11 +55,11 @@ class FoundationOptimizationLevels extends ConsumerWidget {
 
     return Column(
       children: [
-        _LevelCard(
+        LevelCard(
           icon: Icons.foundation,
           categoryLabel: 'Foundation',
-          color: _foundationColor,
-          colorDark: _foundationColorDark,
+          color: foundationColor,
+          colorDark: foundationColorDark,
           level: result.foundationLevel,
           onTap: () => FoundationDetailSheet.show(context, result.foundationItems),
           footer: FeatureGate(
@@ -81,11 +83,11 @@ class FoundationOptimizationLevels extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: AppConstants.spaceM),
-        _LevelCard(
+        LevelCard(
           icon: Icons.trending_up_rounded,
           categoryLabel: 'Optimization',
-          color: _optimizationColor,
-          colorDark: _optimizationColorDark,
+          color: optimizationColor,
+          colorDark: optimizationColorDark,
           level: result.optimizationLevel,
           onTap: () => OptimizationDetailSheet.show(
             context,
@@ -136,30 +138,36 @@ class FoundationOptimizationLevels extends ConsumerWidget {
   }
 }
 
-class _LevelCard extends StatelessWidget {
+/// Öffentlich (nicht nur von hier genutzt) — LevelUpOverlay baut daraus seine
+/// vergrößerte Feier-Version mit denselben Farben/Level-Daten, nur mit
+/// [scale] > 1 skaliert statt eine komplett eigene Karte nachzubauen.
+class LevelCard extends StatelessWidget {
   final IconData icon;
   final String categoryLabel;
   final Color color;
   final Color colorDark;
   final LevelInfo level;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Widget? content;
-  final Widget footer;
+  final Widget? footer;
+  final double scale;
 
-  const _LevelCard({
+  const LevelCard({
+    super.key,
     required this.icon,
     required this.categoryLabel,
     required this.color,
     required this.colorDark,
     required this.level,
-    required this.onTap,
+    this.onTap,
     this.content,
-    required this.footer,
+    this.footer,
+    this.scale = 1.0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -178,6 +186,7 @@ class _LevelCard extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(AppConstants.spaceL),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ---- Header (Tap öffnet die Detailliste) ----
@@ -214,7 +223,7 @@ class _LevelCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.55)),
+                if (onTap != null) Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.55)),
               ],
             ),
           ),
@@ -237,10 +246,15 @@ class _LevelCard extends StatelessWidget {
             const SizedBox(height: AppConstants.spaceL),
             content!,
           ],
-          const SizedBox(height: AppConstants.spaceM),
-          footer,
+          if (footer != null) ...[
+            const SizedBox(height: AppConstants.spaceM),
+            footer!,
+          ],
         ],
       ),
     );
+
+    if (scale == 1.0) return card;
+    return Transform.scale(scale: scale, alignment: Alignment.topCenter, child: card);
   }
 }
