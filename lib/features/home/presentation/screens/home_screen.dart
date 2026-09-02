@@ -50,11 +50,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     super.dispose();
   }
 
-  @override
-  void didPushNext() => ref.read(shellCoveredProvider.notifier).state = true;
+  // didPushNext/didPopNext können synchron während eines laufenden
+  // Rebuilds der Router-Navigation feuern (z.B. wenn context.push() direkt
+  // aus einem Build-abhängigen Zustand heraus einen neuen Eintrag ins
+  // Navigator-Widget-Tree einfügt) — Riverpod verbietet das direkte
+  // Modifizieren eines Providers währenddessen ("Tried to modify a
+  // provider while the widget tree was building"). Deshalb hier immer erst
+  // nach dem aktuellen Frame anwenden.
+  void _setShellCovered(bool covered) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(shellCoveredProvider.notifier).state = covered;
+    });
+  }
 
   @override
-  void didPopNext() => ref.read(shellCoveredProvider.notifier).state = false;
+  void didPushNext() => _setShellCovered(true);
+
+  @override
+  void didPopNext() => _setShellCovered(false);
 
   int _selectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
