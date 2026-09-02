@@ -28,14 +28,14 @@ import 'optimization_detail_sheet.dart';
 class FoundationOptimizationLevels extends ConsumerWidget {
   const FoundationOptimizationLevels({super.key});
 
-  // Foundation: tiefes Teal-Grün (an die Markenfarbe angelehnt).
-  static const foundationColor = Color(0xFF0F7A5D);
-  static const foundationColorDark = Color(0xFF083D2E);
-  // Optimization: warmes Oliv-Grün — bleibt in der Grün-Familie, aber
-  // deutlich wärmer/gelber, damit beide Kacheln trotz gemeinsamer
-  // Grün-Markenfarbe klar unterscheidbar bleiben.
-  static const optimizationColor = Color(0xFF7C8A1E);
-  static const optimizationColorDark = Color(0xFF454E0F);
+  // Foundation: an die Lime-Markenfarbe angelehnt.
+  static const foundationColor = AppColors.primary;
+  static const foundationColorDark = AppColors.primaryDark;
+  // Optimization: warmes Bernstein/Gold statt Grün — bewusst NICHT Teil der
+  // Lime-Familie, damit beide Kacheln trotz gemeinsamer Markenfarbe klar
+  // unterscheidbar bleiben (passt zusätzlich zum "Elite"-Erfolgs-Thema).
+  static const optimizationColor = Color(0xFFB45309);
+  static const optimizationColorDark = Color(0xFF78350F);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -151,6 +151,10 @@ class LevelCard extends StatelessWidget {
   final Widget? content;
   final Widget? footer;
   final double scale;
+  /// 0-1 — legt ein weißes "Aufblitzen" über die Karte, genutzt von
+  /// LevelUpOverlay bei einem tatsächlichen Levelaufstieg während der
+  /// Zähl-Animation. 0 = unsichtbar (Normalfall).
+  final double overlayOpacity;
 
   const LevelCard({
     super.key,
@@ -163,10 +167,12 @@ class LevelCard extends StatelessWidget {
     this.content,
     this.footer,
     this.scale = 1.0,
+    this.overlayOpacity = 0.0,
   });
 
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppConstants.radiusM + 4);
     final card = Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -175,7 +181,7 @@ class LevelCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [color, colorDark],
         ),
-        borderRadius: BorderRadius.circular(AppConstants.radiusM + 4),
+        borderRadius: radius,
         boxShadow: [
           BoxShadow(
             color: colorDark.withOpacity(0.35),
@@ -184,8 +190,13 @@ class LevelCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(AppConstants.spaceL),
-      child: Column(
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.spaceL),
+              child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -251,6 +262,16 @@ class LevelCard extends StatelessWidget {
             footer!,
           ],
         ],
+              ),
+            ),
+            if (overlayOpacity > 0)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(color: Colors.white.withOpacity(overlayOpacity)),
+                ),
+              ),
+          ],
+        ),
       ),
     );
 
