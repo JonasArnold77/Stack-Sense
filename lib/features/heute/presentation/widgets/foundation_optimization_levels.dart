@@ -28,14 +28,13 @@ import 'optimization_detail_sheet.dart';
 class FoundationOptimizationLevels extends ConsumerWidget {
   const FoundationOptimizationLevels({super.key});
 
-  // Foundation: an die Lime-Markenfarbe angelehnt.
+  // Beide Kacheln bewusst in derselben Lime-Familie — Foundation dunkler,
+  // Optimization eine Stufe heller, damit alle Home-Screen-Kacheln
+  // durchgängig Lime Green sind, aber trotzdem unterscheidbar bleiben.
   static const foundationColor = AppColors.primary;
   static const foundationColorDark = AppColors.primaryDark;
-  // Optimization: warmes Bernstein/Gold statt Grün — bewusst NICHT Teil der
-  // Lime-Familie, damit beide Kacheln trotz gemeinsamer Markenfarbe klar
-  // unterscheidbar bleiben (passt zusätzlich zum "Elite"-Erfolgs-Thema).
-  static const optimizationColor = Color(0xFFB45309);
-  static const optimizationColorDark = Color(0xFF78350F);
+  static const optimizationColor = AppColors.primaryLight;
+  static const optimizationColorDark = AppColors.primary;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

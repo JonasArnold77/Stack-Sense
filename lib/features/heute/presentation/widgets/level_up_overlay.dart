@@ -28,7 +28,9 @@ class _LevelUpOverlayState extends ConsumerState<LevelUpOverlay> {
   bool _dismissed = false;
   bool _autoDismissScheduled = false;
 
-  static const _animDuration = Duration(milliseconds: 1400);
+  // Halb so schnell wie ursprünglich (1400ms) — damit man den Balken beim
+  // Hochzählen tatsächlich in Ruhe verfolgen kann statt ihn nur zucken zu sehen.
+  static const _animDuration = Duration(milliseconds: 2800);
   static const _holdAfter = Duration(milliseconds: 900);
 
   void _dismiss(LevelSnapshot current) {
