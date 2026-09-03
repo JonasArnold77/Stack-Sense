@@ -370,7 +370,7 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
         : AppColors.cardShadow;
 
     return GestureDetector(
-      onTap: () => showSupplementDetail(context, supplement),
+      onTap: () => showSupplementDetail(context, supplement, goalContext: widget.goalContext),
       child: Container(
         margin: const EdgeInsets.only(bottom: AppConstants.spaceM),
         decoration: BoxDecoration(

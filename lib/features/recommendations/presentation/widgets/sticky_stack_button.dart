@@ -14,11 +14,20 @@ import 'safety_warning_dialog.dart';
 class StickyStackButton extends ConsumerWidget {
   final Supplement supplement;
   final bool isInStack;
+  /// Der Problemfeld-/Phasenziel-/Basissupplementierung-Kontext, aus dem
+  /// heraus dieser Screen geöffnet wurde (z.B. "Immunsystem"). Ist das
+  /// Supplement bereits über einen ANDEREN Kontext im Stack, zeigt
+  /// _InStackSection dann einen zusätzlichen, deutlich von "Zum Stack
+  /// hinzufügen" unterscheidbaren Button, um auch DIESEN Kontext zu
+  /// verknüpfen — gleiches Prinzip wie der "+ [Ziel]"-Button in der
+  /// Kartenliste (siehe EvidenceCard/_InStackPanel).
+  final String? goalContext;
 
   const StickyStackButton({
     super.key,
     required this.supplement,
     required this.isInStack,
+    this.goalContext,
   });
 
   @override
@@ -31,6 +40,8 @@ class StickyStackButton extends ConsumerWidget {
         .where((e) => e.id == supplement.id)
         .firstOrNull;
     final addedFromGoals = stackEntry?.addedFromGoals ?? const [];
+    final unlinkedGoalContext =
+        (goalContext != null && !addedFromGoals.contains(goalContext)) ? goalContext : null;
 
     return Container(
       decoration: BoxDecoration(
@@ -49,6 +60,25 @@ class StickyStackButton extends ConsumerWidget {
           ? _InStackSection(
               supplement: supplement,
               addedFromGoals: addedFromGoals,
+              unlinkedGoalContext: unlinkedGoalContext,
+              onAddGoalContext: unlinkedGoalContext == null
+                  ? null
+                  : () async {
+                      await ref
+                          .read(stackProvider.notifier)
+                          .addGoalContext(supplement.id, unlinkedGoalContext);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${supplement.name} auch „$unlinkedGoalContext" zugeordnet',
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
               onRemove: () {
                 ref.read(stackProvider.notifier).remove(supplement.id);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -105,11 +135,17 @@ class StickyStackButton extends ConsumerWidget {
 class _InStackSection extends StatelessWidget {
   final Supplement supplement;
   final List<String> addedFromGoals;
+  /// Gesetzt, wenn der aktuelle Kontext noch NICHT in [addedFromGoals]
+  /// enthalten ist — steuert, ob der "Auch hier zuordnen"-Button erscheint.
+  final String? unlinkedGoalContext;
+  final VoidCallback? onAddGoalContext;
   final VoidCallback onRemove;
 
   const _InStackSection({
     required this.supplement,
     required this.addedFromGoals,
+    this.unlinkedGoalContext,
+    this.onAddGoalContext,
     required this.onRemove,
   });
 
@@ -179,6 +215,32 @@ class _InStackSection extends StatelessWidget {
               ],
             ),
           ),
+
+        // "Auch hier zuordnen"-Button — nur wenn der aktuelle Kontext noch
+        // nicht mit-gespeichert ist. Bewusst als primärfarbener
+        // OutlinedButton mit "add_link"-Icon, damit er weder mit dem grünen
+        // "Zum Stack hinzufügen" (neuer Eintrag!) noch mit dem grünen
+        // "Entfernen"-Button verwechselt werden kann.
+        if (unlinkedGoalContext != null) ...[
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              key: const ValueKey('add_goal_context'),
+              onPressed: onAddGoalContext,
+              icon: const Icon(Icons.add_link, size: 18),
+              label: Text('Auch zu „$unlinkedGoalContext" zuordnen'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary),
+                minimumSize: const Size(double.infinity, 52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppConstants.radiusM),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppConstants.spaceS),
+        ],
 
         // Entfernen-Button
         OutlinedButton.icon(

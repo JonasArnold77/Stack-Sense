@@ -17,11 +17,15 @@ import '../widgets/sticky_stack_button.dart';
 import '../widgets/supplement_detail_widgets.dart';
 
 /// Öffnet den Supplement-Detail-Screen mit slide-from-bottom Transition.
-void showSupplementDetail(BuildContext context, Supplement supplement) {
+/// [goalContext] – der Problemfeld-/Phasenziel-/Basissupplementierung-Kontext,
+/// aus dem heraus geöffnet wurde (z.B. "Immunsystem") — ermöglicht den
+/// "Auch hier zuordnen"-Button, wenn das Supplement bereits über einen
+/// ANDEREN Kontext im Stack ist (siehe StickyStackButton).
+void showSupplementDetail(BuildContext context, Supplement supplement, {String? goalContext}) {
   Navigator.of(context).push(
     PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) =>
-          SupplementDetailScreen(supplement: supplement),
+          SupplementDetailScreen(supplement: supplement, goalContext: goalContext),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         final slide = Tween(
           begin: const Offset(0, 1),
@@ -48,8 +52,10 @@ void showSupplementDetail(BuildContext context, Supplement supplement) {
 /// Vollständige Detailansicht eines Supplements.
 class SupplementDetailScreen extends ConsumerStatefulWidget {
   final Supplement supplement;
+  /// Siehe showSupplementDetail().
+  final String? goalContext;
 
-  const SupplementDetailScreen({super.key, required this.supplement});
+  const SupplementDetailScreen({super.key, required this.supplement, this.goalContext});
 
   @override
   ConsumerState<SupplementDetailScreen> createState() =>
@@ -373,6 +379,7 @@ class _SupplementDetailScreenState
             child: StickyStackButton(
               supplement: s,
               isInStack: isInStack,
+              goalContext: widget.goalContext,
             ),
           ),
         ],
