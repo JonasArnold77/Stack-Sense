@@ -486,8 +486,6 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
                 ),
                 child: _InStackPanel(
                   supplementId: widget.supplement.id,
-                  goalContext: widget.goalContext,
-                  onAddGoalContext: _handleAddGoalContext,
                 ),
               ),
 
@@ -652,6 +650,16 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
                 ],
               ),
             ),
+
+            // --- "Auch hier zuordnen" — direkt unter dem "Im Stack"/"Zum
+            // Stack"-Button, nur wenn bereits im Stack und der aktuelle
+            // Kontext noch nicht gespeichert ist ---
+            if (widget.isInStack && widget.goalContext != null)
+              _AddGoalContextButton(
+                supplementId: widget.supplement.id,
+                goalContext: widget.goalContext!,
+                onTap: _handleAddGoalContext,
+              ),
               ],
             ),
 
@@ -671,20 +679,15 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
 
 // ---------------------------------------------------------------------------
 // Panel das angezeigt wird wenn das Supplement bereits im Stack ist.
-// Zeigt alle gespeicherten Ziel-Kontexte als Chips + optional einen
-// "+ [aktuelles Ziel]" Button um den aktuellen Kontext hinzuzufügen.
+// Zeigt alle gespeicherten Ziel-Kontexte als Chips. Der "+ [aktuelles Ziel]"
+// Button, um den aktuellen Kontext hinzuzufügen, sitzt separat unten bei den
+// Action-Buttons — siehe _AddGoalContextButton.
 // ---------------------------------------------------------------------------
 
 class _InStackPanel extends ConsumerWidget {
   final String supplementId;
-  final String? goalContext;
-  final VoidCallback onAddGoalContext;
 
-  const _InStackPanel({
-    required this.supplementId,
-    required this.goalContext,
-    required this.onAddGoalContext,
-  });
+  const _InStackPanel({required this.supplementId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -694,10 +697,6 @@ class _InStackPanel extends ConsumerWidget {
         .firstOrNull;
     final goals = entry?.addedFromGoals ?? const [];
     final isPhaseGoal = entry?.isTemporary ?? false;
-
-    // Ist der aktuelle Kontext bereits gespeichert?
-    final contextAlreadyLinked =
-        goalContext == null || goals.contains(goalContext);
 
     return Container(
       decoration: BoxDecoration(
@@ -762,43 +761,55 @@ class _InStackPanel extends ConsumerWidget {
               }).toList(),
             ),
           ],
-
-          // "+ [Ziel]" Button — nur wenn aktueller Kontext noch nicht verknüpft
-          if (!contextAlreadyLinked) ...[
-            const SizedBox(height: AppConstants.spaceS),
-            GestureDetector(
-              onTap: onAddGoalContext,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.08),
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.radiusRound),
-                  border: Border.all(
-                    color: AppColors.primary.withOpacity(0.40),
-                    width: 1.2,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.add,
-                        size: 16, color: AppColors.primary),
-                    const SizedBox(width: 5),
-                    Text(
-                      goalContext!,
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// "Auch zu '<Kontext>' zuordnen" — sitzt bewusst unter dem "Im Stack"/"Zum
+// Stack"-Button statt oben im _InStackPanel, damit er direkt neben der
+// anderen Stack-Aktion auftaucht statt weiter oben in der Karte. Erscheint
+// nur, wenn der aktuelle Kontext noch nicht in addedFromGoals steht.
+// ---------------------------------------------------------------------------
+
+class _AddGoalContextButton extends ConsumerWidget {
+  final String supplementId;
+  final String goalContext;
+  final VoidCallback onTap;
+
+  const _AddGoalContextButton({
+    required this.supplementId,
+    required this.goalContext,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entry = ref
+        .watch(stackProvider)
+        .where((e) => e.id == supplementId)
+        .firstOrNull;
+    final alreadyLinked = entry?.addedFromGoals.contains(goalContext) ?? false;
+    if (alreadyLinked) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.cardPadding, 0, AppConstants.cardPadding, AppConstants.cardPadding,
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: onTap,
+          icon: const Icon(Icons.add_link, size: 16),
+          label: Text('Auch zu „$goalContext" zuordnen'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.primary,
+            side: const BorderSide(color: AppColors.primary),
+            minimumSize: const Size(0, 44),
+          ),
+        ),
       ),
     );
   }
