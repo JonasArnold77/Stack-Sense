@@ -216,12 +216,30 @@ class _InStackSection extends StatelessWidget {
             ),
           ),
 
-        // "Auch hier zuordnen"-Button — nur wenn der aktuelle Kontext noch
-        // nicht mit-gespeichert ist. Bewusst als primärfarbener
+        // Entfernen-Button — an derselben Stelle, an der sonst "Zum Stack
+        // hinzufügen" sitzt.
+        OutlinedButton.icon(
+          key: const ValueKey('in_stack'),
+          onPressed: onRemove,
+          icon: const Icon(Icons.check_circle, size: 18),
+          label: const Text('Im Stack — tippen zum Entfernen'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.evidenceGreen,
+            side: const BorderSide(color: AppColors.evidenceGreen),
+            minimumSize: const Size(double.infinity, 52),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppConstants.radiusM),
+            ),
+          ),
+        ),
+
+        // "Auch hier zuordnen"-Button — darunter, nur wenn der aktuelle
+        // Kontext noch nicht mit-gespeichert ist. Bewusst als primärfarbener
         // OutlinedButton mit "add_link"-Icon, damit er weder mit dem grünen
         // "Zum Stack hinzufügen" (neuer Eintrag!) noch mit dem grünen
         // "Entfernen"-Button verwechselt werden kann.
         if (unlinkedGoalContext != null) ...[
+          const SizedBox(height: AppConstants.spaceS),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -239,24 +257,7 @@ class _InStackSection extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: AppConstants.spaceS),
         ],
-
-        // Entfernen-Button
-        OutlinedButton.icon(
-          key: const ValueKey('in_stack'),
-          onPressed: onRemove,
-          icon: const Icon(Icons.check_circle, size: 18),
-          label: const Text('Im Stack — tippen zum Entfernen'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.evidenceGreen,
-            side: const BorderSide(color: AppColors.evidenceGreen),
-            minimumSize: const Size(double.infinity, 52),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppConstants.radiusM),
-            ),
-          ),
-        ),
       ],
     );
   }
