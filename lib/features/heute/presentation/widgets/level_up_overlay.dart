@@ -202,32 +202,77 @@ class _AnimatedCelebrationCardState extends State<_AnimatedCelebrationCard>
   // läuft unabhängig vom Zähl-Fortschritt, startet bei jedem Levelsprung neu.
   late final AnimationController _flashController;
   late int _lastSeenLevel;
+  // Stand vom jeweils VORHERIGEN Tick — direkt vor einem Levelsprung zeigt er
+  // noch die gerade abgeschlossene Stufe (kurz vor 100%). Wird bei jedem
+  // Levelsprung in _lastCompletedInfo eingefroren (siehe unten).
+  late LevelInfo _prevInfo;
+  LevelInfo? _lastCompletedInfo;
+
+  // Optimization hat enge, direkt aufeinanderfolgende Anfangs-Thresholds
+  // (0, 1, 2) — ein einzelnes hinzugefügtes Supplement ist dort so gut wie
+  // immer GENAU ein Levelaufstieg, der exakt auf der nächsten Stufengrenze
+  // landet (0% Fortschritt für die neue Stufe). Ohne diese Pause würde die
+  // Animation jedes Mal mit einem sofort leeren Balken enden, was sich wie
+  // ein kaputter Balken anfühlt statt wie "Stufe geschafft!". Deshalb: kurz
+  // bei 100% der gerade abgeschlossenen Stufe verweilen, bevor auf den
+  // echten (leeren) neuen Stand gewechselt wird.
+  bool _settling = false;
+  static const _settleHold = Duration(milliseconds: 550);
 
   @override
   void initState() {
     super.initState();
-    _lastSeenLevel = widget.levelFor(widget.fromRaw).level;
+    _prevInfo = widget.levelFor(widget.fromRaw);
+    _lastSeenLevel = _prevInfo.level;
 
     _countController = AnimationController(vsync: this, duration: widget.duration)..forward();
     _countAnimation = CurvedAnimation(parent: _countController, curve: Curves.easeOutCubic);
 
     _flashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 550));
 
-    _countController.addListener(_checkForLevelUp);
+    _countController.addListener(_onTick);
+    _countController.addStatusListener(_onCountStatusChanged);
   }
 
-  void _checkForLevelUp() {
+  void _onTick() {
     final raw = widget.fromRaw + (widget.toRaw - widget.fromRaw) * _countAnimation.value;
-    final currentLevel = widget.levelFor(raw).level;
-    if (currentLevel > _lastSeenLevel) {
-      _lastSeenLevel = currentLevel;
+    final info = widget.levelFor(raw);
+    if (info.level > _lastSeenLevel) {
+      // _prevInfo hält noch den letzten bekannten Stand DER GERADE
+      // ABGESCHLOSSENEN Stufe fest (kurz vor 100%) — genau das brauchen wir
+      // gleich in _onCountStatusChanged für die Verweil-Pause.
+      _lastCompletedInfo = _prevInfo;
+      _lastSeenLevel = info.level;
       _flashController.forward(from: 0);
     }
+    _prevInfo = info;
+  }
+
+  void _onCountStatusChanged(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    final toInfo = widget.levelFor(widget.toRaw);
+    final leveledUp = toInfo.level > widget.levelFor(widget.fromRaw).level;
+    if (!leveledUp || toInfo.progressToNext != 0.0 || _lastCompletedInfo == null) return;
+
+    final completed = _lastCompletedInfo!;
+    setState(() {
+      _settling = true;
+      _lastCompletedInfo = LevelInfo(
+        level: completed.level,
+        name: completed.name,
+        progressToNext: 1.0,
+        isMax: completed.isMax,
+      );
+    });
+    Future.delayed(_settleHold, () {
+      if (mounted) setState(() => _settling = false);
+    });
   }
 
   @override
   void dispose() {
-    _countController.removeListener(_checkForLevelUp);
+    _countController.removeListener(_onTick);
+    _countController.removeStatusListener(_onCountStatusChanged);
     _countController.dispose();
     _flashController.dispose();
     super.dispose();
@@ -248,12 +293,17 @@ class _AnimatedCelebrationCardState extends State<_AnimatedCelebrationCard>
                 ? Curves.easeOut.transform(f / 0.35)
                 : Curves.easeIn.transform(1 - (f - 0.35) / 0.65);
 
+        // Während der Verweil-Pause (siehe _onCountStatusChanged) bewusst die
+        // eingefrorene "100% der gerade abgeschlossenen Stufe"-Info zeigen
+        // statt den echten (leeren) neuen Stand.
+        final info = _settling ? _lastCompletedInfo! : widget.levelFor(raw);
+
         return LevelCard(
           icon: widget.icon,
           categoryLabel: widget.categoryLabel,
           color: widget.color,
           colorDark: widget.colorDark,
-          level: widget.levelFor(raw),
+          level: info,
           scale: 1.12,
           overlayOpacity: flashOpacity.clamp(0.0, 1.0) * 0.6,
         );
