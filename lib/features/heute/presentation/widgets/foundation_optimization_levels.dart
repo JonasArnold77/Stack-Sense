@@ -7,11 +7,12 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/feature_gate.dart';
+import '../../../phase_goals/data/phase_goals_provider.dart';
 import '../../../settings/domain/models/feature_keys.dart';
 import '../../../stack/data/foundation_optimization_provider.dart';
 import '../../../stack/data/stack_provider.dart';
 import 'foundation_detail_sheet.dart';
-import 'goal_progress_panel.dart' show NormalGoalCard, stageForEntries;
+import 'goal_progress_panel.dart' show NormalGoalCard, PhaseGoalCard, stageForEntries;
 import 'optimization_detail_sheet.dart';
 
 /// Zwei unabhängige Level-Systeme, im selben großen Karten-Format wie
@@ -40,6 +41,7 @@ class FoundationOptimizationLevels extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final result = ref.watch(foundationOptimizationProvider);
     final stack = ref.watch(stackProvider);
+    final phaseGoals = ref.watch(phaseGoalsProvider);
 
     // Angewendete Problemfelder — dieselbe Gruppierung wie in
     // GoalProgressPanel ("normale Ziele"), aber ohne die generische
@@ -51,6 +53,12 @@ class FoundationOptimizationLevels extends ConsumerWidget {
       }
     }
     final sortedProblemfeldGoals = problemfeldGoals.toList()..sort();
+
+    // Aktive (nicht abgelaufene) Phasenziele — laufen NICHT mehr über "Meine
+    // Ziele" (GoalProgressPanel), sondern hier, weil sie ohnehin schon für
+    // den Optimization-Level mitzählen (siehe _isFromProblemfeld in
+    // foundation_optimization_provider.dart).
+    final activePhaseGoals = phaseGoals.where((g) => !g.isExpired).toList();
 
     return Column(
       children: [
@@ -92,25 +100,36 @@ class FoundationOptimizationLevels extends ConsumerWidget {
             entries: result.activeOptimizationEntries,
             foundationScorePct: result.foundationScorePct,
           ),
-          content: sortedProblemfeldGoals.isEmpty
+          content: (sortedProblemfeldGoals.isEmpty && activePhaseGoals.isEmpty)
               ? null
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: sortedProblemfeldGoals.map((goal) {
-                    final entries = stack
-                        .where((e) => e.phaseGoalId == null && e.addedFromGoals.contains(goal))
-                        .toList();
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: AppConstants.spaceM),
-                      child: NormalGoalCard(
-                        goalName: goal,
-                        supplementCount: entries.length,
-                        stage: stageForEntries(entries),
-                        onTap: () => context.push(AppRoutes.goalProgress, extra: goal),
-                        accentColorOverride: Colors.white,
-                      ),
-                    );
-                  }).toList(),
+                  children: [
+                    ...sortedProblemfeldGoals.map((goal) {
+                      final entries = stack
+                          .where((e) => e.phaseGoalId == null && e.addedFromGoals.contains(goal))
+                          .toList();
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppConstants.spaceM),
+                        child: NormalGoalCard(
+                          goalName: goal,
+                          supplementCount: entries.length,
+                          stage: stageForEntries(entries),
+                          onTap: () => context.push(AppRoutes.goalProgress, extra: goal),
+                          accentColorOverride: Colors.white,
+                        ),
+                      );
+                    }),
+                    ...activePhaseGoals.map((pg) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppConstants.spaceM),
+                          child: PhaseGoalCard(
+                            phaseGoal: pg,
+                            definition: pg.definition,
+                            onTap: () => context.push('${AppRoutes.phaseGoalDetail}/${pg.id}'),
+                            accentColorOverride: Colors.white,
+                          ),
+                        )),
+                  ],
                 ),
           footer: Column(
             children: [

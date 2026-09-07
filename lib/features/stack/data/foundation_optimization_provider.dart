@@ -184,12 +184,18 @@ Set<String> _profileTriggeredSlugs(UserProfile profile) {
 Set<String> foundationReferenceSlugs(UserProfile profile) =>
     _kBaselineSlugs.union(_profileTriggeredSlugs(profile));
 
-/// Ist dieser Stack-Eintrag "aus einem Problemfeld gewählt"? Das ist der
-/// Fall, wenn er einem Phasenziel zugeordnet ist (goalIds) ODER einen
-/// konkreten Themen-/Zielkontext trägt (addedFromGoals) — mit Ausnahme des
-/// generischen "Basissupplementierung"-Labels aus profile_recommendations_
-/// screen.dart, das explizit KEINEM spezifischen Problemfeld entspricht.
+/// Ist dieser Stack-Eintrag "aus einem Problemfeld ODER Phasenziel gewählt"?
+/// Das ist der Fall, wenn er einem Phasenziel zugeordnet ist (phaseGoalId
+/// ODER goalIds) ODER einen konkreten Themen-/Zielkontext trägt
+/// (addedFromGoals) — mit Ausnahme des generischen "Basissupplementierung"-
+/// Labels aus profile_recommendations_screen.dart, das explizit KEINEM
+/// spezifischen Problemfeld entspricht. phaseGoalId wird zusätzlich zu
+/// goalIds/addedFromGoals geprüft, statt sich allein auf den (optionalen)
+/// goalContext-Namen zu verlassen — ein Phasenziel ohne bekannte
+/// PhaseGoalDefinition (goalContext == null, addedFromGoals also leer)
+/// würde sonst fälschlich NICHT als Optimization zählen, obwohl es eines ist.
 bool _isFromProblemfeld(StackEntry entry) {
+  if (entry.phaseGoalId != null) return true;
   if (entry.goalIds.isNotEmpty) return true;
   return entry.addedFromGoals.any((g) => g != 'Basissupplementierung');
 }

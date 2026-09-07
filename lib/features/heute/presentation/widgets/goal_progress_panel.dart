@@ -10,7 +10,6 @@ import '../../../../core/widgets/feature_gate.dart';
 import '../../../settings/domain/models/feature_keys.dart';
 import '../../../goal_progress/presentation/screens/goal_progress_screen.dart'
     show goalColor;
-import '../../../phase_goals/data/phase_goals_provider.dart';
 import '../../../phase_goals/domain/models/phase_goal.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/domain/models/stack_entry.dart';
@@ -42,12 +41,12 @@ class GoalProgressPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stack = ref.watch(stackProvider);
-    final phaseGoals = ref.watch(phaseGoalsProvider);
 
-    // Aktive (nicht abgelaufene) Phasenziele
-    final activePhaseGoals = phaseGoals.where((g) => !g.isExpired).toList();
-
-    // Normale Ziele aus addedFromGoals (ohne Phasenziel-Einträge herausfiltern)
+    // Normale Ziele aus addedFromGoals (ohne Phasenziel-Einträge herausfiltern).
+    // Phasenziele selbst laufen NICHT mehr über "Meine Ziele" — sie werden
+    // stattdessen auf der Optimization-Kachel gezeigt (siehe
+    // foundation_optimization_levels.dart), wo sie ohnehin schon für den
+    // Optimization-Level mitzählen.
     final normalGoals = <String>{};
     for (final entry in stack) {
       if (entry.phaseGoalId == null) {
@@ -56,7 +55,7 @@ class GoalProgressPanel extends ConsumerWidget {
     }
     final sortedNormalGoals = normalGoals.toList()..sort();
 
-    final isEmpty = sortedNormalGoals.isEmpty && activePhaseGoals.isEmpty;
+    final isEmpty = sortedNormalGoals.isEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -99,7 +98,7 @@ class GoalProgressPanel extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    '${sortedNormalGoals.length + activePhaseGoals.length} aktive Ziele',
+                    '${sortedNormalGoals.length} aktive Ziele',
                     style: AppTextStyles.caption.copyWith(
                       color: Colors.white.withOpacity(0.55),
                     ),
@@ -147,21 +146,6 @@ class GoalProgressPanel extends ConsumerWidget {
                   stage: stage,
                   onTap: () =>
                       context.push(AppRoutes.goalProgress, extra: goal),
-                ),
-              );
-            }),
-
-            // Phasenziele
-            ...activePhaseGoals.map((pg) {
-              final def = pg.definition;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppConstants.spaceM),
-                child: _PhaseGoalCard(
-                  phaseGoal: pg,
-                  definition: def,
-                  onTap: () => context.push(
-                    '${AppRoutes.phaseGoalDetail}/${pg.id}',
-                  ),
                 ),
               );
             }),
@@ -370,23 +354,33 @@ class _StageDots extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Phasenziel-Karte: Fortschrittsbalken + Tage
+// Phasenziel-Karte: Fortschrittsbalken + Tage — öffentlich, da sie inzwischen
+// nicht mehr hier, sondern auf der Optimization-Kachel gerendert wird (siehe
+// foundation_optimization_levels.dart). Bleibt trotzdem in dieser Datei
+// (gleiches Muster wie NormalGoalCard, das ebenfalls von hier exportiert wird).
 // ---------------------------------------------------------------------------
 
-class _PhaseGoalCard extends StatelessWidget {
+class PhaseGoalCard extends StatelessWidget {
   final ActivePhaseGoal phaseGoal;
   final PhaseGoalDefinition? definition;
   final VoidCallback onTap;
+  /// Überschreibt die sonst per-Definition unterschiedliche accentColor
+  /// (z.B. Lila) — nötig auf der Optimization-Kachel, wo die Themenfarbe
+  /// mit dem Kachel-Grün zusammenstößt statt sich einzufügen (gleiches
+  /// Prinzip wie bei NormalGoalCard.accentColorOverride).
+  final Color? accentColorOverride;
 
-  const _PhaseGoalCard({
+  const PhaseGoalCard({
+    super.key,
     required this.phaseGoal,
     required this.definition,
     required this.onTap,
+    this.accentColorOverride,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = definition?.accentColor ?? AppColors.primary;
+    final color = accentColorOverride ?? definition?.accentColor ?? AppColors.primary;
     final name = definition?.name ?? 'Phasenziel';
     final elapsed = phaseGoal.elapsedDays;
     final total = phaseGoal.totalDays;
