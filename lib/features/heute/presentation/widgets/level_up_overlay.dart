@@ -78,17 +78,17 @@ class _LevelUpOverlayState extends ConsumerState<LevelUpOverlay> {
     // gespeicherte Stand hier überschrieben werden bevor er überhaupt gelesen
     // wurde.
     if (lastShownAsync.isLoading) return const SizedBox.shrink();
-    final lastShown = lastShownAsync.asData?.value;
 
-    // Nichts zu feiern: entweder wirklich noch nie ein Stand gemerkt (allererster
-    // App-Start — dann erst mal nur den Ist-Stand als Basislinie setzen, ohne
-    // Feier), oder unverändert seit dem letzten Anzeigen.
-    if (lastShown == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) ref.read(lastShownLevelsProvider.notifier).markShown(current);
-      });
-      return const SizedBox.shrink();
-    }
+    // Wirklich noch nie ein Stand gemerkt (allererster Besuch von Heute) —
+    // von null (statt die Feier zu überspringen) ausgehen. Betrifft genau
+    // den Onboarding-Fall: Onboarding → Basissupplementierung (beides per
+    // context.go(), Heute also noch nie gemountet) → dort werden direkt die
+    // ersten Supplements gewählt → beim allerersten Ankommen auf Heute soll
+    // das schon als Feier vom Nullpunkt aus hochzählen, statt es lautlos als
+    // neue Basislinie zu verbuchen. Ist wirklich noch nichts im Stack, sind
+    // beide Werte ohnehin 0 → kein Unterschied → keine Feier, ganz normal.
+    final lastShown = lastShownAsync.asData?.value ??
+        const LevelSnapshot(foundationScorePct: 0, optimizationCount: 0);
 
     final foundationChanged = lastShown.foundationScorePct != current.foundationScorePct;
     final optimizationChanged = lastShown.optimizationCount != current.optimizationCount;
