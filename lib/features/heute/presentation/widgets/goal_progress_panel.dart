@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/feature_gate.dart';
-import '../../../settings/domain/models/feature_keys.dart';
 import '../../../goal_progress/presentation/screens/goal_progress_screen.dart'
     show goalColor;
 import '../../../phase_goals/domain/models/phase_goal.dart';
-import '../../../stack/data/stack_provider.dart';
 import '../../../stack/domain/models/stack_entry.dart';
 
 // ---------------------------------------------------------------------------
@@ -31,139 +25,12 @@ int stageForEntries(List<StackEntry> entries) {
 }
 
 // ---------------------------------------------------------------------------
-// Panel
+// Kartenwidgets — werden nicht mehr in einem eigenen "Meine Ziele"-Panel
+// gezeigt (das gab es hier früher, ist aber komplett entfallen: Problemfeld-
+// und Phasenziel-Fortschritt laufen inzwischen beide über die Optimization-
+// Kachel, siehe foundation_optimization_levels.dart), sondern direkt von
+// dort aus verwendet.
 // ---------------------------------------------------------------------------
-
-/// Großes "Meine Ziele" Panel — prominentestes Element auf dem Home Screen.
-class GoalProgressPanel extends ConsumerWidget {
-  const GoalProgressPanel({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final stack = ref.watch(stackProvider);
-
-    // Normale Ziele aus addedFromGoals (ohne Phasenziel-Einträge herausfiltern).
-    // Phasenziele selbst laufen NICHT mehr über "Meine Ziele" — sie werden
-    // stattdessen auf der Optimization-Kachel gezeigt (siehe
-    // foundation_optimization_levels.dart), wo sie ohnehin schon für den
-    // Optimization-Level mitzählen.
-    final normalGoals = <String>{};
-    for (final entry in stack) {
-      if (entry.phaseGoalId == null) {
-        normalGoals.addAll(entry.addedFromGoals);
-      }
-    }
-    final sortedNormalGoals = normalGoals.toList()..sort();
-
-    final isEmpty = sortedNormalGoals.isEmpty;
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(AppConstants.radiusM + 4),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryDark.withOpacity(0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(AppConstants.spaceL),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ---- Header ----
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(AppConstants.radiusM),
-                ),
-                child: const Icon(Icons.track_changes,
-                    color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: AppConstants.spaceM),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Meine Ziele',
-                    style: AppTextStyles.headlineLarge.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    '${sortedNormalGoals.length} aktive Ziele',
-                    style: AppTextStyles.caption.copyWith(
-                      color: Colors.white.withOpacity(0.55),
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              // "+" Button
-              GestureDetector(
-                onTap: () => _showAddGoalSheet(context),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusM),
-                    border: Border.all(
-                        color: Colors.white.withOpacity(0.30), width: 1.2),
-                  ),
-                  child: const Icon(Icons.add, color: Colors.white, size: 22),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppConstants.spaceL),
-
-          // ---- Inhalt ----
-          if (isEmpty)
-            _EmptyState(onAdd: () => _showAddGoalSheet(context))
-          else ...[
-            // Normale Ziele (Problemfelder / Basis)
-            ...sortedNormalGoals.map((goal) {
-              final entries = stack
-                  .where((e) =>
-                      e.phaseGoalId == null &&
-                      e.addedFromGoals.contains(goal))
-                  .toList();
-              final stage = stageForEntries(entries);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppConstants.spaceM),
-                child: NormalGoalCard(
-                  goalName: goal,
-                  supplementCount: entries.length,
-                  stage: stage,
-                  onTap: () =>
-                      context.push(AppRoutes.goalProgress, extra: goal),
-                ),
-              );
-            }),
-          ],
-        ],
-      ),
-    );
-  }
-
-  void _showAddGoalSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _AddGoalSheet(parentContext: context),
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Normales Ziel: Problemfeld / Basis — 4-Stufen Progress
@@ -354,10 +221,8 @@ class _StageDots extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Phasenziel-Karte: Fortschrittsbalken + Tage — öffentlich, da sie inzwischen
-// nicht mehr hier, sondern auf der Optimization-Kachel gerendert wird (siehe
-// foundation_optimization_levels.dart). Bleibt trotzdem in dieser Datei
-// (gleiches Muster wie NormalGoalCard, das ebenfalls von hier exportiert wird).
+// Phasenziel-Karte: Fortschrittsbalken + Tage — wird auf der Optimization-
+// Kachel gerendert (siehe foundation_optimization_levels.dart).
 // ---------------------------------------------------------------------------
 
 class PhaseGoalCard extends StatelessWidget {
@@ -486,204 +351,6 @@ class PhaseGoalCard extends StatelessWidget {
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Leer-Zustand
-// ---------------------------------------------------------------------------
-
-class _EmptyState extends StatelessWidget {
-  final VoidCallback onAdd;
-
-  const _EmptyState({required this.onAdd});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onAdd,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          vertical: AppConstants.spaceXL,
-          horizontal: AppConstants.spaceM,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(AppConstants.radiusM),
-          border: Border.all(color: Colors.white.withOpacity(0.12)),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.add_circle_outline,
-                color: Colors.white.withOpacity(0.45), size: 36),
-            const SizedBox(height: AppConstants.spaceS),
-            Text(
-              'Ziel hinzufügen',
-              style: AppTextStyles.labelLarge.copyWith(
-                color: Colors.white.withOpacity(0.75),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Problemfelder oder Phasenziele',
-              style: AppTextStyles.caption.copyWith(
-                color: Colors.white.withOpacity(0.40),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// "+" Modal Bottom Sheet
-// ---------------------------------------------------------------------------
-
-class _AddGoalSheet extends StatelessWidget {
-  final BuildContext parentContext;
-
-  const _AddGoalSheet({required this.parentContext});
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
-          AppConstants.spaceM, 0, AppConstants.spaceM, AppConstants.spaceL),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppConstants.radiusM + 4),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: AppConstants.spaceM),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: AppConstants.spaceM),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.screenPaddingH),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Was möchtest du hinzufügen?',
-                      style: AppTextStyles.headlineSmall),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Wähle eine Kategorie um passende Supplements zu entdecken.',
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: AppConstants.spaceL),
-                  FeatureGate(
-                    featureKey: FeatureKeys.problemfelder,
-                    child: _SheetOption(
-                      icon: Icons.search,
-                      color: AppColors.primary,
-                      title: 'Problemfelder',
-                      subtitle: 'Schlaf, Energie, Fokus, Stress & mehr',
-                      onTap: () {
-                        Navigator.pop(context);
-                        parentContext.go(AppRoutes.recommendations);
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: AppConstants.spaceS),
-                  FeatureGate(
-                    featureKey: FeatureKeys.phasenziele,
-                    child: _SheetOption(
-                      icon: Icons.flag_outlined,
-                      color: const Color(0xFF5C35CC),
-                      title: 'Phasenziele',
-                      subtitle: 'Marathon, Diät, Reise & temporäre Phasen',
-                      onTap: () {
-                        Navigator.pop(context);
-                        parentContext.push(AppRoutes.phaseGoals);
-                      },
-                    ),
-                  ),
-                  SizedBox(height: AppConstants.spaceL + bottomInset),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetOption extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _SheetOption({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppConstants.spaceM),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(AppConstants.radiusM),
-          border: Border.all(color: color.withOpacity(0.20)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(AppConstants.radiusM),
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: AppConstants.spaceM),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: AppTextStyles.labelLarge
-                          .copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(subtitle,
-                      style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.textSecondary)),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios,
-                size: 14, color: AppColors.textTertiary),
           ],
         ),
       ),

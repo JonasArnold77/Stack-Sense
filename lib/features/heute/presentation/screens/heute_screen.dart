@@ -26,7 +26,6 @@ import '../widgets/checkin_summary_card.dart';
 import '../widgets/doctor_consultation_banner.dart';
 import '../widgets/foundation_optimization_levels.dart';
 import '../widgets/daily_insights_panel.dart';
-import '../widgets/goal_progress_panel.dart';
 import '../widgets/insight_snippet_card.dart';
 import '../widgets/level_up_overlay.dart';
 import '../widgets/plan_card.dart';
@@ -154,10 +153,6 @@ class HeuteScreen extends ConsumerWidget {
                   const SizedBox(height: AppConstants.spaceL),
                   const ProfileRecommendationsBanner(),
                 ],
-
-                // Meine Ziele — Prominentes Panel
-                const SizedBox(height: AppConstants.spaceL),
-                const GoalProgressPanel(),
 
                 const SizedBox(height: AppConstants.spaceL),
 

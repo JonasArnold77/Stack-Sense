@@ -10,8 +10,9 @@ import '../../../settings/domain/models/feature_keys.dart';
 /// Shell-Screen mit Bottom Navigation.
 /// Tabs: Heute | Stack | Rezepte | Insights | Profil
 /// "Entdecken" (Problemfelder) hat keinen eigenen Tab mehr — erreichbar über
-/// den "Was möchtest du hinzufügen?"-Dialog auf dem Heute-Screen
-/// (siehe GoalProgressPanel). "Rezepte" und "Insights" werden ausgegraut,
+/// die "Problemfelder"-/"Phasenziele"-Buttons auf der Optimization-Kachel
+/// des Heute-Screens (siehe foundation_optimization_levels.dart). "Rezepte"
+/// und "Insights" werden ausgegraut,
 /// wenn das jeweilige Feature für die aktuelle Partei deaktiviert ist — siehe
 /// FeatureKeys/TenantConfig. "Heute", "Stack" und "Profil" sind immer aktiv,
 /// da sie keinem der konfigurierbaren Features entsprechen.
