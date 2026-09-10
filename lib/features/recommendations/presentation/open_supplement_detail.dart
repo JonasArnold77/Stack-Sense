@@ -33,16 +33,22 @@ Future<void> openSupplementDetail(
     context: context,
     useRootNavigator: true,
     barrierDismissible: false,
+    barrierColor: Colors.black54,
     builder: (_) => const Center(child: CircularProgressIndicator()),
   );
 
   try {
-    final supplement = await ApiService.instance.lookupSupplement(
+    final lookup = ApiService.instance.lookupSupplement(
       supplementId: supplementId,
       supplementName: supplementName,
       dbOnly: dbOnly,
       bypassCache: bypassCache,
     );
+    // Mindest-Anzeigedauer — damit der Ladekreis bei gecachten/schnellen
+    // Antworten nicht nur kurz aufblitzt, sondern beim Öffnen jeder Karte
+    // sichtbar bleibt, bis die Detailseite da ist.
+    await Future<void>.delayed(const Duration(milliseconds: 450));
+    final supplement = await lookup;
     navigator.pop(); // Spinner schließen
     if (!context.mounted) return;
     showSupplementDetail(context, supplement, goalContext: goalContext);
