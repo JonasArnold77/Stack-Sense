@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../recommendations/presentation/open_supplement_detail.dart';
 import '../../../stack/domain/models/stack_entry.dart';
 
 /// Liste aller aktiven Optimization-Supplements — geöffnet per Tap auf den
@@ -97,13 +99,17 @@ class OptimizationDetailSheet extends StatelessWidget {
   }
 }
 
-class _OptimizationEntryRow extends StatelessWidget {
+class _OptimizationEntryRow extends ConsumerWidget {
   final StackEntry entry;
   const _OptimizationEntryRow({required this.entry});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => openSupplementDetail(context, ref,
+          supplementId: entry.id, supplementName: entry.name),
+      child: Container(
       padding: const EdgeInsets.all(AppConstants.spaceM),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
@@ -124,6 +130,7 @@ class _OptimizationEntryRow extends StatelessWidget {
           ),
           const Icon(Icons.trending_up, size: 16, color: Color(0xFFFFA000)),
         ],
+      ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -6,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/nutrient_coverable_badge.dart';
 import '../../domain/models/stack_entry.dart';
 import '../../../recommendations/domain/models/supplement.dart';
+import '../../../recommendations/presentation/open_supplement_detail.dart';
 import '../../../recommendations/presentation/widgets/supplement_category_badge.dart';
 
 /// Card für einen Eintrag im Stack des Nutzers.
@@ -13,7 +15,7 @@ import '../../../recommendations/presentation/widgets/supplement_category_badge.
 /// Hintergrundfarbe = Evidenzstufe (grün/gelb/rot, dezent).
 /// Warnfeld unten = Wechselwirkungsschwere (gelb/orange/rot, auffällig).
 /// Ziel-Chips = explizit verknüpfte Ziele + Sekundärziele aus Kategorien.
-class StackSupplementCard extends StatelessWidget {
+class StackSupplementCard extends ConsumerWidget {
   final StackEntry entry;
   final VoidCallback onRemove;
 
@@ -82,8 +84,12 @@ class StackSupplementCard extends StatelessWidget {
       entry.drugInteraction != null;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => openSupplementDetail(context, ref,
+          supplementId: entry.id, supplementName: entry.name),
+      child: Container(
       margin: const EdgeInsets.only(bottom: AppConstants.spaceM),
       decoration: BoxDecoration(
         color: _cardBg(),
@@ -248,6 +254,7 @@ class StackSupplementCard extends StatelessWidget {
               severity: InteractionSeverity.moderate,
             ),
         ],
+      ),
       ),
     );
   }

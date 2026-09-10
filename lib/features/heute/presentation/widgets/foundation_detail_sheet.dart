@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../recommendations/domain/models/supplement_thresholds.dart';
+import '../../../recommendations/presentation/open_supplement_detail.dart';
 import '../../../stack/data/foundation_optimization_provider.dart';
 
 /// Liste aller Foundation-Referenz-Nährstoffe mit individuellem
@@ -103,7 +105,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _FoundationItemRow extends StatelessWidget {
+class _FoundationItemRow extends ConsumerWidget {
   final FoundationItemStatus item;
 
   const _FoundationItemRow({required this.item});
@@ -127,9 +129,14 @@ class _FoundationItemRow extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final status = _statusInfo;
-    return Container(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => openSupplementDetail(context, ref,
+          supplementId: item.matchedEntry?.id ?? item.slug,
+          supplementName: item.matchedEntry?.name ?? item.label),
+      child: Container(
       padding: const EdgeInsets.all(AppConstants.spaceM),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
@@ -172,6 +179,7 @@ class _FoundationItemRow extends StatelessWidget {
             decoration: BoxDecoration(color: status.color, shape: BoxShape.circle),
           ),
         ],
+      ),
       ),
     );
   }

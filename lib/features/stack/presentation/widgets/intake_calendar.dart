@@ -14,6 +14,7 @@ import '../../data/taken_provider.dart';
 import '../../domain/models/stack_entry.dart';
 import '../../../gamification/data/xp_provider.dart';
 import '../../../recommendations/domain/models/supplement.dart';
+import '../../../recommendations/presentation/open_supplement_detail.dart';
 
 /// Einnahme-Kalender — zeigt die Supplements in Zeitslots (Morgen/Mittag/Abend/Nacht).
 /// Wochenansicht: aktuelle Woche, heute hervorgehoben.
@@ -438,8 +439,12 @@ class _CalendarSupplementTile extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Name + Dosierung
-                      Row(
+                      // Name + Dosierung — Tap öffnet die Detail-Karte
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => openSupplementDetail(context, ref,
+                            supplementId: entry.id, supplementName: entry.name),
+                        child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
@@ -520,6 +525,7 @@ class _CalendarSupplementTile extends ConsumerWidget {
                             ],
                           ),
                         ],
+                        ),
                       ),
 
                       // Einnahme-Hinweis
