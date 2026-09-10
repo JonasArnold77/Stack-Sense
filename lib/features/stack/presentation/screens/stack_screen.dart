@@ -11,8 +11,11 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/feature_gate.dart';
 import '../../../settings/domain/models/feature_keys.dart';
 import '../../../recommendations/domain/models/supplement.dart';
+import '../../data/inventory_provider.dart';
 import '../../data/stack_provider.dart';
 import '../../domain/models/stack_entry.dart';
+import '../widgets/inventory_reorder_sheet.dart';
+import '../widgets/inventory_tab.dart';
 import '../widgets/stack_supplement_card.dart';
 import '../widgets/intake_calendar.dart';
 import '../../../phase_goals/domain/models/phase_goal.dart';
@@ -149,6 +152,29 @@ class StackScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stack = ref.watch(stackProvider);
 
+    // "Bald leer": öffnet automatisch das Nachbestell-Fenster, sobald eine
+    // Packung neu unter die Schwelle rutscht (z.B. nach einem Kalender-
+    // Check-in — der ändert takenProvider, was inventoryStatusProvider neu
+    // rechnen lässt).
+    ref.listen<Map<String, PackageStatus>>(inventoryStatusProvider, (prev, next) {
+      if (prev == null) return;
+      for (final entry in next.entries) {
+        if (!prev.containsKey(entry.key)) continue; // frisch angelegt, kein Übergang
+        final wasLow = prev[entry.key]?.isLowStock ?? false;
+        if (!wasLow && entry.value.isLowStock) {
+          final pkg = ref
+              .read(inventoryProvider)
+              .where((p) => p.id == entry.key)
+              .firstOrNull;
+          if (pkg == null) continue;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) showInventoryReorderSheet(context, ref, pkg);
+          });
+          break; // nur eins auf einmal
+        }
+      }
+    });
+
     // Zähle Supplements mit Wechselwirkungswarnung
     final warningCount = stack
         .where((e) =>
@@ -157,7 +183,7 @@ class StackScreen extends ConsumerWidget {
         .length;
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       initialIndex: initialTabIndex,
       child: Scaffold(
         body: Column(
@@ -202,6 +228,7 @@ class StackScreen extends ConsumerWidget {
                 tabs: [
                   Tab(text: 'Supplements'),
                   Tab(text: 'Kalender'),
+                  Tab(text: 'Lager'),
                 ],
               ),
             ),
@@ -225,6 +252,9 @@ class StackScreen extends ConsumerWidget {
                         const EdgeInsets.all(AppConstants.screenPaddingH),
                     child: const IntakeCalendar(),
                   ),
+
+                  // --- Tab 3: Lager ---
+                  const InventoryTab(),
                 ],
               ),
             ),

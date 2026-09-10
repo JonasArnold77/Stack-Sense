@@ -12,6 +12,7 @@ import '../../domain/models/supplement.dart';
 import '../screens/supplement_detail_screen.dart';
 import '../../../community/domain/models/community_insight.dart';
 import '../../../stack/data/stack_provider.dart';
+import '../../../stack/presentation/widgets/inventory_package_sheet.dart';
 import 'supplement_category_badge.dart';
 
 /// Die Kern-Komponente der App — zeigt ein Supplement mit Evidenz-Ampel.
@@ -166,6 +167,16 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
           // Im State cachen damit Sheet beim nächsten Öffnen sofort zeigt
           if (mounted) setState(() => _cachedLinks = links);
         },
+        onAddToInventory: widget.isInStack
+            ? (link) => openInventoryPackageSheet(
+                  context,
+                  ref,
+                  stackEntryId: widget.supplement.id,
+                  prefillProductName: link.label,
+                  prefillShop: link.shop,
+                  prefillReorderUrl: link.url,
+                )
+            : null,
       ),
     );
   }
@@ -934,11 +945,14 @@ class _ProductSheet extends StatefulWidget {
   final Supplement supplement;
   final List<ProductLink>? initialLinks; // null = noch nicht geladen
   final ValueChanged<List<ProductLink>> onLinksLoaded;
+  /// Gesetzt, wenn das Supplement im Stack ist — zeigt pro Zeile "Ins Lager".
+  final void Function(ProductLink link)? onAddToInventory;
 
   const _ProductSheet({
     required this.supplement,
     required this.initialLinks,
     required this.onLinksLoaded,
+    this.onAddToInventory,
   });
 
   @override
@@ -1132,8 +1146,24 @@ class _ProductSheetState extends State<_ProductSheet> {
                   subtitle: link.note != null
                       ? Text(link.note!, style: AppTextStyles.caption)
                       : Text(link.shop, style: AppTextStyles.caption),
-                  trailing: const Icon(Icons.open_in_new,
-                      size: 16, color: AppColors.textTertiary),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.onAddToInventory != null)
+                        IconButton(
+                          onPressed: () => widget.onAddToInventory!(link),
+                          icon: const Icon(Icons.add_box_outlined, size: 18),
+                          tooltip: 'Ins Lager eintragen',
+                          color: AppColors.primary,
+                          style: IconButton.styleFrom(
+                              minimumSize: const Size(32, 32),
+                              padding: EdgeInsets.zero),
+                        ),
+                      const SizedBox(width: AppConstants.spaceXS),
+                      const Icon(Icons.open_in_new,
+                          size: 16, color: AppColors.textTertiary),
+                    ],
+                  ),
                   onTap: () => _launch(link.url),
                 );
               },

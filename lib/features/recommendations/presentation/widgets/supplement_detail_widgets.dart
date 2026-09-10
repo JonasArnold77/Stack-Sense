@@ -105,8 +105,19 @@ class FoodRow extends StatelessWidget {
 class ProductRow extends StatelessWidget {
   final ProductLink link;
   final VoidCallback onTap;
+  /// Wenn gesetzt: zeigt zusätzlich einen "Ins Lager"-Button. `null` =
+  /// Button nicht anzeigbar (z.B. Supplement nicht im Stack) — bei
+  /// [addToInventoryDisabledHint] wird der Grund als Tooltip gezeigt.
+  final VoidCallback? onAddToInventory;
+  final String? addToInventoryDisabledHint;
 
-  const ProductRow({super.key, required this.link, required this.onTap});
+  const ProductRow({
+    super.key,
+    required this.link,
+    required this.onTap,
+    this.onAddToInventory,
+    this.addToInventoryDisabledHint,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -155,6 +166,16 @@ class ProductRow extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onAddToInventory != null || addToInventoryDisabledHint != null)
+                IconButton(
+                  onPressed: onAddToInventory,
+                  icon: const Icon(Icons.add_box_outlined, size: 18),
+                  tooltip: addToInventoryDisabledHint ?? 'Ins Lager eintragen',
+                  color: AppColors.primary,
+                  style: IconButton.styleFrom(
+                      minimumSize: const Size(32, 32), padding: EdgeInsets.zero),
+                ),
+              const SizedBox(width: AppConstants.spaceXS),
               const Icon(Icons.open_in_new,
                   size: 15, color: AppColors.textTertiary),
             ],

@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/services/api_service.dart';
 import '../../domain/models/supplement.dart';
 import '../../../stack/data/stack_provider.dart';
+import '../../../stack/presentation/widgets/inventory_package_sheet.dart';
 import '../widgets/detail_header.dart';
 import '../widgets/expandable_section.dart';
 import '../widgets/interaction_card.dart';
@@ -357,12 +358,28 @@ class _SupplementDetailScreenState
                                   ),
                                 )
                               : Column(
-                                  children: _productLinks!
-                                      .map((p) => ProductRow(
-                                            link: p,
-                                            onTap: () => _launch(p.url),
-                                          ))
-                                      .toList(),
+                                  children: _productLinks!.map((p) {
+                                    final inStack = ref
+                                        .watch(stackProvider)
+                                        .any((e) => e.id == widget.supplement.id);
+                                    return ProductRow(
+                                      link: p,
+                                      onTap: () => _launch(p.url),
+                                      onAddToInventory: inStack
+                                          ? () => openInventoryPackageSheet(
+                                                context,
+                                                ref,
+                                                stackEntryId: widget.supplement.id,
+                                                prefillProductName: p.label,
+                                                prefillShop: p.shop,
+                                                prefillReorderUrl: p.url,
+                                              )
+                                          : null,
+                                      addToInventoryDisabledHint: inStack
+                                          ? null
+                                          : 'Erst zum Stack hinzufügen',
+                                    );
+                                  }).toList(),
                                 ),
                     ),
                   ]),

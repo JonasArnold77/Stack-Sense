@@ -64,4 +64,5 @@ class AppConstants {
   static const String keyPhaseGoals = 'active_phase_goals';
   static const String keyDeviceId  = 'device_id_anon';     // anonyme UUID für Community-Insights
   static const String keyRecipeLibrary = 'recipe_library';
+  static const String keyStackInventory = 'stack_inventory'; // physischer Packungs-Bestand ("Lager")
 }
