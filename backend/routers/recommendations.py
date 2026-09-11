@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import asyncio
 import logging
 import json
 import os
@@ -96,7 +97,11 @@ async def get_supplements_search(request: SupplementSearchRequest) -> dict:
     Home Screen (Typeahead während der Nutzer tippt).
     """
     try:
-        results = search_supplements(request.q, limit=request.limit)
+        # search_supplements ist eine synchrone psycopg2-Abfrage — ohne
+        # to_thread würde sie den Event-Loop dieser Instanz kurz blockieren,
+        # während der Nutzer tippt (der Endpoint wird pro Tastenanschlag
+        # aufgerufen, siehe supplement_search_bar.dart).
+        results = await asyncio.to_thread(search_supplements, request.q, limit=request.limit)
         return {"results": results}
     except Exception as e:
         logger.error(f"Supplement-Suche Fehler: {e}", exc_info=True)
@@ -145,7 +150,7 @@ async def explain_supplement(request: ExplainRequest) -> dict:
     bevor ein frischer Claude-Call gemacht wird.
     """
     supp_id = request.supplement_name.lower().strip().replace(" ", "-").replace("_", "-")
-    precomputed = get_precomputed_supplement_info_single(supp_id)
+    precomputed = await asyncio.to_thread(get_precomputed_supplement_info_single, supp_id)
     if precomputed and precomputed.get("simple_explanation"):
         return {"explanation": precomputed["simple_explanation"]}
 
@@ -214,7 +219,7 @@ async def get_food_sources(request: FoodSourcesRequest) -> dict:
             return {"sources": entry["food_sources"]}
 
     # 3. Vorberechnete Daten versuchen (siehe scripts/precompute_recommendations.py)
-    precomputed = get_precomputed_supplement_info_single(supp_id)
+    precomputed = await asyncio.to_thread(get_precomputed_supplement_info_single, supp_id)
     if precomputed and precomputed.get("food_sources"):
         logger.info(f"food-sources: Precompute-Treffer fuer '{supp_id}'")
         return {"sources": precomputed["food_sources"]}

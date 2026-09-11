@@ -274,3 +274,30 @@ def init_recipe_tables() -> None:
         logger.info("Rezept-Nährstoff-Tabellen bereit.")
     except Exception as e:
         logger.warning("Rezept-Nährstoff-Tabellen konnten nicht initialisiert werden: %s", e)
+
+
+def init_recommendation_cache_table() -> None:
+    """
+    Ersetzt den bisherigen In-Memory-Empfehlungscache (services/claude_service.py)
+    durch eine geteilte Tabelle in Postgres — kostenlos, da RDS ohnehin schon
+    läuft, statt eine eigene Redis-Instanz zu bezahlen. Wichtig, seit die
+    Umgebung hinter einem Load Balancer mit 2 Instanzen läuft: ein reiner
+    In-Memory-Cache lebt pro Prozess, trifft also nur die Hälfte der
+    Anfragen — dieselbe Tabelle sehen beide Instanzen.
+    """
+    create_sql = """
+    CREATE TABLE IF NOT EXISTS recommendation_cache (
+        cache_key   TEXT PRIMARY KEY,
+        value       TEXT NOT NULL,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_recommendation_cache_created_at
+        ON recommendation_cache(created_at);
+    """
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(create_sql)
+        logger.info("Empfehlungs-Cache-Tabelle bereit.")
+    except Exception as e:
+        logger.warning("Empfehlungs-Cache-Tabelle konnte nicht initialisiert werden: %s", e)

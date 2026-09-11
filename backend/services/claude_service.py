@@ -3,7 +3,6 @@ import hashlib
 import json
 import logging
 import re
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -22,6 +21,7 @@ from services.vector_service import (
 )
 from services.rxnorm_service import RxNormService
 from services.claude_json import extract_json as _extract_json
+from database import recommendation_cache_repository as _cache_repo
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +60,14 @@ GOAL_CATEGORY_MAP: dict[str, list[str]] = {
 }
 
 # ---------------------------------------------------------------------------
-# Einfacher In-Memory Cache für Empfehlungen
-# Key = hash(goal + profil-relevante Felder), TTL = 6h
+# Empfehlungs-Cache — geteilte Postgres-Tabelle statt In-Memory-Dict (siehe
+# database/recommendation_cache_repository.py + init_recommendation_cache_table()
+# in database/db.py). Ein reines In-Memory-Dict lebt pro Prozess; seit die
+# Umgebung hinter einem Load Balancer mit 2 Instanzen läuft, sah nur jede
+# zweite Anfrage überhaupt einen möglichen Cache-Hit. Key = hash(goal +
+# profil-relevante Felder), TTL = 6h. Die synchronen DB-Zugriffe laufen via
+# asyncio.to_thread, damit sie den Event-Loop nicht blockieren.
 # ---------------------------------------------------------------------------
-_recommendation_cache: dict[str, tuple[float, RecommendationResponse]] = {}
 _CACHE_TTL = 6 * 3600  # 6 Stunden
 
 
@@ -100,21 +104,19 @@ def _cache_key(
     return hashlib.md5(raw.encode()).hexdigest()
 
 
-def _cache_get(key: str) -> RecommendationResponse | None:
-    entry = _recommendation_cache.get(key)
-    if entry and (time.time() - entry[0]) < _CACHE_TTL:
-        return entry[1]
-    if entry:
-        del _recommendation_cache[key]   # abgelaufen → entfernen
-    return None
+async def _cache_get(key: str) -> RecommendationResponse | None:
+    raw = await asyncio.to_thread(_cache_repo.get_cached, key, _CACHE_TTL)
+    if raw is None:
+        return None
+    try:
+        return RecommendationResponse.model_validate_json(raw)
+    except Exception as e:
+        logger.warning(f"Cache-Eintrag für '{key}' nicht lesbar, wird ignoriert: {e}")
+        return None
 
 
-def _cache_set(key: str, value: RecommendationResponse) -> None:
-    # Max 50 Einträge im Cache (LRU-light)
-    if len(_recommendation_cache) >= 50:
-        oldest = min(_recommendation_cache, key=lambda k: _recommendation_cache[k][0])
-        del _recommendation_cache[oldest]
-    _recommendation_cache[key] = (time.time(), value)
+async def _cache_set(key: str, value: RecommendationResponse) -> None:
+    await asyncio.to_thread(_cache_repo.set_cached, key, value.model_dump_json())
 
 # --- Supplement-Wissensdatenbank einmalig laden ---
 _DB_PATH = Path(__file__).parent.parent / "data" / "supplement_knowledge.json"
@@ -1150,7 +1152,7 @@ class ClaudeService:
         # vom Cache profitieren.
         cache_key = _cache_key(goal, profile, limit, exclude_ids or [], db_only=db_only)
         if not bypass_cache:
-            cached = _cache_get(cache_key)
+            cached = await _cache_get(cache_key)
             if cached:
                 logger.info(f"Cache-Hit für '{goal}' (limit={limit}) — Claude-Aufruf übersprungen")
                 return cached
@@ -1236,7 +1238,7 @@ class ClaudeService:
         ]
 
         result = RecommendationResponse(goal=goal, recommendations=recommendations)
-        _cache_set(cache_key, result)
+        await _cache_set(cache_key, result)
         return result
 
     async def get_goal_ranking(
@@ -1442,7 +1444,7 @@ class ClaudeService:
 
         cache_key = f"detail::{supplement_id}::{db_only}"
         if not bypass_cache:
-            cached = _cache_get(cache_key)
+            cached = await _cache_get(cache_key)
             if cached and cached.recommendations:
                 return cached.recommendations[0]
 
@@ -1472,7 +1474,7 @@ class ClaudeService:
             raise ValueError(f"Claude hat keine Karte für '{supplement_name}' erzeugt.")
 
         rec = await _parse_recommendation_item(items[0], [])
-        _cache_set(cache_key, RecommendationResponse(goal=supplement_name, recommendations=[rec]))
+        await _cache_set(cache_key, RecommendationResponse(goal=supplement_name, recommendations=[rec]))
         return rec
 
     async def check_duplicate_in_stack(

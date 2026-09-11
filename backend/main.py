@@ -48,13 +48,14 @@ async def startup_event():
     try:
         from database.db import (
             init_user_tables, init_community_tables, init_checkin_tables, init_tenant_tables,
-            init_recipe_tables,
+            init_recipe_tables, init_recommendation_cache_table,
         )
         init_user_tables()
         init_community_tables()
         init_checkin_tables()
         init_tenant_tables()
         init_recipe_tables()
+        init_recommendation_cache_table()
     except Exception as e:
         logger.warning("DB-Init beim Start fehlgeschlagen (wird ignoriert): %s", e)
 
