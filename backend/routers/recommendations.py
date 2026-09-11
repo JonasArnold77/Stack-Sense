@@ -6,7 +6,7 @@ import json
 import os
 
 from models.profile import RecommendationRequest
-from models.recommendation import RecommendationResponse, SupplementRecommendation, ProductLink, SynergyResponse
+from models.recommendation import RecommendationResponse, SupplementRecommendation, ProductLink, SynergyResponse, CombinationCheckResponse
 from services.claude_service import ClaudeService
 from services.pubmed_service import PubMedService
 from services.vector_service import search_supplements, get_precomputed_supplement_info_single
@@ -328,6 +328,39 @@ async def get_synergies(request: RecommendationRequest) -> SynergyResponse:
     except Exception as e:
         logger.error(f"Synergy-Fehler: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Synergien konnten nicht geladen werden")
+
+
+class CombinationCheckItem(BaseModel):
+    name: str
+    substance_name: str | None = None
+    dosage: str
+
+
+class CombinationCheckRequest(BaseModel):
+    supplements: list[CombinationCheckItem]
+    medications: list[str] = []
+
+
+@router.post("/stack/combination-check", response_model=CombinationCheckResponse)
+async def check_stack_combination(request: CombinationCheckRequest) -> CombinationCheckResponse:
+    """
+    Analysiert die komplette, aktuelle Supplement-Kombination des Nutzers auf
+    Wechselwirkungen, Überdosierung (Summierung über mehrere Produkte) und
+    doppelte Wirkstoffe. Ausgelöst über den "Kombination checken lassen"-
+    Hinweis ab 8-10 gleichzeitig aktiven Supplements (siehe Flutter:
+    combination_check_banner.dart) — der Stack selbst lebt nur lokal auf dem
+    Gerät, wird also mit jeder Anfrage komplett mitgeschickt.
+    """
+    try:
+        return await claude_service.check_stack_combination(
+            supplements=request.supplements,
+            medications=request.medications,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        logger.error(f"Kombinationscheck-Fehler: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Kombinationscheck fehlgeschlagen")
 
 
 @router.get("/health")

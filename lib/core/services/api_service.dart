@@ -10,6 +10,7 @@ import '../../features/recommendations/domain/models/supplement.dart';
 import '../../features/community/domain/models/community_insight.dart';
 import '../../features/recipes/domain/models/generated_recipe.dart';
 import '../../features/stack/domain/models/stack_entry.dart';
+import '../../features/stack/domain/models/combination_check_result.dart';
 // ProductLink wird aus supplement.dart re-exportiert
 
 /// Verbindet die Flutter App mit dem FastAPI Backend.
@@ -281,6 +282,51 @@ class ApiService {
     } catch (e) {
       debugPrint('Produkt-Suche Fehler: $e');
       throw ApiException('Produkte konnten nicht geladen werden.');
+    }
+  }
+
+  /// Prüft den GESAMTEN aktuellen Stack auf Wechselwirkungen, Überdosierung
+  /// (Summierung über mehrere Produkte) und doppelte Wirkstoffe — ausgelöst
+  /// über den "Kombination checken lassen"-Hinweis. Der Stack lebt nur lokal
+  /// auf dem Gerät, wird also komplett mitgeschickt statt serverseitig
+  /// nachgeschlagen.
+  Future<CombinationCheckResult> checkStackCombination({
+    required List<StackEntry> supplements,
+    List<String> medications = const [],
+  }) async {
+    final body = jsonEncode({
+      'supplements': supplements
+          .map((e) => {
+                'name': e.name,
+                'substance_name': e.substanceName,
+                'dosage': e.dosage,
+              })
+          .toList(),
+      'medications': medications,
+    });
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/stack/combination-check'),
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: body,
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        return CombinationCheckResult.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      } else {
+        throw ApiException('Kombinationscheck nicht verfügbar (${response.statusCode})');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Kombinationscheck-Fehler: $e');
+      throw ApiException('Kombinationscheck konnte nicht durchgeführt werden.');
     }
   }
 

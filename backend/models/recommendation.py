@@ -97,3 +97,25 @@ class SynergyRecommendation(BaseModel):
 class SynergyResponse(BaseModel):
     goal: str
     synergies: list[SynergyRecommendation]
+
+
+class CombinationWarningCategory(str, Enum):
+    """Drei Risikotypen, die der Kombinationscheck über den GESAMTEN Stack
+    prüft — anders als die bereits beim Hinzufügen einzeln generierten
+    drug_interaction-Felder (die nur paarweise gegen Medikamente prüfen)."""
+    interaction = "interaction"  # Wechselwirkung zwischen zwei+ Substanzen (oder mit Medikamenten)
+    overdose = "overdose"        # Überdosierungsrisiko durch Summierung über mehrere Produkte
+    duplicate = "duplicate"      # Zwei+ Produkte liefern denselben Wirkstoff
+
+
+class CombinationWarningGroup(BaseModel):
+    category: CombinationWarningCategory
+    title: str
+    explanation: str
+    severity: InteractionSeverity  # nur moderate | high sinnvoll hier
+    supplement_names: list[str]    # exakt wie in der Anfrage übergeben — für den Löschen-Vorschlag
+
+
+class CombinationCheckResponse(BaseModel):
+    summary: str
+    groups: list[CombinationWarningGroup]

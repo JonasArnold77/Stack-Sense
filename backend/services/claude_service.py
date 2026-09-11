@@ -10,7 +10,7 @@ import anthropic
 
 from config.settings import settings
 from models.profile import UserProfile
-from models.recommendation import RecommendationResponse, SupplementRecommendation, SecondaryBenefit, EvidenceLevel, InteractionSeverity, SupplementType, SubstanceCategory, ProductLink, SynergyRecommendation, SynergyResponse
+from models.recommendation import RecommendationResponse, SupplementRecommendation, SecondaryBenefit, EvidenceLevel, InteractionSeverity, SupplementType, SubstanceCategory, ProductLink, SynergyRecommendation, SynergyResponse, CombinationCheckResponse, CombinationWarningGroup, CombinationWarningCategory
 from data.products import get_products
 from services.pubmed_service import PubMedService
 from services.vector_service import (
@@ -665,6 +665,41 @@ REGELN:
 - synergy_score: 0-100 (Passgenauigkeit zum Ziel)
 - 3-4 Synergien ausgeben
 - Nur wissenschaftlich belegte Kombinationen"""
+
+
+# ---------------------------------------------------------------------------
+# Kombinationscheck — ausgelöst über den "Kombination checken lassen"-Hinweis
+# ab 8-10 gleichzeitig aktiven Supplements (siehe Flutter:
+# combination_check_banner.dart). Anders als die schon beim Hinzufügen
+# einzeln generierten drug_interaction-Felder (nur paarweise gegen
+# Medikamente) prüft dieser Check den GESAMTEN aktuellen Stack auf einmal.
+# ---------------------------------------------------------------------------
+COMBINATION_CHECK_SYSTEM_PROMPT = """Du bist ein klinischer Pharmakologe. Deine Aufgabe: die \
+komplette aktuelle Supplement-Kombination eines Nutzers auf drei Risikotypen prüfen:
+
+1. interaction — Wechselwirkungen zwischen zwei oder mehr der genannten Substanzen, oder mit den
+   genannten Dauermedikamenten.
+2. overdose — Überdosierungsrisiko einer einzelnen Substanz durch Summierung über mehrere
+   genannte Produkte, die diesen Wirkstoff jeweils enthalten, gegen bekannte sichere Obergrenzen.
+3. duplicate — zwei oder mehr Produkte liefern denselben Wirkstoff, ohne erkennbaren Grund für
+   die Redundanz.
+
+WICHTIG: Antworte NUR mit dem JSON-Objekt. Kein Text davor, kein Text danach, keine Erklärung.
+
+JSON-FORMAT (exakt so):
+{"summary":"kurzer Gesamttext, 1-2 Sätze","groups":[{"category":"interaction","title":"Kurztitel","explanation":"1-2 Sätze Begründung","severity":"moderate","supplement_names":["Name A","Name B"]}]}
+
+REGELN:
+- category muss exakt "interaction", "overdose" oder "duplicate" sein
+- severity muss exakt "moderate" oder "high" sein
+- Jeder Eintrag in der Kombination ist als Name: "..." | Wirkstoff: ... | Dosierung: ...
+  formatiert. supplement_names MUSS NUR den Text zwischen den Anführungszeichen nach "Name:"
+  wortwörtlich übernehmen — NICHT den Wirkstoff, NICHT die Dosierung, NICHT beides kombiniert.
+  Beispiel: aus 'Name: "Ginkgo Biloba" | Wirkstoff: Ginkgo | Dosierung: 120 mg' wird ausschließlich
+  "Ginkgo Biloba" übernommen, niemals "Ginkgo Biloba (Ginkgo)" oder ähnliches.
+- Nur echte, klinisch relevante Punkte nennen — bei Unauffälligkeit "groups": [] und einen
+  kurzen, beruhigenden summary-Text
+- Keine allgemeinen Ratschläge, nur auf die konkret genannte Kombination bezogen"""
 
 
 # ---------------------------------------------------------------------------
@@ -1671,3 +1706,57 @@ class ClaudeService:
                 ))
 
         return SynergyResponse(goal=goal, synergies=synergies)
+
+    async def check_stack_combination(
+        self, supplements: list, medications: list[str],
+    ) -> CombinationCheckResponse:
+        """
+        Analysiert die AKTUELLE, komplette Supplement-Kombination des Nutzers auf
+        Wechselwirkungen, Überdosierung durch Summierung und doppelte Wirkstoffe —
+        siehe COMBINATION_CHECK_SYSTEM_PROMPT. [supplements] sind einfache Objekte
+        mit .name / .substance_name / .dosage (siehe CombinationCheckItem im
+        Router). Kein Fallback wie bei Synergien: ein leerer/fehlgeschlagener
+        Check ist hier kein sinnvoller Ersatz, deshalb wird ein Fehler durchgereicht.
+        """
+        lines = []
+        for s in supplements:
+            substance = s.substance_name or "unbekannt"
+            lines.append(f'- Name: "{s.name}" | Wirkstoff: {substance} | Dosierung: {s.dosage}')
+
+        user_msg = "AKTUELLE SUPPLEMENT-KOMBINATION:\n" + "\n".join(lines)
+        if medications:
+            user_msg += "\n\nDAUERMEDIKAMENTE (kein Name-Format nötig, exakt so übernehmen):\n" + \
+                "\n".join(f"- {m}" for m in medications)
+        user_msg += "\n\nPrüfe diese komplette Kombination wie im System-Prompt beschrieben."
+
+        logger.info(
+            f"Kombinationscheck-Anfrage: {len(supplements)} Supplements, "
+            f"{len(medications)} Medikamente"
+        )
+
+        message = await self.client.messages.create(
+            model=settings.claude_model,
+            max_tokens=1536,
+            system=COMBINATION_CHECK_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_msg}],
+        )
+
+        raw = _extract_json(message.content[0].text.strip())
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            logger.error(f"Claude JSON-Fehler (Kombinationscheck): {e}\nRaw: {raw[:500]}")
+            raise ValueError(f"Claude-Antwort ist kein valides JSON: {e}")
+
+        groups = [
+            CombinationWarningGroup(
+                category=CombinationWarningCategory(item["category"]),
+                title=item["title"],
+                explanation=item["explanation"],
+                severity=InteractionSeverity(item["severity"]),
+                supplement_names=item.get("supplement_names", []),
+            )
+            for item in data.get("groups", [])
+        ]
+        logger.info(f"Kombinationscheck: {len(groups)} Punkt(e) gefunden")
+        return CombinationCheckResponse(summary=data.get("summary", ""), groups=groups)

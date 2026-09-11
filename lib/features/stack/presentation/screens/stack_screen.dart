@@ -14,6 +14,7 @@ import '../../../recommendations/domain/models/supplement.dart';
 import '../../data/inventory_provider.dart';
 import '../../data/stack_provider.dart';
 import '../../domain/models/stack_entry.dart';
+import '../widgets/combination_check_banner.dart';
 import '../widgets/inventory_reorder_sheet.dart';
 import '../widgets/inventory_tab.dart';
 import '../widgets/stack_supplement_card.dart';
@@ -237,14 +238,25 @@ class StackScreen extends ConsumerWidget {
               child: TabBarView(
                 children: [
                   // --- Tab 1: Supplement-Liste (nach Kategorie gruppiert) ---
-                  stack.isEmpty
-                      ? _EmptyStack()
-                      : _GroupedSupplementList(
-                          stack: stack,
-                          warningCount: warningCount,
-                          onRemove: (id) =>
-                              ref.read(stackProvider.notifier).remove(id),
-                        ),
+                  Column(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(
+                            AppConstants.screenPaddingH, AppConstants.spaceM, AppConstants.screenPaddingH, 0),
+                        child: CombinationCheckBanner(),
+                      ),
+                      Expanded(
+                        child: stack.isEmpty
+                            ? _EmptyStack()
+                            : _GroupedSupplementList(
+                                stack: stack,
+                                warningCount: warningCount,
+                                onRemove: (id) =>
+                                    ref.read(stackProvider.notifier).remove(id),
+                              ),
+                      ),
+                    ],
+                  ),
 
                   // --- Tab 2: Kalender ---
                   SingleChildScrollView(
