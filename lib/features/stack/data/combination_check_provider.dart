@@ -5,8 +5,10 @@ import 'stack_provider.dart';
 import '../domain/models/stack_entry.dart';
 
 /// Ab wie vielen gleichzeitig aktiven Supplements der "Kombination checken
-/// lassen"-Hinweis erscheint.
-const int kCombinationCheckThreshold = 8;
+/// lassen"-Hinweis erscheint. Bewusst niedriger als "viele" (ursprünglich 8) —
+/// je mehr Supplements schon unentdeckt nebeneinander laufen, wenn der erste
+/// Hinweis kommt, desto später greift er tatsächlich.
+const int kCombinationCheckThreshold = 5;
 
 /// Stabile "Signatur" der aktuellen Stack-Zusammensetzung (sortierte IDs) —
 /// ändert sich bei jedem Hinzufügen/Entfernen, aber NICHT bei bloßem Neuladen
