@@ -18,14 +18,60 @@ import 'combination_check_result_sheet.dart';
 /// aber ab einer gewissen Anzahl lohnt sich ein Blick auf die Kombination als
 /// Ganzes (Wechselwirkungen/Überdosierung/Duplikate — siehe
 /// combination_check_result_sheet.dart).
-class CombinationCheckBanner extends ConsumerStatefulWidget {
+///
+/// Steht dauerhaft im Stack-Screen (Tab "Supplements") — siehe auch
+/// [showCombinationCheckPromptPopup] für die sofortige Variante direkt nach
+/// dem Hinzufügen eines Supplements, egal auf welchem Screen.
+class CombinationCheckBanner extends ConsumerWidget {
   const CombinationCheckBanner({super.key});
 
   @override
-  ConsumerState<CombinationCheckBanner> createState() => _CombinationCheckBannerState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final shouldShow = ref.watch(shouldShowCombinationCheckPromptProvider);
+    if (!shouldShow) return const SizedBox.shrink();
+    return const Padding(
+      padding: EdgeInsets.only(bottom: AppConstants.spaceM),
+      child: _CombinationCheckPromptCard(),
+    );
+  }
 }
 
-class _CombinationCheckBannerState extends ConsumerState<CombinationCheckBanner> {
+/// Zeigt denselben Hinweis wie [CombinationCheckBanner], aber sofort als
+/// Bottom-Sheet — aufgerufen direkt nachdem ein Supplement zum Stack
+/// hinzugefügt wurde (siehe stack_add_warnings.dart), statt erst zu warten,
+/// bis der Nutzer von sich aus den Stack-Screen besucht.
+Future<void> showCombinationCheckPromptPopup(BuildContext context, WidgetRef ref) async {
+  if (!ref.read(shouldShowCombinationCheckPromptProvider)) return;
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppConstants.radiusL)),
+    ),
+    builder: (sheetContext) => Padding(
+      padding: const EdgeInsets.all(AppConstants.spaceL),
+      child: _CombinationCheckPromptCard(
+        onHandled: () => Navigator.of(sheetContext).pop(),
+      ),
+    ),
+  );
+}
+
+class _CombinationCheckPromptCard extends ConsumerStatefulWidget {
+  /// Wird aufgerufen, sobald der Nutzer reagiert hat (geprüft ODER
+  /// weggewischt) — im Popup-Kontext genutzt, um das Sheet danach zu
+  /// schließen. Im dauerhaften Banner auf dem Stack-Screen null, weil dort
+  /// nichts "geschlossen" werden muss.
+  final VoidCallback? onHandled;
+
+  const _CombinationCheckPromptCard({this.onHandled});
+
+  @override
+  ConsumerState<_CombinationCheckPromptCard> createState() => _CombinationCheckPromptCardState();
+}
+
+class _CombinationCheckPromptCardState extends ConsumerState<_CombinationCheckPromptCard> {
   bool _checking = false;
 
   Future<void> _check(List<StackEntry> stack, String signature) async {
@@ -39,6 +85,7 @@ class _CombinationCheckBannerState extends ConsumerState<CombinationCheckBanner>
       if (!mounted) return;
       await ref.read(combinationCheckPromptProvider.notifier).markHandled(signature);
       if (!mounted) return;
+      widget.onHandled?.call();
       showCombinationCheckResultSheet(context, result);
     } on AppFailure catch (e) {
       if (mounted) {
@@ -55,17 +102,18 @@ class _CombinationCheckBannerState extends ConsumerState<CombinationCheckBanner>
     }
   }
 
+  void _dismiss(String signature) {
+    ref.read(combinationCheckPromptProvider.notifier).markHandled(signature);
+    widget.onHandled?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final shouldShow = ref.watch(shouldShowCombinationCheckPromptProvider);
-    if (!shouldShow) return const SizedBox.shrink();
-
     final stack = ref.watch(stackProvider);
     final signature = stackSignature(stack);
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: AppConstants.spaceM),
       padding: const EdgeInsets.all(AppConstants.spaceM),
       decoration: BoxDecoration(
         color: AppColors.primary.withOpacity(0.06),
@@ -73,6 +121,7 @@ class _CombinationCheckBannerState extends ConsumerState<CombinationCheckBanner>
         border: Border.all(color: AppColors.primary.withOpacity(0.30)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -87,9 +136,7 @@ class _CombinationCheckBannerState extends ConsumerState<CombinationCheckBanner>
                 ),
               ),
               IconButton(
-                onPressed: _checking
-                    ? null
-                    : () => ref.read(combinationCheckPromptProvider.notifier).markHandled(signature),
+                onPressed: _checking ? null : () => _dismiss(signature),
                 icon: const Icon(Icons.close, size: 18, color: AppColors.textTertiary),
                 tooltip: 'Nicht jetzt',
                 style: IconButton.styleFrom(minimumSize: const Size(28, 28), padding: EdgeInsets.zero),

@@ -21,6 +21,7 @@ import '../../../settings/domain/models/recommendation_source_mode.dart';
 import '../../../settings/data/cache_mode_provider.dart';
 import '../../../settings/domain/models/cache_mode.dart';
 import '../../../stack/data/stack_provider.dart';
+import '../../../stack/presentation/widgets/stack_add_warnings.dart';
 
 // ---------------------------------------------------------------------------
 // Tag-Modell für den Filter
@@ -324,13 +325,15 @@ class _ProfileRecommendationsScreenState
     if (!mounted || !safetyConfirmed) return;
 
     final notifier = ref.read(stackProvider.notifier);
-    notifier.add(supplement, goalContext: 'Basissupplementierung');
+    await notifier.add(supplement, goalContext: 'Basissupplementierung');
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('${supplement.name} zum Stack hinzugefügt'),
       backgroundColor: AppColors.evidenceGreen,
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
     ));
+    await showStackWarningsAfterAdd(context, ref, justAddedGoalContext: 'Basissupplementierung');
   }
 
   // --- Navigation ---

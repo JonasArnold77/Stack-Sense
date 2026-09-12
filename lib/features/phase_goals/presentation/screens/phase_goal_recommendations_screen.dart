@@ -19,6 +19,7 @@ import '../../../settings/domain/models/recommendation_source_mode.dart';
 import '../../../settings/data/cache_mode_provider.dart';
 import '../../../settings/domain/models/cache_mode.dart';
 import '../../../stack/data/stack_provider.dart';
+import '../../../stack/presentation/widgets/stack_add_warnings.dart';
 import '../../data/phase_goals_provider.dart';
 import '../../domain/models/phase_goal.dart';
 
@@ -120,6 +121,10 @@ class _PhaseGoalRecommendationsScreenState
     await ref
         .read(phaseGoalsProvider.notifier)
         .addSupplementIds(goal.id, [supplement.id]);
+
+    if (mounted) {
+      await showStackWarningsAfterAdd(context, ref, justAddedGoalContext: goal.definition?.name);
+    }
 
     if (mounted) {
       final def = goal.definition;

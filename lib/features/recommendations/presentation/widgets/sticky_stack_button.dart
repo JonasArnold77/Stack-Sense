@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/models/supplement.dart';
 import '../../../stack/data/stack_provider.dart';
+import '../../../stack/presentation/widgets/stack_add_warnings.dart';
 import 'safety_warning_dialog.dart';
 
 /// Sticky-Button am unteren Bildschirmrand — fügt das Supplement zum Stack
@@ -105,7 +106,8 @@ class StickyStackButton extends ConsumerWidget {
                 );
                 if (!context.mounted || !safetyConfirmed) return;
 
-                ref.read(stackProvider.notifier).add(supplement);
+                await ref.read(stackProvider.notifier).add(supplement, goalContext: goalContext);
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('${supplement.name} zum Stack hinzugefügt'),
@@ -113,6 +115,7 @@ class StickyStackButton extends ConsumerWidget {
                     duration: const Duration(seconds: 2),
                   ),
                 );
+                await showStackWarningsAfterAdd(context, ref, justAddedGoalContext: goalContext);
               },
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Zum Stack hinzufügen'),

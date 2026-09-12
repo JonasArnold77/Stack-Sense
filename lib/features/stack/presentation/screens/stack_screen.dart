@@ -17,6 +17,7 @@ import '../../domain/models/stack_entry.dart';
 import '../widgets/combination_check_banner.dart';
 import '../widgets/inventory_reorder_sheet.dart';
 import '../widgets/inventory_tab.dart';
+import '../widgets/same_goal_repeat_banner.dart';
 import '../widgets/stack_supplement_card.dart';
 import '../widgets/intake_calendar.dart';
 import '../../../phase_goals/domain/models/phase_goal.dart';
@@ -243,7 +244,12 @@ class StackScreen extends ConsumerWidget {
                       const Padding(
                         padding: EdgeInsets.fromLTRB(
                             AppConstants.screenPaddingH, AppConstants.spaceM, AppConstants.screenPaddingH, 0),
-                        child: CombinationCheckBanner(),
+                        child: Column(
+                          children: [
+                            SameGoalRepeatBanner(),
+                            CombinationCheckBanner(),
+                          ],
+                        ),
                       ),
                       Expanded(
                         child: stack.isEmpty

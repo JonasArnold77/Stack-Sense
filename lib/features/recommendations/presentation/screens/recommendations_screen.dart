@@ -12,6 +12,7 @@ import '../../domain/models/supplement.dart';
 import '../../../stack/domain/models/stack_entry.dart' show StackEntry;
 import '../widgets/evidence_card.dart';
 import '../../../stack/data/stack_provider.dart';
+import '../../../stack/presentation/widgets/stack_add_warnings.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
 import '../../../onboarding/domain/models/user_profile.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
@@ -299,6 +300,7 @@ class _RecommendationsScreenState
 
     if (!checkResult.hasDuplicates) {
       await stackNotifier.add(supplement, goalContext: _selectedGoal);
+      if (mounted) await showStackWarningsAfterAdd(context, ref, justAddedGoalContext: _selectedGoal);
       return;
     }
 
@@ -308,6 +310,7 @@ class _RecommendationsScreenState
 
     if (duplicates.isEmpty) {
       await stackNotifier.add(supplement, goalContext: _selectedGoal);
+      if (mounted) await showStackWarningsAfterAdd(context, ref, justAddedGoalContext: _selectedGoal);
       return;
     }
 
@@ -333,6 +336,7 @@ class _RecommendationsScreenState
       await stackNotifier.markDuplicateWarnings(
           duplicates.map((e) => e.id).toList());
     }
+    if (mounted) await showStackWarningsAfterAdd(context, ref, justAddedGoalContext: _selectedGoal);
   }
 
   Supplement _stackEntryToSupplement(StackEntry e) => Supplement(
