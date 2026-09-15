@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,11 +10,14 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/widgets/nutrient_coverable_badge.dart';
+import '../../../auth/data/auth_provider.dart';
 import '../../domain/models/supplement.dart';
 import '../screens/supplement_detail_screen.dart';
 import '../../../community/domain/models/community_insight.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/presentation/widgets/inventory_package_sheet.dart';
+import '../../../tokens/presentation/widgets/insufficient_tokens_dialog.dart';
+import '../../../tokens/presentation/widgets/token_spend_feedback.dart';
 import 'supplement_category_badge.dart';
 
 /// Die Kern-Komponente der App — zeigt ein Supplement mit Evidenz-Ampel.
@@ -109,11 +114,20 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
     if (_explanation == null && !_loadingExplanation) {
       setState(() => _loadingExplanation = true);
       try {
+        final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
         final text = await ApiService.instance.explainSupplement(
           supplementName: widget.supplement.name,
+          idToken: idToken,
           substanceName: widget.supplement.substanceName,
         );
         if (mounted) setState(() => _explanation = text);
+        unawaited(refreshTokenBalanceAndShowCost(context, ref));
+      } on InsufficientTokensException {
+        if (mounted) {
+          setState(() => _explanation = null);
+          await showInsufficientTokensDialog(context, ref);
+        }
+        unawaited(refreshTokenBalanceAndShowCost(context, ref));
       } on AppFailure catch (e) {
         if (mounted) {
           setState(() => _explanation = e.message);
@@ -138,11 +152,20 @@ class _EvidenceCardState extends ConsumerState<EvidenceCard>
     if (_foodSources == null && !_loadingFoodSources) {
       setState(() => _loadingFoodSources = true);
       try {
+        final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
         final sources = await ApiService.instance.getFoodSources(
           supplementName: widget.supplement.name,
+          idToken: idToken,
           substanceName: widget.supplement.substanceName,
         );
         if (mounted) setState(() => _foodSources = sources);
+        unawaited(refreshTokenBalanceAndShowCost(context, ref));
+      } on InsufficientTokensException {
+        if (mounted) {
+          setState(() => _foodSources = []);
+          await showInsufficientTokensDialog(context, ref);
+        }
+        unawaited(refreshTokenBalanceAndShowCost(context, ref));
       } on AppFailure catch (_) {
         if (mounted) setState(() => _foodSources = []);
       } finally {
@@ -941,7 +964,7 @@ class _RankStrip extends StatelessWidget {
 
 // --- Bottomsheet mit lazy-geladenen Kaufoptionen ---
 
-class _ProductSheet extends StatefulWidget {
+class _ProductSheet extends ConsumerStatefulWidget {
   final Supplement supplement;
   final List<ProductLink>? initialLinks; // null = noch nicht geladen
   final ValueChanged<List<ProductLink>> onLinksLoaded;
@@ -956,10 +979,10 @@ class _ProductSheet extends StatefulWidget {
   });
 
   @override
-  State<_ProductSheet> createState() => _ProductSheetState();
+  ConsumerState<_ProductSheet> createState() => _ProductSheetState();
 }
 
-class _ProductSheetState extends State<_ProductSheet> {
+class _ProductSheetState extends ConsumerState<_ProductSheet> {
   List<ProductLink>? _links;
   bool _loading = false;
   String? _error;
@@ -977,8 +1000,10 @@ class _ProductSheetState extends State<_ProductSheet> {
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
     try {
+      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       final links = await ApiService.instance.getProductSuggestions(
         supplementName: widget.supplement.name,
+        idToken: idToken,
         substanceName: widget.supplement.substanceName,
         categories: widget.supplement.categories,
       );
@@ -986,6 +1011,16 @@ class _ProductSheetState extends State<_ProductSheet> {
         setState(() { _links = links; _loading = false; });
         widget.onLinksLoaded(links);
       }
+      unawaited(refreshTokenBalanceAndShowCost(context, ref));
+    } on InsufficientTokensException {
+      if (mounted) {
+        setState(() {
+          _error = 'Keine Tokens mehr verfügbar.';
+          _loading = false;
+        });
+        await showInsufficientTokensDialog(context, ref);
+      }
+      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } catch (e) {
       if (mounted) {
         setState(() {

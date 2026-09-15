@@ -25,6 +25,7 @@ class UserRow:
     created_at: datetime
     last_login_at: Optional[datetime]
     tenant_id: Optional[str] = None
+    token_balance: int = 0
 
 
 @dataclass
@@ -54,7 +55,7 @@ def upsert_user(cognito_sub: str, email: str) -> UserRow:
     ON CONFLICT (cognito_sub) DO UPDATE
         SET last_login_at = NOW(),
             email = EXCLUDED.email
-    RETURNING id, cognito_sub, email, role, created_at, last_login_at, tenant_id
+    RETURNING id, cognito_sub, email, role, created_at, last_login_at, tenant_id, token_balance
     """
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -68,13 +69,14 @@ def upsert_user(cognito_sub: str, email: str) -> UserRow:
         created_at=row[4],
         last_login_at=row[5],
         tenant_id=row[6],
+        token_balance=row[7],
     )
 
 
 def get_user_by_sub(cognito_sub: str) -> Optional[UserRow]:
     """Sucht einen User anhand des Cognito Sub-Feldes."""
     sql = """
-    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id
+    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id, token_balance
     FROM users WHERE cognito_sub = %s
     """
     with get_conn() as conn:
@@ -91,13 +93,14 @@ def get_user_by_sub(cognito_sub: str) -> Optional[UserRow]:
         created_at=row[4],
         last_login_at=row[5],
         tenant_id=row[6],
+        token_balance=row[7],
     )
 
 
 def list_all_users() -> list[UserRow]:
     """Gibt alle User zurück (nur für Admin-Endpoints)."""
     sql = """
-    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id
+    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id, token_balance
     FROM users ORDER BY created_at DESC
     """
     with get_conn() as conn:
@@ -108,6 +111,7 @@ def list_all_users() -> list[UserRow]:
         UserRow(
             id=str(r[0]), cognito_sub=r[1], email=r[2],
             role=r[3], created_at=r[4], last_login_at=r[5], tenant_id=r[6],
+            token_balance=r[7],
         )
         for r in rows
     ]

@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/failures.dart';
 import '../../../core/services/api_service.dart';
+import '../../auth/data/auth_provider.dart';
 import '../../settings/data/cache_mode_provider.dart';
 import '../../settings/data/recommendation_mode_provider.dart';
 import '../../settings/domain/models/cache_mode.dart';
 import '../../settings/domain/models/recommendation_mode.dart';
+import '../../tokens/presentation/widgets/insufficient_tokens_dialog.dart';
+import '../../tokens/presentation/widgets/token_spend_feedback.dart';
 import 'screens/supplement_detail_screen.dart';
 
 /// Öffnet dasselbe Detail-Fenster wie ein Tap auf eine Supplement-Karte unter
@@ -38,9 +43,11 @@ Future<void> openSupplementDetail(
   );
 
   try {
+    final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
     final lookup = ApiService.instance.lookupSupplement(
       supplementId: supplementId,
       supplementName: supplementName,
+      idToken: idToken,
       dbOnly: dbOnly,
       bypassCache: bypassCache,
     );
@@ -52,6 +59,11 @@ Future<void> openSupplementDetail(
     navigator.pop(); // Spinner schließen
     if (!context.mounted) return;
     showSupplementDetail(context, supplement, goalContext: goalContext);
+    unawaited(refreshTokenBalanceAndShowCost(context, ref));
+  } on InsufficientTokensException {
+    navigator.pop();
+    if (context.mounted) await showInsufficientTokensDialog(context, ref);
+    unawaited(refreshTokenBalanceAndShowCost(context, ref));
   } on AppFailure catch (e) {
     navigator.pop();
     messenger.showSnackBar(SnackBar(content: Text(e.message)));

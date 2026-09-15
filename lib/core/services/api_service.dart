@@ -33,6 +33,7 @@ class ApiService {
   Future<List<Supplement>> getRecommendations({
     required UserProfile profile,
     required String goal,
+    required String idToken,
     int limit = 5,
     List<String> excludeIds = const [],
     bool dbOnly = false,
@@ -53,6 +54,7 @@ class ApiService {
             Uri.parse('$_baseUrl/recommendations'),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
               'ngrok-skip-browser-warning': 'true',
             },
             body: body,
@@ -65,6 +67,8 @@ class ApiService {
         return list
             .map((e) => _supplementFromJson(e as Map<String, dynamic>))
             .toList();
+      } else if (response.statusCode == 402) {
+        throw const InsufficientTokensException();
       } else {
         debugPrint('API Fehler ${response.statusCode}: ${response.body}');
         throw ApiException('Server-Fehler: ${response.statusCode}');
@@ -85,6 +89,7 @@ class ApiService {
   Future<List<Supplement>> getPrecomputedRecommendations({
     required UserProfile profile,
     required String goal,
+    required String idToken,
     int limit = 4,
     int offset = 0,
     bool dbOnly = false,
@@ -103,6 +108,7 @@ class ApiService {
             Uri.parse('$_baseUrl/recommendations/precomputed'),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
               'ngrok-skip-browser-warning': 'true',
             },
             body: body,
@@ -115,6 +121,8 @@ class ApiService {
         return list
             .map((e) => _supplementFromJson(e as Map<String, dynamic>))
             .toList();
+      } else if (response.statusCode == 402) {
+        throw const InsufficientTokensException();
       } else {
         debugPrint('API Fehler ${response.statusCode}: ${response.body}');
         throw ApiException('Server-Fehler: ${response.statusCode}');
@@ -165,6 +173,7 @@ class ApiService {
   Future<Supplement> lookupSupplement({
     required String supplementId,
     required String supplementName,
+    required String idToken,
     bool dbOnly = false,
     bool bypassCache = false,
   }) async {
@@ -174,6 +183,7 @@ class ApiService {
             Uri.parse('$_baseUrl/recommendations/lookup'),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
               'ngrok-skip-browser-warning': 'true',
             },
             body: jsonEncode({
@@ -187,6 +197,9 @@ class ApiService {
 
       if (response.statusCode == 200) {
         return _supplementFromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      }
+      if (response.statusCode == 402) {
+        throw const InsufficientTokensException();
       }
       debugPrint('API Fehler ${response.statusCode}: ${response.body}');
       throw ApiException('Server-Fehler: ${response.statusCode}');
@@ -211,6 +224,7 @@ class ApiService {
   /// Holt eine "Einfach erklärt" Erklärung für ein Supplement (on-demand, Sonnet).
   Future<String> explainSupplement({
     required String supplementName,
+    required String idToken,
     String? substanceName,
   }) async {
     final body = jsonEncode({
@@ -224,6 +238,7 @@ class ApiService {
             Uri.parse('$_baseUrl/explain'),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
               'ngrok-skip-browser-warning': 'true',
             },
             body: body,
@@ -233,6 +248,8 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         return data['explanation'] as String;
+      } else if (response.statusCode == 402) {
+        throw const InsufficientTokensException();
       } else {
         throw ApiException('Erklärung nicht verfügbar (${response.statusCode})');
       }
@@ -247,6 +264,7 @@ class ApiService {
   /// Lädt on-demand Kaufoptionen für ein Supplement via Claude.
   Future<List<ProductLink>> getProductSuggestions({
     required String supplementName,
+    required String idToken,
     String? substanceName,
     List<String> categories = const [],
   }) async {
@@ -262,6 +280,7 @@ class ApiService {
             Uri.parse('$_baseUrl/products'),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
               'ngrok-skip-browser-warning': 'true',
             },
             body: body,
@@ -274,6 +293,8 @@ class ApiService {
         return list
             .map((e) => ProductLink.fromJson(e as Map<String, dynamic>))
             .toList();
+      } else if (response.statusCode == 402) {
+        throw const InsufficientTokensException();
       } else {
         throw ApiException('Produkte nicht verfügbar (${response.statusCode})');
       }
@@ -290,8 +311,12 @@ class ApiService {
   /// über den "Kombination checken lassen"-Hinweis. Der Stack lebt nur lokal
   /// auf dem Gerät, wird also komplett mitgeschickt statt serverseitig
   /// nachgeschlagen.
+  /// Sicherheitsrelevant — bewusst NICHT vom Token-Guthaben blockiert
+  /// (der Server prüft hier nur Auth, kein 402 möglich). Braucht trotzdem
+  /// [idToken], damit der Verbrauch dem richtigen Nutzer zugeordnet wird.
   Future<CombinationCheckResult> checkStackCombination({
     required List<StackEntry> supplements,
+    required String idToken,
     List<String> medications = const [],
   }) async {
     final body = jsonEncode({
@@ -311,6 +336,7 @@ class ApiService {
             Uri.parse('$_baseUrl/stack/combination-check'),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
               'ngrok-skip-browser-warning': 'true',
             },
             body: body,
@@ -394,6 +420,7 @@ class ApiService {
   Future<DuplicateCheckResult> checkDuplicates({
     required Supplement newSupplement,
     required List<Supplement> stack,
+    required String idToken,
   }) async {
     if (stack.isEmpty) {
       return const DuplicateCheckResult(duplicateIds: [], reasoning: '');
@@ -417,6 +444,7 @@ class ApiService {
             Uri.parse('$_baseUrl/check-duplicates'),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
               'ngrok-skip-browser-warning': 'true',
             },
             body: body,
@@ -433,7 +461,12 @@ class ApiService {
           reasoning: data['reasoning'] as String? ?? '',
         );
       }
+      if (response.statusCode == 402) {
+        throw const InsufficientTokensException();
+      }
       return const DuplicateCheckResult(duplicateIds: [], reasoning: '');
+    } on InsufficientTokensException {
+      rethrow;
     } catch (e) {
       debugPrint('Duplikat-Check Fehler: $e');
       return const DuplicateCheckResult(duplicateIds: [], reasoning: '');
@@ -598,6 +631,7 @@ class ApiService {
   Future<List<SupplementSynergy>> getSynergies({
     required UserProfile profile,
     required String goal,
+    required String idToken,
   }) async {
     final body = jsonEncode({
       'profile': _profileToJson(profile),
@@ -612,6 +646,7 @@ class ApiService {
             Uri.parse('$_baseUrl/synergies'),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
               'ngrok-skip-browser-warning': 'true',
             },
             body: body,
@@ -624,10 +659,14 @@ class ApiService {
         return list
             .map((e) => SupplementSynergy.fromJson(e as Map<String, dynamic>))
             .toList();
+      } else if (response.statusCode == 402) {
+        throw const InsufficientTokensException();
       } else {
         debugPrint('Synergy API Fehler ${response.statusCode}');
         return [];
       }
+    } on InsufficientTokensException {
+      rethrow;
     } catch (e) {
       debugPrint('Synergy-Fehler (ignoriert): $e');
       return [];
@@ -637,6 +676,7 @@ class ApiService {
   /// Lädt natürliche Lebensmittelquellen für einen Nährstoff (lazy, on-demand).
   Future<List<FoodSource>> getFoodSources({
     required String supplementName,
+    required String idToken,
     String? substanceName,
   }) async {
     final body = jsonEncode({
@@ -650,6 +690,7 @@ class ApiService {
             Uri.parse('$_baseUrl/food-sources'),
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
               'ngrok-skip-browser-warning': 'true',
             },
             body: body,
@@ -662,6 +703,8 @@ class ApiService {
         return list
             .map((e) => FoodSource.fromJson(e as Map<String, dynamic>))
             .toList();
+      } else if (response.statusCode == 402) {
+        throw const InsufficientTokensException();
       } else {
         throw ApiException('Quellen nicht verfügbar (${response.statusCode})');
       }
@@ -692,6 +735,52 @@ class ApiService {
       return MeResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
     } catch (e) {
       debugPrint('getMe Fehler: $e');
+      return null;
+    }
+  }
+
+  /// Aktuelles KI-Token-Guthaben. Liefert null bei jedem Fehler statt zu
+  /// werfen — ein fehlgeschlagener Balance-Refresh soll nie einen Screen
+  /// blockieren, der Chip/Banner zeigt dann einfach den letzten bekannten Stand.
+  Future<int?> getTokenBalance(String idToken) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl/users/me/tokens'),
+            headers: {
+              'Authorization': 'Bearer $idToken',
+              'ngrok-skip-browser-warning': 'true',
+            },
+          )
+          .timeout(AppConstants.apiTimeout);
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return (data['balance'] as num).toInt();
+    } catch (e) {
+      debugPrint('getTokenBalance Fehler: $e');
+      return null;
+    }
+  }
+
+  /// Lädt sofort und kostenlos neue Tokens nach (Test-Stub, siehe Backend
+  /// routers/users.py — Platzhalter bis eine echte Bezahl-/IAP-Anbindung
+  /// existiert). Gibt das neue Guthaben zurück, oder null bei Fehler.
+  Future<int?> purchaseTokens(String idToken) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/users/me/tokens/purchase'),
+            headers: {
+              'Authorization': 'Bearer $idToken',
+              'ngrok-skip-browser-warning': 'true',
+            },
+          )
+          .timeout(AppConstants.apiTimeout);
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return (data['balance'] as num).toInt();
+    } catch (e) {
+      debugPrint('purchaseTokens Fehler: $e');
       return null;
     }
   }
@@ -854,6 +943,12 @@ class MeResponse {
 /// neu geschriebener Code kann `on AppFailure` verwenden.
 class ApiException extends NetworkFailure {
   const ApiException(String message) : super(message: message);
+}
+
+/// Wird geworfen wenn der Server 402 zurückgibt (Token-Guthaben leer).
+/// UI-Stellen fangen das gezielt ab, um showInsufficientTokensDialog zu zeigen.
+class InsufficientTokensException extends ApiException {
+  const InsufficientTokensException() : super('Keine Tokens mehr verfügbar.');
 }
 
 /// Ergebnis der KI-basierten Duplikatprüfung.

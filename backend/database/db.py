@@ -72,6 +72,10 @@ def init_user_tables() -> None:
         last_login_at  TIMESTAMPTZ
     );
 
+    -- KI-Token-Guthaben: sinkt um die echten Claude-Tokens (Input+Output)
+    -- jeder KI-Anfrage. 50000 ist ein Test-Startwert (~5 typische Anfragen).
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS token_balance BIGINT NOT NULL DEFAULT 50000;
+
     CREATE INDEX IF NOT EXISTS idx_users_cognito_sub ON users(cognito_sub);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
