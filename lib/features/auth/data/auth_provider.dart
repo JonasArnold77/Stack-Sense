@@ -1,6 +1,7 @@
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../core/services/api_service.dart';
 
@@ -146,6 +147,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       features: me.features,
       branding: me.branding,
     );
+
+    // RevenueCat mit unserer eigenen User-UUID verknüpfen (== app_user_id im
+    // Kauf-Webhook, siehe backend/routers/purchases.py) — kein eigenes
+    // Mapping nötig. Still, wenn RevenueCat nicht konfiguriert ist (kein Key
+    // in .env, siehe main.dart::_configureRevenueCat).
+    try {
+      await Purchases.logIn(me.id);
+    } catch (_) {}
   }
 
   // --- Login mit Email + Passwort ---

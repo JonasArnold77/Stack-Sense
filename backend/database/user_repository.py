@@ -73,6 +73,30 @@ def upsert_user(cognito_sub: str, email: str) -> UserRow:
     )
 
 
+def get_user_by_id(user_id: str) -> Optional[UserRow]:
+    """Sucht einen User anhand der internen UUID (z.B. RevenueCat app_user_id)."""
+    sql = """
+    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id, token_balance
+    FROM users WHERE id = %s
+    """
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, (user_id,))
+            row = cur.fetchone()
+    if row is None:
+        return None
+    return UserRow(
+        id=str(row[0]),
+        cognito_sub=row[1],
+        email=row[2],
+        role=row[3],
+        created_at=row[4],
+        last_login_at=row[5],
+        tenant_id=row[6],
+        token_balance=row[7],
+    )
+
+
 def get_user_by_sub(cognito_sub: str) -> Optional[UserRow]:
     """Sucht einen User anhand des Cognito Sub-Feldes."""
     sql = """

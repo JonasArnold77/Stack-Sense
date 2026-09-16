@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../data/purchase_provider.dart';
 import '../../data/token_balance_provider.dart';
+import 'purchase_flow.dart';
 
 /// Dauerhafter Hinweis auf dem Home-Screen, solange das Token-Guthaben leer
 /// ist — ergänzt (ersetzt nicht) den sofortigen Dialog, der direkt nach einer
@@ -15,6 +17,7 @@ class TokenBalanceBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final balance = ref.watch(tokenBalanceProvider);
     if (balance == null || balance > 0) return const SizedBox.shrink();
+    final packages = ref.watch(purchaseProvider);
 
     const accent = Color(0xFFC62828);
     const bg = Color(0xFFFFEBEE);
@@ -43,15 +46,32 @@ class TokenBalanceBanner extends ConsumerWidget {
               ),
             ],
           ),
+          for (final package in packages) ...[
+            const SizedBox(height: AppConstants.spaceS),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => buyTokenPackage(context, ref, package),
+                style: FilledButton.styleFrom(
+                  backgroundColor: accent,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusM)),
+                ),
+                child: Text(
+                  '${tokenLabelForProduct(package.storeProduct.identifier)} — ${package.storeProduct.priceString}',
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: AppConstants.spaceM),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: OutlinedButton.icon(
               onPressed: () => ref.read(tokenBalanceProvider.notifier).purchase(),
               icon: const Icon(Icons.add_circle_outline, size: 18),
               label: const Text('Tokens aufladen (Test)'),
-              style: FilledButton.styleFrom(
-                backgroundColor: accent,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: accent,
+                side: const BorderSide(color: accent),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.radiusM)),
               ),
             ),

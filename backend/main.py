@@ -10,6 +10,7 @@ from routers.admin_tenants import router as admin_tenants_router
 from routers.admin_upgrade import router as admin_upgrade_router
 from routers.admin_page import router as admin_page_router
 from routers.recipes import router as recipes_router
+from routers.purchases import router as purchases_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,6 +41,7 @@ app.include_router(admin_tenants_router)
 app.include_router(admin_upgrade_router)
 app.include_router(admin_page_router)
 app.include_router(recipes_router)
+app.include_router(purchases_router)
 
 
 @app.on_event("startup")

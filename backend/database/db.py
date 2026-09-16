@@ -90,6 +90,18 @@ def init_user_tables() -> None:
         is_pregnant    BOOLEAN NOT NULL DEFAULT FALSE,
         updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    -- Ledger echter Token-Käufe (RevenueCat-Webhook) — UNIQUE auf
+    -- revenuecat_event_id schützt vor doppelter Gutschrift bei erneut
+    -- zugestellten Webhooks.
+    CREATE TABLE IF NOT EXISTS token_purchases (
+        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id             UUID NOT NULL REFERENCES users(id),
+        product_id          TEXT NOT NULL,
+        revenuecat_event_id TEXT NOT NULL UNIQUE,
+        tokens_credited     BIGINT NOT NULL,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     """
     try:
         with get_conn() as conn:
