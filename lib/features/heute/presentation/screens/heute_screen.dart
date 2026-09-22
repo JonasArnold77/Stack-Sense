@@ -13,6 +13,7 @@ import '../../../checkin/data/checkin_provider.dart';
 import '../../../gamification/data/xp_provider.dart';
 import '../../../insights/data/insights_provider.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
+import '../../../settings/data/developer_mode_provider.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../settings/data/recommendation_source_mode_provider.dart';
@@ -249,6 +250,7 @@ class _GreetingHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDevMode = ref.watch(developerModeProvider);
     return Container(
       decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
@@ -293,29 +295,33 @@ class _GreetingHeader extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
-              const _RecommendationModeToggle(),
+              if (isDevMode) const _RecommendationModeToggle(),
             ],
           ),
-          const SizedBox(height: AppConstants.spaceS),
-          const Align(
-            alignment: Alignment.centerRight,
-            child: _RecommendationSourceModeToggle(),
-          ),
-          const SizedBox(height: AppConstants.spaceS),
-          const Align(
-            alignment: Alignment.centerRight,
-            child: _CacheModeToggle(),
-          ),
-          const SizedBox(height: AppConstants.spaceXS),
-          const Align(
-            alignment: Alignment.centerRight,
-            child: _ResetSavedListsButton(),
-          ),
-          const SizedBox(height: AppConstants.spaceXS),
-          const Align(
-            alignment: Alignment.centerRight,
-            child: _ResetProfileButton(),
-          ),
+          // Interne Test-/Debug-Schalter — nur im Developer Mode sichtbar
+          // (siehe Profil-Screen → Einstellungen).
+          if (isDevMode) ...[
+            const SizedBox(height: AppConstants.spaceS),
+            const Align(
+              alignment: Alignment.centerRight,
+              child: _RecommendationSourceModeToggle(),
+            ),
+            const SizedBox(height: AppConstants.spaceS),
+            const Align(
+              alignment: Alignment.centerRight,
+              child: _CacheModeToggle(),
+            ),
+            const SizedBox(height: AppConstants.spaceXS),
+            const Align(
+              alignment: Alignment.centerRight,
+              child: _ResetSavedListsButton(),
+            ),
+            const SizedBox(height: AppConstants.spaceXS),
+            const Align(
+              alignment: Alignment.centerRight,
+              child: _ResetProfileButton(),
+            ),
+          ],
           const SizedBox(height: AppConstants.spaceM),
           Text(
             dateStr,

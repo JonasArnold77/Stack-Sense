@@ -7,6 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../checkin/data/checkin_provider.dart';
 import '../../../gamification/data/xp_provider.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
+import '../../../settings/data/developer_mode_provider.dart';
 import '../widgets/backend_url_card.dart';
 import '../widgets/profile_gradient_header.dart';
 import '../widgets/profile_info_card.dart';
@@ -25,6 +26,7 @@ class ProfileScreen extends ConsumerWidget {
     final xpLevel = ref.watch(xpLevelProvider);
     final checkins = ref.watch(checkinProvider);
     final streak = ref.read(checkinProvider.notifier).currentStreak;
+    final isDevMode = ref.watch(developerModeProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -41,12 +43,13 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Backend-Verbindung',
-                      style: AppTextStyles.headlineSmall),
-                  const SizedBox(height: AppConstants.spaceS),
-                  const BackendUrlCard(),
-
-                  const SizedBox(height: AppConstants.spaceL),
+                  if (isDevMode) ...[
+                    Text('Backend-Verbindung',
+                        style: AppTextStyles.headlineSmall),
+                    const SizedBox(height: AppConstants.spaceS),
+                    const BackendUrlCard(),
+                    const SizedBox(height: AppConstants.spaceL),
+                  ],
 
                   const ProfileRecommendationsCard(),
 
