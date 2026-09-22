@@ -46,9 +46,6 @@ dependencies:
   intl: ^0.20.3
   collection: ^1.19.1
 
-  # In-App-Käufe (Apple IAP + Google Play Billing) — Token-Pakete
-  purchases_flutter: ^8.0.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

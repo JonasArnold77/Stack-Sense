@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import asyncio
 import logging
@@ -10,10 +10,6 @@ from models.recommendation import RecommendationResponse, SupplementRecommendati
 from services.claude_service import ClaudeService
 from services.pubmed_service import PubMedService
 from services.vector_service import search_supplements, get_precomputed_supplement_info_single
-from services.token_usage_tracker import track_usage
-from database.user_repository import UserRow
-from database.token_repository import deduct_tokens
-from middleware.auth import get_current_user, require_tokens
 
 router = APIRouter(prefix="/api/v1", tags=["Empfehlungen"])
 logger = logging.getLogger(__name__)
@@ -34,10 +30,7 @@ except Exception as _e:
 
 
 @router.post("/recommendations", response_model=RecommendationResponse)
-async def get_recommendations(
-    request: RecommendationRequest,
-    user: UserRow = Depends(require_tokens),
-) -> RecommendationResponse:
+async def get_recommendations(request: RecommendationRequest) -> RecommendationResponse:
     """
     Gibt personalisierte Supplement-Empfehlungen zurueck.
 
@@ -45,17 +38,14 @@ async def get_recommendations(
     gibt Gruen/Gelb/Rot-Empfehlungen von Claude zurueck.
     """
     try:
-        async with track_usage() as usage:
-            result = await claude_service.get_recommendations(
-                profile=request.profile,
-                goal=request.goal,
-                limit=request.limit,
-                exclude_ids=request.exclude_ids,
-                db_only=request.db_only,
-                bypass_cache=request.bypass_cache,
-            )
-        if usage["tokens"] > 0:
-            deduct_tokens(user.id, usage["tokens"])
+        result = await claude_service.get_recommendations(
+            profile=request.profile,
+            goal=request.goal,
+            limit=request.limit,
+            exclude_ids=request.exclude_ids,
+            db_only=request.db_only,
+            bypass_cache=request.bypass_cache,
+        )
         return result
     except ValueError as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -71,7 +61,6 @@ class PrecomputedRecommendationRequest(RecommendationRequest):
 @router.post("/recommendations/precomputed", response_model=RecommendationResponse)
 async def get_precomputed_recommendations(
     request: PrecomputedRecommendationRequest,
-    user: UserRow = Depends(require_tokens),
 ) -> RecommendationResponse:
     """
     Vorberechnungs-Modus: nutzt die per scripts/precompute_recommendations.py
@@ -80,16 +69,13 @@ async def get_precomputed_recommendations(
     noch frisch erzeugt — für die angeforderte Seite.
     """
     try:
-        async with track_usage() as usage:
-            result = await claude_service.get_recommendations_from_precomputed(
-                profile=request.profile,
-                goal=request.goal,
-                db_only=request.db_only,
-                limit=request.limit,
-                offset=request.offset,
-            )
-        if usage["tokens"] > 0:
-            deduct_tokens(user.id, usage["tokens"])
+        result = await claude_service.get_recommendations_from_precomputed(
+            profile=request.profile,
+            goal=request.goal,
+            db_only=request.db_only,
+            limit=request.limit,
+            offset=request.offset,
+        )
         return result
     except ValueError as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -130,26 +116,19 @@ class SupplementLookupRequest(BaseModel):
 
 
 @router.post("/recommendations/lookup", response_model=SupplementRecommendation)
-async def get_supplement_lookup(
-    request: SupplementLookupRequest,
-    user: UserRow = Depends(require_tokens),
-) -> SupplementRecommendation:
+async def get_supplement_lookup(request: SupplementLookupRequest) -> SupplementRecommendation:
     """
     Generiert die volle Supplement-Karte für einen Such-Treffer (Direktsuche,
     kein Ziel/Profil) — wird aufgerufen wenn der Nutzer in der Home-Screen-
     Suche auf ein Ergebnis tippt. Respektiert den KI-/Datenbank-Modus.
     """
     try:
-        async with track_usage() as usage:
-            result = await claude_service.get_supplement_detail(
-                supplement_id=request.supplement_id,
-                supplement_name=request.supplement_name,
-                db_only=request.db_only,
-                bypass_cache=request.bypass_cache,
-            )
-        if usage["tokens"] > 0:
-            deduct_tokens(user.id, usage["tokens"])
-        return result
+        return await claude_service.get_supplement_detail(
+            supplement_id=request.supplement_id,
+            supplement_name=request.supplement_name,
+            db_only=request.db_only,
+            bypass_cache=request.bypass_cache,
+        )
     except ValueError as e:
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
@@ -163,10 +142,7 @@ class ExplainRequest(BaseModel):
 
 
 @router.post("/explain")
-async def explain_supplement(
-    request: ExplainRequest,
-    user: UserRow = Depends(require_tokens),
-) -> dict:
+async def explain_supplement(request: ExplainRequest) -> dict:
     """
     Gibt eine einfache Laienerklarung fuer ein Supplement zurueck.
     Wird on-demand geladen wenn der Nutzer auf "Einfach erklaert" tippt.
@@ -179,13 +155,10 @@ async def explain_supplement(
         return {"explanation": precomputed["simple_explanation"]}
 
     try:
-        async with track_usage() as usage:
-            explanation = await claude_service.get_simple_explanation(
-                supplement_name=request.supplement_name,
-                substance_name=request.substance_name,
-            )
-        if usage["tokens"] > 0:
-            deduct_tokens(user.id, usage["tokens"])
+        explanation = await claude_service.get_simple_explanation(
+            supplement_name=request.supplement_name,
+            substance_name=request.substance_name,
+        )
         return {"explanation": explanation}
     except Exception as e:
         logger.error(f"Explain-Fehler: {e}", exc_info=True)
@@ -199,23 +172,17 @@ class ProductsRequest(BaseModel):
 
 
 @router.post("/products")
-async def get_products(
-    request: ProductsRequest,
-    user: UserRow = Depends(require_tokens),
-) -> dict:
+async def get_products(request: ProductsRequest) -> dict:
     """
     Gibt on-demand KI-generierte Kaufoptionen fuer ein Supplement zurueck.
     Wird lazy geladen wenn der Nutzer auf den Kauf-Button tippt.
     """
     try:
-        async with track_usage() as usage:
-            links = await claude_service.get_product_suggestions(
-                supplement_name=request.supplement_name,
-                substance_name=request.substance_name,
-                categories=request.categories,
-            )
-        if usage["tokens"] > 0:
-            deduct_tokens(user.id, usage["tokens"])
+        links = await claude_service.get_product_suggestions(
+            supplement_name=request.supplement_name,
+            substance_name=request.substance_name,
+            categories=request.categories,
+        )
         return {"products": [l.model_dump() for l in links]}
     except Exception as e:
         logger.error(f"Produkt-Suche Fehler: {e}", exc_info=True)
@@ -228,10 +195,7 @@ class FoodSourcesRequest(BaseModel):
 
 
 @router.post("/food-sources")
-async def get_food_sources(
-    request: FoodSourcesRequest,
-    user: UserRow = Depends(require_tokens),
-) -> dict:
+async def get_food_sources(request: FoodSourcesRequest) -> dict:
     """
     Gibt natuerliche Lebensmittelquellen fuer einen Naehrstoff zurueck.
     Primaer aus supplement_knowledge.json (statisch, O(1)).
@@ -263,13 +227,10 @@ async def get_food_sources(
     # 4. Fallback Claude (nur fuer unbekannte Supplements)
     logger.info(f"food-sources: Kein DB-Treffer fuer '{supp_id}' -- Claude-Fallback")
     try:
-        async with track_usage() as usage:
-            sources = await claude_service.get_food_sources(
-                supplement_name=request.supplement_name,
-                substance_name=request.substance_name,
-            )
-        if usage["tokens"] > 0:
-            deduct_tokens(user.id, usage["tokens"])
+        sources = await claude_service.get_food_sources(
+            supplement_name=request.supplement_name,
+            substance_name=request.substance_name,
+        )
         return {"sources": sources}
     except Exception as e:
         logger.error(f"Food-Sources Fehler: {e}", exc_info=True)
@@ -289,23 +250,17 @@ class DuplicateCheckRequest(BaseModel):
 
 
 @router.post("/check-duplicates")
-async def check_duplicates(
-    request: DuplicateCheckRequest,
-    user: UserRow = Depends(require_tokens),
-) -> dict:
+async def check_duplicates(request: DuplicateCheckRequest) -> dict:
     """
     Prueft semantisch ob das neue Supplement Wirkstoffe enthaelt
     die bereits im Stack vorhanden sind -- via Claude Haiku.
     Gibt { "duplicates": [ids], "reasoning": "..." } zurueck.
     """
     try:
-        async with track_usage() as usage:
-            result = await claude_service.check_duplicate_in_stack(
-                new_supplement=request.new_supplement.model_dump(),
-                stack=[e.model_dump() for e in request.stack],
-            )
-        if usage["tokens"] > 0:
-            deduct_tokens(user.id, usage["tokens"])
+        result = await claude_service.check_duplicate_in_stack(
+            new_supplement=request.new_supplement.model_dump(),
+            stack=[e.model_dump() for e in request.stack],
+        )
         return result
     except Exception as e:
         logger.error(f"Duplikat-Check Fehler: {e}", exc_info=True)
@@ -355,10 +310,7 @@ class SynergyRequest(BaseModel):
 
 
 @router.post("/synergies", response_model=SynergyResponse)
-async def get_synergies(
-    request: RecommendationRequest,
-    user: UserRow = Depends(require_tokens),
-) -> SynergyResponse:
+async def get_synergies(request: RecommendationRequest) -> SynergyResponse:
     """
     Gibt Claude-generierte Synergie-Empfehlungen zurück.
 
@@ -366,13 +318,10 @@ async def get_synergies(
     die sich nachweislich gegenseitig verstärken.
     """
     try:
-        async with track_usage() as usage:
-            result = await claude_service.get_synergies(
-                profile=request.profile,
-                goal=request.goal,
-            )
-        if usage["tokens"] > 0:
-            deduct_tokens(user.id, usage["tokens"])
+        result = await claude_service.get_synergies(
+            profile=request.profile,
+            goal=request.goal,
+        )
         return result
     except ValueError as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -393,10 +342,7 @@ class CombinationCheckRequest(BaseModel):
 
 
 @router.post("/stack/combination-check", response_model=CombinationCheckResponse)
-async def check_stack_combination(
-    request: CombinationCheckRequest,
-    user: UserRow = Depends(get_current_user),
-) -> CombinationCheckResponse:
+async def check_stack_combination(request: CombinationCheckRequest) -> CombinationCheckResponse:
     """
     Analysiert die komplette, aktuelle Supplement-Kombination des Nutzers auf
     Wechselwirkungen, Überdosierung (Summierung über mehrere Produkte) und
@@ -404,21 +350,12 @@ async def check_stack_combination(
     Hinweis ab 8-10 gleichzeitig aktiven Supplements (siehe Flutter:
     combination_check_banner.dart) — der Stack selbst lebt nur lokal auf dem
     Gerät, wird also mit jeder Anfrage komplett mitgeschickt.
-
-    Bewusst NICHT hinter `require_tokens` — Sicherheitsrelevantes (Wechsel-
-    wirkungen/Überdosierung) darf nicht am leeren Token-Guthaben scheitern.
-    Der Verbrauch wird trotzdem erfasst und abgezogen (das Konto darf dafür
-    unter 0 fallen), nur der 402-Block entfällt.
     """
     try:
-        async with track_usage() as usage:
-            result = await claude_service.check_stack_combination(
-                supplements=request.supplements,
-                medications=request.medications,
-            )
-        if usage["tokens"] > 0:
-            deduct_tokens(user.id, usage["tokens"])
-        return result
+        return await claude_service.check_stack_combination(
+            supplements=request.supplements,
+            medications=request.medications,
+        )
     except ValueError as e:
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:

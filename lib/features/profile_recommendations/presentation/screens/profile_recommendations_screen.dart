@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +9,6 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/services/recommendation_local_cache.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../auth/data/auth_provider.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
 import '../../../onboarding/domain/models/user_profile.dart';
 import '../../../recommendations/domain/models/supplement.dart';
@@ -25,8 +22,6 @@ import '../../../settings/data/cache_mode_provider.dart';
 import '../../../settings/domain/models/cache_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/presentation/widgets/stack_add_warnings.dart';
-import '../../../tokens/presentation/widgets/insufficient_tokens_dialog.dart';
-import '../../../tokens/presentation/widgets/token_spend_feedback.dart';
 
 // ---------------------------------------------------------------------------
 // Tag-Modell für den Filter
@@ -238,13 +233,11 @@ class _ProfileRecommendationsScreenState
   Future<List<Supplement>> _fetchRecommendations({
     required int offset,
     required List<String> alreadyLoadedIds,
-  }) async {
-    final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
+  }) {
     if (_precomputed) {
       return ApiService.instance.getPrecomputedRecommendations(
         profile: _buildFilteredProfile(),
         goal: 'Basis-Supplementierung',
-        idToken: idToken,
         limit: _pageSize,
         offset: offset,
         dbOnly: _dbOnly,
@@ -253,7 +246,6 @@ class _ProfileRecommendationsScreenState
     return ApiService.instance.getRecommendations(
       profile: _buildFilteredProfile(),
       goal: 'Basis-Supplementierung',
-      idToken: idToken,
       limit: _pageSize,
       excludeIds: alreadyLoadedIds,
       dbOnly: _dbOnly,
@@ -287,10 +279,6 @@ class _ProfileRecommendationsScreenState
           _hasMore = results.length >= _pageSize;
         });
       }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) await showInsufficientTokensDialog(context, ref);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
@@ -317,10 +305,6 @@ class _ProfileRecommendationsScreenState
       if (!_precomputed) {
         RecommendationLocalCache.instance.save(_cacheGoalKey, _dbOnly, _supplements);
       }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) await showInsufficientTokensDialog(context, ref);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } on AppFailure catch (_) {
       // Beim Nachladen stumm bleiben — kein Snackbar, kein Error-State
     } finally {

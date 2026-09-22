@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,11 +11,8 @@ import '../../../../core/widgets/gradient_screen_header.dart';
 import '../../domain/models/supplement.dart';
 import '../../../stack/domain/models/stack_entry.dart' show StackEntry;
 import '../widgets/evidence_card.dart';
-import '../../../auth/data/auth_provider.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/presentation/widgets/stack_add_warnings.dart';
-import '../../../tokens/presentation/widgets/insufficient_tokens_dialog.dart';
-import '../../../tokens/presentation/widgets/token_spend_feedback.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
 import '../../../onboarding/domain/models/user_profile.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
@@ -117,12 +112,10 @@ class _RecommendationsScreenState
     required int offset,
     required List<String> alreadyLoadedIds,
   }) async {
-    final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
     if (_precomputed) {
       return ApiService.instance.getPrecomputedRecommendations(
         profile: profile,
         goal: goal,
-        idToken: idToken,
         limit: _pageSize,
         offset: offset,
         dbOnly: _dbOnly,
@@ -131,7 +124,6 @@ class _RecommendationsScreenState
     return ApiService.instance.getRecommendations(
       profile: profile,
       goal: goal,
-      idToken: idToken,
       limit: _pageSize,
       excludeIds: alreadyLoadedIds,
       dbOnly: _dbOnly,
@@ -175,13 +167,6 @@ class _RecommendationsScreenState
         });
       }
       _loadCommunityInsights(results.map((s) => s.name).toList());
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        await showInsufficientTokensDialog(context, ref);
-      }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } on AppFailure catch (e) {
       if (mounted) {
         setState(() {
@@ -210,11 +195,9 @@ class _RecommendationsScreenState
     setState(() => _loadingSynergies = true);
     final profile = ref.read(onboardingProvider);
     try {
-      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       final results = await ApiService.instance.getSynergies(
         profile: profile,
         goal: _selectedGoal!,
-        idToken: idToken,
       );
       if (mounted) {
         setState(() {
@@ -223,13 +206,6 @@ class _RecommendationsScreenState
           _loadingSynergies = false;
         });
       }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) {
-        setState(() => _loadingSynergies = false);
-        await showInsufficientTokensDialog(context, ref);
-      }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } catch (_) {
       if (mounted) setState(() => _loadingSynergies = false);
     }
@@ -266,13 +242,6 @@ class _RecommendationsScreenState
         RecommendationLocalCache.instance.save(_selectedGoal!, _dbOnly, _supplements);
       }
       _loadCommunityInsights(results.map((s) => s.name).toList());
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) {
-        setState(() => _isLoadingMore = false);
-        await showInsufficientTokensDialog(context, ref);
-      }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } on AppFailure catch (e) {
       if (mounted) {
         setState(() => _isLoadingMore = false);
@@ -319,20 +288,13 @@ class _RecommendationsScreenState
 
     DuplicateCheckResult checkResult;
     try {
-      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       checkResult = await ApiService.instance.checkDuplicates(
         newSupplement: supplement,
         stack: stackAsSupplements,
-        idToken: idToken,
       );
-    } on InsufficientTokensException {
-      if (mounted) await showInsufficientTokensDialog(context, ref);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-      return;
     } finally {
       if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
     }
-    unawaited(refreshTokenBalanceAndShowCost(context, ref));
 
     if (!mounted) return;
 

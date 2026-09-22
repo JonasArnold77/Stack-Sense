@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,10 +7,7 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../auth/data/auth_provider.dart';
 import '../../../recommendations/domain/models/supplement.dart';
-import '../../../tokens/presentation/widgets/insufficient_tokens_dialog.dart';
-import '../../../tokens/presentation/widgets/token_spend_feedback.dart';
 import '../../data/stack_provider.dart';
 import '../../domain/models/inventory_package.dart';
 import 'inventory_package_sheet.dart';
@@ -64,21 +59,12 @@ class _ReorderSheetState extends ConsumerState<_ReorderSheet> {
     final stack = ref.read(stackProvider);
     final entry = stack.where((e) => e.id == widget.package.stackEntryId).firstOrNull;
     try {
-      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       final links = await ApiService.instance.getProductSuggestions(
         supplementName: entry?.name ?? widget.package.productName,
-        idToken: idToken,
         substanceName: entry?.substanceName,
         categories: entry?.categories ?? const [],
       );
       if (mounted) setState(() => _links = links);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) {
-        setState(() => _error = 'Keine Tokens mehr verfügbar.');
-        await showInsufficientTokensDialog(context, ref);
-      }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } on AppFailure catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,12 +7,9 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/services/api_service.dart';
-import '../../../auth/data/auth_provider.dart';
 import '../../domain/models/supplement.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/presentation/widgets/inventory_package_sheet.dart';
-import '../../../tokens/presentation/widgets/insufficient_tokens_dialog.dart';
-import '../../../tokens/presentation/widgets/token_spend_feedback.dart';
 import '../widgets/detail_header.dart';
 import '../widgets/expandable_section.dart';
 import '../widgets/interaction_card.dart';
@@ -87,20 +82,11 @@ class _SupplementDetailScreenState
 
   Future<void> _loadExplanation() async {
     try {
-      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       final text = await ApiService.instance.explainSupplement(
         supplementName: widget.supplement.name,
-        idToken: idToken,
         substanceName: widget.supplement.substanceName,
       );
       if (mounted) setState(() => _explanation = text);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) {
-        setState(() => _explanation = 'Keine Tokens mehr verfügbar.');
-        await showInsufficientTokensDialog(context, ref);
-      }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } on AppFailure catch (e) {
       if (mounted) {
         setState(() => _explanation = e.message);
@@ -134,20 +120,11 @@ class _SupplementDetailScreenState
     if (_foodSources != null || _loadingFoodSources) return;
     setState(() => _loadingFoodSources = true);
     try {
-      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       final sources = await ApiService.instance.getFoodSources(
         supplementName: widget.supplement.name,
-        idToken: idToken,
         substanceName: widget.supplement.substanceName,
       );
       if (mounted) setState(() => _foodSources = sources);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) {
-        setState(() => _foodSources = []);
-        await showInsufficientTokensDialog(context, ref);
-      }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } on AppFailure catch (_) {
       if (mounted) setState(() => _foodSources = []);
     } finally {
@@ -159,21 +136,12 @@ class _SupplementDetailScreenState
     if (_productLinks != null || _loadingProducts) return;
     setState(() => _loadingProducts = true);
     try {
-      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       final links = await ApiService.instance.getProductSuggestions(
         supplementName: widget.supplement.name,
-        idToken: idToken,
         substanceName: widget.supplement.substanceName,
         categories: widget.supplement.categories,
       );
       if (mounted) setState(() => _productLinks = links);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) {
-        setState(() => _productLinks = []);
-        await showInsufficientTokensDialog(context, ref);
-      }
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } on AppFailure catch (_) {
       if (mounted) setState(() => _productLinks = []);
     } finally {

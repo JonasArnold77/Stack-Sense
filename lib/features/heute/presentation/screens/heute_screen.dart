@@ -22,8 +22,6 @@ import '../../../settings/data/cache_mode_provider.dart';
 import '../../../settings/domain/models/cache_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/data/taken_provider.dart';
-import '../../../tokens/data/token_balance_provider.dart';
-import '../../../tokens/presentation/widgets/token_balance_banner.dart';
 import '../widgets/calendar_quick_access_card.dart';
 import '../widgets/checkin_summary_card.dart';
 import '../widgets/doctor_consultation_banner.dart';
@@ -117,10 +115,6 @@ class HeuteScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(AppConstants.screenPaddingH),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // Leeres Token-Guthaben — ganz oben, noch vor der ärztlichen
-                // Rücksprache, da es jede weitere KI-Nutzung blockiert.
-                const TokenBalanceBanner(),
-
                 // Ärztliche Rücksprache nötig — auffällig, ganz oben, bevor
                 // irgendwas anderes den Blick ablenkt.
                 const DoctorConsultationBanner(),
@@ -264,11 +258,6 @@ class _GreetingHeader extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Token-Guthaben — ganz oben, groß, bevor irgendwas anderes
-          // Aufmerksamkeit beansprucht.
-          const _TokenBalanceHeaderBadge(),
-          const SizedBox(height: AppConstants.spaceM),
-
           // LifeLab logo row + Empfehlungs-Modus-Switch
           Row(
             children: [
@@ -359,65 +348,6 @@ class _GreetingHeader extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// Aktuelles KI-Token-Guthaben — ganz oben im Header, groß und unübersehbar
-/// (eigene Zeile, nicht nur ein kleiner Chip zwischen anderen Stats).
-/// Rot + Warnsymbol sobald das Guthaben leer ist.
-class _TokenBalanceHeaderBadge extends ConsumerWidget {
-  const _TokenBalanceHeaderBadge();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final balance = ref.watch(tokenBalanceProvider);
-    final empty = balance != null && balance <= 0;
-    final color = empty ? const Color(0xFFFFCDD2) : Colors.white;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.spaceM,
-        vertical: AppConstants.spaceS,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(AppConstants.radiusM),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.toll, color: color, size: 26),
-          const SizedBox(width: 10),
-          Text(
-            balance == null ? '…' : _formatTokenCount(balance),
-            style: AppTextStyles.headlineLarge.copyWith(
-              color: color,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'Tokens',
-            style: AppTextStyles.labelMedium.copyWith(color: color.withOpacity(0.85)),
-          ),
-          if (empty) ...[
-            const Spacer(),
-            Icon(Icons.warning_amber_rounded, color: color, size: 20),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Tausendertrennzeichen ("." — deutsches Format), z.B. 50000 -> "50.000".
-String _formatTokenCount(int n) {
-  final digits = n.abs().toString();
-  final buffer = StringBuffer();
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
-    buffer.write(digits[i]);
-  }
-  return n < 0 ? '-$buffer' : buffer.toString();
 }
 
 // ---------------------------------------------------------------------------

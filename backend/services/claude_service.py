@@ -22,7 +22,6 @@ from services.vector_service import (
 from services.rxnorm_service import RxNormService
 from services.claude_json import extract_json as _extract_json
 from database import recommendation_cache_repository as _cache_repo
-from services.token_usage_tracker import record_usage
 
 logger = logging.getLogger(__name__)
 
@@ -1246,7 +1245,6 @@ class ClaudeService:
             system=SYSTEM_PROMPT_DB_ONLY if db_only else SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
         )
-        record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
         raw = _extract_json(message.content[0].text.strip())
 
@@ -1305,7 +1303,6 @@ class ClaudeService:
             system=RANKING_SYSTEM_PROMPT_DB_ONLY if db_only else RANKING_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
         )
-        record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
         raw = _extract_json(message.content[0].text.strip())
         try:
@@ -1388,7 +1385,6 @@ class ClaudeService:
                 system=RESORT_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": user_message}],
             )
-            record_usage(message.usage.input_tokens, message.usage.output_tokens)
             raw = _extract_json(message.content[0].text.strip())
             data = json.loads(raw)
             score_map = {
@@ -1448,7 +1444,6 @@ class ClaudeService:
             system=SYSTEM_PROMPT_DB_ONLY if db_only else SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
         )
-        record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
         raw = _extract_json(message.content[0].text.strip())
         try:
@@ -1501,7 +1496,6 @@ class ClaudeService:
             system=SYSTEM_PROMPT_DB_ONLY if db_only else SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
         )
-        record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
         raw = _extract_json(message.content[0].text.strip())
         try:
@@ -1549,7 +1543,6 @@ class ClaudeService:
             system=DUPLICATE_CHECK_PROMPT,
             messages=[{"role": "user", "content": user_msg}],
         )
-        record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
         raw = _extract_json(message.content[0].text.strip())
         try:
@@ -1577,7 +1570,6 @@ class ClaudeService:
             system=PRODUCTS_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_msg}],
         )
-        record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
         raw = _extract_json(message.content[0].text.strip())
         try:
@@ -1608,7 +1600,6 @@ class ClaudeService:
             system=EXPLAIN_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": f"Supplement: {name}"}],
         )
-        record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
         raw = _extract_json(message.content[0].text.strip())
         try:
@@ -1630,7 +1621,6 @@ class ClaudeService:
             system=FOOD_SOURCES_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": f"Supplement: {name}"}],
         )
-        record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
         raw = _extract_json(message.content[0].text.strip())
         try:
@@ -1685,7 +1675,6 @@ class ClaudeService:
                 system=SYNERGY_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": user_msg}],
             )
-            record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
             raw = _extract_json(message.content[0].text.strip())
             logger.debug(f"Synergy raw response: {raw[:300]}")
@@ -1751,7 +1740,6 @@ class ClaudeService:
             system=COMBINATION_CHECK_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_msg}],
         )
-        record_usage(message.usage.input_tokens, message.usage.output_tokens)
 
         raw = _extract_json(message.content[0].text.strip())
         try:

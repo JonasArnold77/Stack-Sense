@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,9 +6,7 @@ import '../../../../core/error/failures.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../auth/data/auth_provider.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
-import '../../../tokens/presentation/widgets/token_spend_feedback.dart';
 import '../../data/combination_check_provider.dart';
 import '../../data/stack_provider.dart';
 import '../../domain/models/stack_entry.dart';
@@ -82,18 +78,15 @@ class _CombinationCheckPromptCardState extends ConsumerState<_CombinationCheckPr
     setState(() => _checking = true);
     final medications = ref.read(onboardingProvider).medications;
     try {
-      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       final result = await ApiService.instance.checkStackCombination(
         supplements: stack,
         medications: medications,
-        idToken: idToken,
       );
       if (!mounted) return;
       await ref.read(combinationCheckPromptProvider.notifier).markHandled(signature);
       if (!mounted) return;
       widget.onHandled?.call();
       showCombinationCheckResultSheet(context, result);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } on AppFailure catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));

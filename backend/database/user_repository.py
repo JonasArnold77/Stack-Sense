@@ -25,7 +25,6 @@ class UserRow:
     created_at: datetime
     last_login_at: Optional[datetime]
     tenant_id: Optional[str] = None
-    token_balance: int = 0
 
 
 @dataclass
@@ -55,7 +54,7 @@ def upsert_user(cognito_sub: str, email: str) -> UserRow:
     ON CONFLICT (cognito_sub) DO UPDATE
         SET last_login_at = NOW(),
             email = EXCLUDED.email
-    RETURNING id, cognito_sub, email, role, created_at, last_login_at, tenant_id, token_balance
+    RETURNING id, cognito_sub, email, role, created_at, last_login_at, tenant_id
     """
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -69,38 +68,13 @@ def upsert_user(cognito_sub: str, email: str) -> UserRow:
         created_at=row[4],
         last_login_at=row[5],
         tenant_id=row[6],
-        token_balance=row[7],
-    )
-
-
-def get_user_by_id(user_id: str) -> Optional[UserRow]:
-    """Sucht einen User anhand der internen UUID (z.B. RevenueCat app_user_id)."""
-    sql = """
-    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id, token_balance
-    FROM users WHERE id = %s
-    """
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql, (user_id,))
-            row = cur.fetchone()
-    if row is None:
-        return None
-    return UserRow(
-        id=str(row[0]),
-        cognito_sub=row[1],
-        email=row[2],
-        role=row[3],
-        created_at=row[4],
-        last_login_at=row[5],
-        tenant_id=row[6],
-        token_balance=row[7],
     )
 
 
 def get_user_by_sub(cognito_sub: str) -> Optional[UserRow]:
     """Sucht einen User anhand des Cognito Sub-Feldes."""
     sql = """
-    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id, token_balance
+    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id
     FROM users WHERE cognito_sub = %s
     """
     with get_conn() as conn:
@@ -117,14 +91,13 @@ def get_user_by_sub(cognito_sub: str) -> Optional[UserRow]:
         created_at=row[4],
         last_login_at=row[5],
         tenant_id=row[6],
-        token_balance=row[7],
     )
 
 
 def list_all_users() -> list[UserRow]:
     """Gibt alle User zurück (nur für Admin-Endpoints)."""
     sql = """
-    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id, token_balance
+    SELECT id, cognito_sub, email, role, created_at, last_login_at, tenant_id
     FROM users ORDER BY created_at DESC
     """
     with get_conn() as conn:
@@ -135,7 +108,6 @@ def list_all_users() -> list[UserRow]:
         UserRow(
             id=str(r[0]), cognito_sub=r[1], email=r[2],
             role=r[3], created_at=r[4], last_login_at=r[5], tenant_id=r[6],
-            token_balance=r[7],
         )
         for r in rows
     ]

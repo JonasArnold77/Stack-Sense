@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +8,6 @@ import '../../../../core/services/api_service.dart';
 import '../../../../core/services/recommendation_local_cache.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../auth/data/auth_provider.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../../recommendations/presentation/widgets/evidence_card.dart';
@@ -23,8 +20,6 @@ import '../../../settings/data/cache_mode_provider.dart';
 import '../../../settings/domain/models/cache_mode.dart';
 import '../../../stack/data/stack_provider.dart';
 import '../../../stack/presentation/widgets/stack_add_warnings.dart';
-import '../../../tokens/presentation/widgets/insufficient_tokens_dialog.dart';
-import '../../../tokens/presentation/widgets/token_spend_feedback.dart';
 import '../../data/phase_goals_provider.dart';
 import '../../domain/models/phase_goal.dart';
 
@@ -77,7 +72,6 @@ class _PhaseGoalRecommendationsScreenState
     final bypassCache = ref.read(cacheModeProvider) == CacheMode.noCache;
 
     try {
-      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       final cached = precomputed
           ? null
           : await RecommendationLocalCache.instance.getCached(def.name, dbOnly);
@@ -86,14 +80,12 @@ class _PhaseGoalRecommendationsScreenState
               ? await ApiService.instance.getPrecomputedRecommendations(
                   profile: profile,
                   goal: def.name, // z.B. "Marathon-Vorbereitung"
-                  idToken: idToken,
                   limit: 4,
                   dbOnly: dbOnly,
                 )
               : await ApiService.instance.getRecommendations(
                   profile: profile,
                   goal: def.name,
-                  idToken: idToken,
                   limit: 4,
                   dbOnly: dbOnly,
                   bypassCache: bypassCache,
@@ -102,10 +94,6 @@ class _PhaseGoalRecommendationsScreenState
         RecommendationLocalCache.instance.save(def.name, dbOnly, results);
       }
       if (mounted) setState(() => _supplements = results);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) await showInsufficientTokensDialog(context, ref);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {

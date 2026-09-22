@@ -23,12 +23,7 @@ from database.user_repository import (
     upsert_profile,
 )
 from database.tenant_repository import assign_user_tenant, get_tenant
-from database.token_repository import add_tokens
 from middleware.auth import get_current_user, require_admin
-
-# Stub-Betrag für den (noch kostenlosen) "Tokens kaufen"-Button — Platzhalter
-# bis eine echte Zahlungs-/IAP-Anbindung existiert.
-_PURCHASE_TOKEN_AMOUNT = 50_000
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
@@ -165,26 +160,6 @@ async def update_my_profile(
             detail="Profil konnte nicht gespeichert werden",
         )
     return _profile_to_response(profile)
-
-
-# ---------------------------------------------------------------------------
-# KI-Token-Guthaben
-# ---------------------------------------------------------------------------
-
-@router.get("/me/tokens", summary="Eigenes Token-Guthaben lesen")
-async def get_my_tokens(user: UserRow = Depends(get_current_user)):
-    return {"balance": user.token_balance}
-
-
-@router.post(
-    "/me/tokens/purchase",
-    summary="Tokens aufladen (Test-Stub, noch keine echte Zahlung)",
-)
-async def purchase_tokens(user: UserRow = Depends(get_current_user)):
-    """Lädt sofort und kostenlos neue Tokens nach. Platzhalter für eine
-    spätere echte Bezahl-/In-App-Purchase-Anbindung."""
-    new_balance = add_tokens(user.id, _PURCHASE_TOKEN_AMOUNT)
-    return {"balance": new_balance}
 
 
 # ---------------------------------------------------------------------------

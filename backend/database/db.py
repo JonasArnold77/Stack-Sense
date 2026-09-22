@@ -72,10 +72,6 @@ def init_user_tables() -> None:
         last_login_at  TIMESTAMPTZ
     );
 
-    -- KI-Token-Guthaben: sinkt um die echten Claude-Tokens (Input+Output)
-    -- jeder KI-Anfrage. 50000 ist ein Test-Startwert (~5 typische Anfragen).
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS token_balance BIGINT NOT NULL DEFAULT 50000;
-
     CREATE INDEX IF NOT EXISTS idx_users_cognito_sub ON users(cognito_sub);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
@@ -89,18 +85,6 @@ def init_user_tables() -> None:
         medications    TEXT[] DEFAULT '{}',
         is_pregnant    BOOLEAN NOT NULL DEFAULT FALSE,
         updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-
-    -- Ledger echter Token-Käufe (RevenueCat-Webhook) — UNIQUE auf
-    -- revenuecat_event_id schützt vor doppelter Gutschrift bei erneut
-    -- zugestellten Webhooks.
-    CREATE TABLE IF NOT EXISTS token_purchases (
-        id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_id             UUID NOT NULL REFERENCES users(id),
-        product_id          TEXT NOT NULL,
-        revenuecat_event_id TEXT NOT NULL UNIQUE,
-        tokens_credited     BIGINT NOT NULL,
-        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     """
     try:

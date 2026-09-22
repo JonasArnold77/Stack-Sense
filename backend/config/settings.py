@@ -33,10 +33,5 @@ class Settings(BaseSettings):
     # Kostenloser Self-Service-Key: https://fdc.nal.usda.gov/api-key-signup.html
     fdc_api_key: str = ""
 
-    # RevenueCat — validiert Apple/Google-Käufe und schickt uns einen Webhook.
-    # Eigener, frei gewählter Wert — muss identisch im RevenueCat-Dashboard
-    # unter Webhook → "Authorization Header" eingetragen werden.
-    revenuecat_webhook_secret: str = ""
-
 
 settings = Settings()

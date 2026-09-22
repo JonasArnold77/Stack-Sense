@@ -8,15 +8,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/api_service.dart';
-import '../../../auth/data/auth_provider.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../../recommendations/presentation/screens/supplement_detail_screen.dart';
 import '../../../settings/data/recommendation_mode_provider.dart';
 import '../../../settings/domain/models/recommendation_mode.dart';
 import '../../../settings/data/cache_mode_provider.dart';
 import '../../../settings/domain/models/cache_mode.dart';
-import '../../../tokens/presentation/widgets/insufficient_tokens_dialog.dart';
-import '../../../tokens/presentation/widgets/token_spend_feedback.dart';
 
 /// Suchleiste für den Home Screen — tippfehler-/schreibweise-tolerant
 /// ("Vitamin B", "Vitamin-B", "VitaminB" finden dieselben Treffer).
@@ -83,21 +80,15 @@ class _SupplementSearchBarState extends ConsumerState<SupplementSearchBar> {
     final bypassCache = ref.read(cacheModeProvider) == CacheMode.noCache;
     setState(() => _loadingResultId = result.id);
     try {
-      final idToken = await ref.read(authProvider.notifier).getIdToken() ?? '';
       final supplement = await ApiService.instance.lookupSupplement(
         supplementId: result.id,
         supplementName: result.name,
-        idToken: idToken,
         dbOnly: dbOnly,
         bypassCache: bypassCache,
       );
       if (!mounted) return;
       _clear();
       showSupplementDetail(context, supplement);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
-    } on InsufficientTokensException {
-      if (mounted) await showInsufficientTokensDialog(context, ref);
-      unawaited(refreshTokenBalanceAndShowCost(context, ref));
     } on AppFailure catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -174,20 +174,6 @@ async def get_current_user(
     return user
 
 
-async def require_tokens(user: UserRow = Depends(get_current_user)) -> UserRow:
-    """
-    Dependency für KI-Routen. Wirft 402 wenn das Token-Guthaben leer ist.
-    detail="insufficient_tokens" ist der String, an dem der Client den Fall
-    gezielt erkennt (nicht nur am Statuscode).
-    """
-    if user.token_balance <= 0:
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail="insufficient_tokens",
-        )
-    return user
-
-
 async def require_admin(user: UserRow = Depends(get_current_user)) -> UserRow:
     """
     Dependency für Admin-Routen.
