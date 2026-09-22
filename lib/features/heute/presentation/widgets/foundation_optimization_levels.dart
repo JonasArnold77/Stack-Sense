@@ -29,9 +29,9 @@ import 'optimization_detail_sheet.dart';
 class FoundationOptimizationLevels extends ConsumerWidget {
   const FoundationOptimizationLevels({super.key});
 
-  // Beide Kacheln bewusst in derselben Lime-Familie — Foundation dunkler,
-  // Optimization eine Stufe heller, damit alle Home-Screen-Kacheln
-  // durchgängig Lime Green sind, aber trotzdem unterscheidbar bleiben.
+  // Beide Kacheln bewusst in derselben Marineblau-Familie — Foundation
+  // dunkler, Optimization eine Stufe heller, damit alle Home-Screen-Kacheln
+  // durchgängig Marineblau sind, aber trotzdem unterscheidbar bleiben.
   static const foundationColor = AppColors.primary;
   static const foundationColorDark = AppColors.primaryDark;
   static const optimizationColor = AppColors.primaryLight;

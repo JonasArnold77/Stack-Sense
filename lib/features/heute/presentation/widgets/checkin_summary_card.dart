@@ -132,7 +132,7 @@ class CheckinSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppConstants.spaceL),
       decoration: BoxDecoration(
-        color: AppColors.panelTintMoss,
+        color: AppColors.panelTintSteel,
         borderRadius: BorderRadius.circular(AppConstants.radiusL),
         border: Border.all(color: AppColors.evidenceGreen.withOpacity(0.4)),
       ),

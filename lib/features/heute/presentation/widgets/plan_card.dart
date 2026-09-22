@@ -323,7 +323,7 @@ class PlanCard extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.panelTintMint,
+        color: AppColors.panelTintSky,
         borderRadius: BorderRadius.circular(AppConstants.radiusL),
         border: Border.all(color: AppColors.border),
       ),
