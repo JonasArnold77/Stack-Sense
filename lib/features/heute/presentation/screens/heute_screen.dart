@@ -258,31 +258,10 @@ class _GreetingHeader extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // LifeLab logo row + Empfehlungs-Modus-Switch
+          // LifeLab-Logo + Empfehlungs-Modus-Switch
           Row(
             children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.science_outlined,
-                  size: 16,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'LifeLab',
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: Colors.white.withOpacity(0.85),
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-              ),
+              Image.asset('assets/images/logo.png', height: 28),
               const Spacer(),
               if (isDevMode) const _RecommendationModeToggle(),
             ],

@@ -82,16 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Logo
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(AppConstants.radiusM),
-                    ),
-                    child: const Icon(Icons.science_outlined,
-                        size: 28, color: Colors.white),
-                  ),
+                  Image.asset('assets/images/logo.png', height: 40),
                   const SizedBox(height: AppConstants.spaceL),
                   Text(
                     'Willkommen zurück',

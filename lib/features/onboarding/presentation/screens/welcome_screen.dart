@@ -131,23 +131,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   opacity: _logoOpacity,
                   child: ScaleTransition(
                     scale: _logoScale,
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(AppConstants.radiusL),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.science_outlined,
-                        color: Colors.white,
-                        size: 36,
-                      ),
-                    ),
+                    child: Image.asset('assets/images/logo.png', height: 56),
                   ),
                 ),
 
