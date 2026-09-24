@@ -261,7 +261,7 @@ class _GreetingHeader extends ConsumerWidget {
           // Hexagon-Logo + "Life Lab"-Text + Empfehlungs-Modus-Switch
           Row(
             children: [
-              Image.asset('assets/images/logo.png', height: 36),
+              Image.asset('assets/images/logo.png', height: 52),
               const SizedBox(width: 10),
               Text(
                 'Life Lab',
