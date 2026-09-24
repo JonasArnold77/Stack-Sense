@@ -258,10 +258,10 @@ class _GreetingHeader extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // LifeLab-Logo + Empfehlungs-Modus-Switch
+          // LifeLab-Wortmarke (ohne Hexagon-Icon, groß) + Empfehlungs-Modus-Switch
           Row(
             children: [
-              Image.asset('assets/images/logo.png', height: 28),
+              Image.asset('assets/images/logo_wordmark.png', height: 40),
               const Spacer(),
               if (isDevMode) const _RecommendationModeToggle(),
             ],
