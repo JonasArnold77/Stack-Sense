@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // ── Primärfarben ── Marineblau, die App-Markenfarbe
-  static const Color primary      = Color(0xFF1746A2); // sattes Mittelblau
-  static const Color primaryLight = Color(0xFF2D60CE); // heller, leuchtendes Blau
-  static const Color primaryDark  = Color(0xFF0A2060); // tiefes Mitternachtsblau
+  // ── Primärfarben ── exakt das dunkle Marineblau aus dem Logo-Hexagon
+  // (#162E52) als Basis, Light/Dark-Varianten davon abgeleitet (gleicher
+  // Farbton, nur Helligkeit verschoben) statt eines helleren Extra-Blaus.
+  static const Color primary      = Color(0xFF162E52); // Logo-Marineblau
+  static const Color primaryLight = Color(0xFF2C5BA2); // gleicher Ton, heller
+  static const Color primaryDark  = Color(0xFF091322); // gleicher Ton, fast Schwarzblau
 
   // ── Akzentfarben ── elektrisches Blau für CTAs
   static const Color accent      = Color(0xFF1967FF); // leuchtend elektrisch blau
@@ -61,29 +63,30 @@ class AppColors {
   static const Color panelTintSteel   = Color(0xFFE9F0FA);
   static const Color panelTintCobalt  = Color(0xFFE3EDFC);
 
-  // ── Primär-Gradient ── vivides Tiefen-Blau für Header & prominente Flächen
+  // ── Primär-Gradient ── startet direkt beim Logo-Marineblau (nie heller),
+  // wird nur nach unten hin dunkler — für Header & prominente Flächen.
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryLight, primaryDark], // #2D60CE → #0A2060
+    colors: [primary, primaryDark], // #162E52 → #091322
   );
 
   // ── Akzent-Gradient (für spezielle Cards / Highlights)
   static const LinearGradient accentGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [accent, primaryDark], // #1967FF → #0A2060
+    colors: [accent, primaryDark], // #1967FF → #091322
   );
 
   // ── Schatten ── blaugetönter Schatten für mehr Tiefe
   static List<BoxShadow> get cardShadow => [
         BoxShadow(
-          color: const Color(0xFF1746A2).withOpacity(0.10),
+          color: primary.withOpacity(0.10),
           blurRadius: 16,
           offset: const Offset(0, 4),
         ),
         BoxShadow(
-          color: const Color(0xFF1746A2).withOpacity(0.04),
+          color: primary.withOpacity(0.04),
           blurRadius: 4,
           offset: const Offset(0, 1),
         ),
@@ -92,12 +95,12 @@ class AppColors {
   // ── Stärkerer Schatten für floating elements
   static List<BoxShadow> get elevatedShadow => [
         BoxShadow(
-          color: const Color(0xFF1746A2).withOpacity(0.18),
+          color: primary.withOpacity(0.18),
           blurRadius: 24,
           offset: const Offset(0, 8),
         ),
         BoxShadow(
-          color: const Color(0xFF1746A2).withOpacity(0.06),
+          color: primary.withOpacity(0.06),
           blurRadius: 6,
           offset: const Offset(0, 2),
         ),
