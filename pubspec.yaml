@@ -51,6 +51,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.1
 
 flutter:
   uses-material-design: true
@@ -73,3 +74,15 @@ flutter_launcher_icons:
   adaptive_icon_background: "#162E52"
   adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
   min_sdk_android: 26
+
+# Splash-Screen (Startbildschirm) — Hexagon-Logo + "Life Lab"-Schriftzug als
+# ein zusammengesetztes Bild (assets/images/splash_logo.png, aus dem
+# Hexagon-Logo + dem weißen Wortmarken-Bild gebaut), zentriert auf
+# Marineblau-Hintergrund. Neu generieren nach jeder Änderung:
+# dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#162E52"
+  image: assets/images/splash_logo.png
+  android_12:
+    color: "#162E52"
+    image: assets/images/splash_logo.png

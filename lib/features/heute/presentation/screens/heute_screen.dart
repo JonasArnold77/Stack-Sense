@@ -258,9 +258,11 @@ class _GreetingHeader extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // "Life Lab" als Text (statt Logo-Bild) + Empfehlungs-Modus-Switch
+          // Hexagon-Logo + "Life Lab"-Text + Empfehlungs-Modus-Switch
           Row(
             children: [
+              Image.asset('assets/images/logo.png', height: 36),
+              const SizedBox(width: 10),
               Text(
                 'Life Lab',
                 style: AppTextStyles.displayMedium.copyWith(
