@@ -19,9 +19,11 @@ const List<String> kOptimizationLevelNames = ['Explorer', 'Active', 'Advanced', 
 const List<double> _kFoundationLevelThresholds = [0, 20, 40, 60, 100];
 
 /// Untere Anzahl-Schwelle pro Optimization-Level (aktive Problemfeld-
-/// Supplements) — bewusst eng gestuft, da "viele" Optimization-Supplements
-/// realistisch selten zweistellig werden.
-const List<int> _kOptimizationLevelThresholds = [0, 1, 2, 4, 6];
+/// Supplements). Bewusst breiter gestuft als früher ([0, 1, 2, 4, 6]) — bei
+/// Schwelle 1 sprang man mit dem ALLERERSTEN Problemfeld-Supplement sofort
+/// von Level 1 auf 2, das fühlte sich wie ein ganzes Level pro Supplement an.
+/// Jetzt braucht jeder Levelaufstieg mindestens 2 weitere Supplements.
+const List<int> _kOptimizationLevelThresholds = [0, 2, 4, 6, 9];
 
 class LevelInfo {
   final int level; // 1-5
