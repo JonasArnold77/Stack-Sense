@@ -10,6 +10,15 @@ class AppColors {
   static const Color primaryLight = Color(0xFF2C5BA2); // gleicher Ton, heller
   static const Color primaryDark  = Color(0xFF091322); // gleicher Ton, fast Schwarzblau
 
+  // ── Header-Ton ── derselbe Farbton wie primary/primaryLight, nur GANZ
+  // LEICHT dunkler (~5% Lightness) als die Foundation-Kachel (primaryLight
+  // → primary). Genutzt vom globalen Header (primaryGradient) UND der
+  // Optimization-Kachel, die bewusst exakt dieselbe Farbe wie der Header
+  // haben soll — dadurch wirken beide Home-Screen-Kacheln fast identisch,
+  // Optimization nur minimal dunkler als Foundation.
+  static const Color headerLight = Color(0xFF27508E); // primaryLight, ~5% dunkler
+  static const Color headerDark  = Color(0xFF11233E); // primary, ~5% dunkler
+
   // ── Akzentfarben ── elektrisches Blau für CTAs
   static const Color accent      = Color(0xFF1967FF); // leuchtend elektrisch blau
   static const Color accentLight = Color(0xFFE4EFFF); // sehr helles Blau für Highlights
@@ -63,12 +72,12 @@ class AppColors {
   static const Color panelTintSteel   = Color(0xFFE9F0FA);
   static const Color panelTintCobalt  = Color(0xFFE3EDFC);
 
-  // ── Primär-Gradient ── startet direkt beim Logo-Marineblau (nie heller),
-  // wird nur nach unten hin dunkler — für Header & prominente Flächen.
+  // ── Primär-Gradient ── identisch zur Optimization-Kachel (headerLight →
+  // headerDark), für Header & prominente Flächen.
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primary, primaryDark], // #162E52 → #091322
+    colors: [headerLight, headerDark], // #27508E → #11233E
   );
 
   // ── Akzent-Gradient (für spezielle Cards / Highlights)

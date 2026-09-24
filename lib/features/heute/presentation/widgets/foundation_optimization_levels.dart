@@ -31,12 +31,12 @@ class FoundationOptimizationLevels extends ConsumerWidget {
 
   // Beide Kacheln bewusst in derselben Marineblau-Familie — Optimization
   // nutzt exakt denselben Verlauf wie der globale Header (AppColors.
-  // primaryGradient), Foundation eine Stufe heller, damit alle Home-Screen-
-  // Kacheln durchgängig Marineblau sind, aber trotzdem unterscheidbar bleiben.
+  // primaryGradient == headerLight/headerDark), Foundation nur GANZ LEICHT
+  // heller, damit beide Kacheln fast gleich wirken, aber unterscheidbar bleiben.
   static const foundationColor = AppColors.primaryLight;
   static const foundationColorDark = AppColors.primary;
-  static const optimizationColor = AppColors.primary;
-  static const optimizationColorDark = AppColors.primaryDark;
+  static const optimizationColor = AppColors.headerLight;
+  static const optimizationColorDark = AppColors.headerDark;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
