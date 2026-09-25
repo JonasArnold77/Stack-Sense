@@ -63,24 +63,26 @@ flutter:
     - .env
 
 # App-Icon (Android-Launcher) — Quelle: assets/icons/app_icon.png (voller
-# Hexagon-Mark). Adaptive Icon (Android 8+) trennt Hintergrund (Marineblau-
-# Fläche) und Vordergrund (nur die Pflanze, transparent freigestellt) damit
-# Launcher-Masken (Kreis/Squircle/Rund) die Pflanze nicht anschneiden.
+# Hexagon-Mark mit schwarzer Kontur). Adaptive Icon (Android 8+) trennt
+# Hintergrund (Marineblau-Fläche, exakte Fläche aus dem Logo-Bild) und
+# Vordergrund (nur das DNA-/Pflanzen-/Kapsel-Symbol, transparent freigestellt)
+# damit Launcher-Masken (Kreis/Squircle/Rund) das Symbol nicht anschneiden.
 # Neu generieren nach jeder Änderung: dart run flutter_launcher_icons
 flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/icons/app_icon.png"
-  adaptive_icon_background: "#162E52"
+  adaptive_icon_background: "#1B2A4A"
   adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
   min_sdk_android: 26
 
 # Splash-Screen (Startbildschirm) — nur das Hexagon-Logo (kein Text mehr
-# darunter), zentriert auf Marineblau-Hintergrund. Neu generieren nach jeder
-# Änderung: dart run flutter_native_splash:create
+# darunter), zentriert auf Marineblau-Hintergrund (exakte Fläche aus dem
+# Logo-Bild). Neu generieren nach jeder Änderung:
+# dart run flutter_native_splash:create
 flutter_native_splash:
-  color: "#162E52"
+  color: "#1B2A4A"
   image: assets/images/logo.png
   android_12:
-    color: "#162E52"
+    color: "#1B2A4A"
     image: assets/images/logo.png

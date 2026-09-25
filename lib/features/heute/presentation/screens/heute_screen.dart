@@ -258,10 +258,10 @@ class _GreetingHeader extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Nur die weiße Pflanze (ohne Hexagon) + "Life Lab"-Text + Empfehlungs-Modus-Switch
+          // Nur das DNA-/Pflanzen-Symbol (ohne Hexagon) + "Life Lab"-Text + Empfehlungs-Modus-Switch
           Row(
             children: [
-              Image.asset('assets/images/logo_plant_only.png', height: 64),
+              Image.asset('assets/images/logo_icon_only.png', height: 64),
               const SizedBox(width: 10),
               Text(
                 'Life Lab',
