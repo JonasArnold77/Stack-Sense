@@ -214,6 +214,15 @@ class StackScreen extends ConsumerWidget {
               ],
               bottomPadding: 0,
               bottom: const TabBar(
+                // isScrollable + TabAlignment.fill: Tabs behalten die gleiche
+                // Breiten-Aufteilung wie vorher, aber jeder Tab bemisst sich an
+                // seinem eigenen Text statt an einer starren 1/3-Breite — sonst
+                // lief "Supplements" (mit Abstand das längste Label) in
+                // "Kalender" hinein, da beide fix auf 1/3 der Breite gepresst
+                // wurden.
+                isScrollable: true,
+                tabAlignment: TabAlignment.fill,
+                labelPadding: EdgeInsets.symmetric(horizontal: 4),
                 labelColor: Colors.white,
                 unselectedLabelColor: Color(0x99FFFFFF),
                 indicatorColor: Colors.white,

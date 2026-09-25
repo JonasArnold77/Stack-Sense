@@ -156,8 +156,12 @@ class StackSupplementCard extends ConsumerWidget {
                   const SizedBox(width: AppConstants.spaceXS),
                 ],
 
-                // Slot Badge
-                _SlotBadge(slot: entry.intakeSlot),
+                // Slot Badge — Flexible statt fixer Breite: zusammen mit dem
+                // optionalen Stoffklasse-Symbol und dem Entfernen-Button kann
+                // die Summe der fixen Breiten schmale Karten sprengen ("Right
+                // overflowed"); Flexible lässt das Badge notfalls schrumpfen
+                // (Text darin ellipsized, siehe _SlotBadge) statt zu überlaufen.
+                Flexible(child: _SlotBadge(slot: entry.intakeSlot)),
 
                 const SizedBox(width: AppConstants.spaceXS),
 
@@ -555,6 +559,9 @@ class _SlotBadge extends StatelessWidget {
       child: Text(
         '${slot.emoji} ${slot.label}',
         style: AppTextStyles.caption,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
       ),
     );
   }
