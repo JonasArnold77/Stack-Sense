@@ -150,18 +150,25 @@ class StackSupplementCard extends ConsumerWidget {
                   ),
                 ),
 
-                // Stoffklasse-Symbol
-                if (entry.substanceCategory != null) ...[
-                  SupplementCategoryBadge(category: entry.substanceCategory),
-                  const SizedBox(width: AppConstants.spaceXS),
-                ],
-
-                // Slot Badge — Flexible statt fixer Breite: zusammen mit dem
-                // optionalen Stoffklasse-Symbol und dem Entfernen-Button kann
-                // die Summe der fixen Breiten schmale Karten sprengen ("Right
-                // overflowed"); Flexible lässt das Badge notfalls schrumpfen
-                // (Text darin ellipsized, siehe _SlotBadge) statt zu überlaufen.
-                Flexible(child: _SlotBadge(slot: entry.intakeSlot)),
+                // Stoffklasse-Symbol + Slot-Badge — in einem Wrap statt fest
+                // nebeneinander: die Summe der fixen Breiten kann auf
+                // schmalen Karten (oder bei größerer Systemschrift) den
+                // verfügbaren Platz sprengen ("Right overflowed"); Wrap
+                // schiebt das zweite Badge notfalls in eine zweite Zeile
+                // statt zu überlaufen.
+                Flexible(
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: AppConstants.spaceXS,
+                    runSpacing: 4,
+                    children: [
+                      if (entry.substanceCategory != null)
+                        SupplementCategoryBadge(category: entry.substanceCategory),
+                      _SlotBadge(slot: entry.intakeSlot),
+                    ],
+                  ),
+                ),
 
                 const SizedBox(width: AppConstants.spaceXS),
 

@@ -78,11 +78,14 @@ flutter_launcher_icons:
 
 # Splash-Screen (Startbildschirm) — nur das Icon ohne Hexagon (das Hexagon
 # bleibt dem Android-Launcher-Icon vorbehalten), zentriert auf
-# Marineblau-Hintergrund (exakte Fläche aus dem Logo-Bild). Neu generieren
-# nach jeder Änderung: dart run flutter_native_splash:create
+# Marineblau-Hintergrund. logo_splash.png ist eine eigene, gepolsterte
+# Variante (Icon nimmt nur ~46% der quadratischen Canvas ein) — die Android
+# 12+ Splash-API maskiert das Icon in einem Kreis, ein randloser Zuschnitt
+# wie logo_icon_only.png würde dort abgeschnitten. Neu generieren nach jeder
+# Änderung: dart run flutter_native_splash:create
 flutter_native_splash:
   color: "#1B2A4A"
-  image: assets/images/logo_icon_only.png
+  image: assets/images/logo_splash.png
   android_12:
     color: "#1B2A4A"
-    image: assets/images/logo_icon_only.png
+    image: assets/images/logo_splash.png
