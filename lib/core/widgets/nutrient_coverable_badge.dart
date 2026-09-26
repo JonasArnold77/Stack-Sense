@@ -41,12 +41,16 @@ class NutrientCoverableBadge extends ConsumerWidget {
         children: [
           const Icon(Icons.eco_outlined, size: 11, color: AppColors.evidenceGreen),
           const SizedBox(width: 3),
-          Text(
-            'Durch Ernährung abdeckbar',
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.evidenceGreen,
-              fontWeight: FontWeight.w600,
-              fontSize: 9,
+          Flexible(
+            child: Text(
+              'Durch Ernährung abdeckbar',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.evidenceGreen,
+                fontWeight: FontWeight.w600,
+                fontSize: 9,
+              ),
             ),
           ),
         ],
