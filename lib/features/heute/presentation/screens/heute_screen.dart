@@ -29,7 +29,6 @@ import '../widgets/daily_insights_panel.dart';
 import '../widgets/insight_snippet_card.dart';
 import '../widgets/level_up_overlay.dart';
 import '../widgets/plan_card.dart';
-import '../widgets/profile_recommendations_banner.dart';
 import '../widgets/quick_stat_chip.dart';
 import '../widgets/daily_checkin_panel.dart';
 import '../widgets/section_title.dart';
@@ -143,12 +142,6 @@ class HeuteScreen extends ConsumerWidget {
                 if (stack.isNotEmpty) ...[
                   const SizedBox(height: AppConstants.spaceM),
                   const CalendarQuickAccessCard(),
-                ],
-
-                // Profil-Empfehlungen Banner (nur bei leerem Stack)
-                if (stack.isEmpty) ...[
-                  const SizedBox(height: AppConstants.spaceL),
-                  const ProfileRecommendationsBanner(),
                 ],
 
                 const SizedBox(height: AppConstants.spaceL),
