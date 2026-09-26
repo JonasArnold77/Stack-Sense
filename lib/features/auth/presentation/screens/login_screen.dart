@@ -82,7 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Logo
-                  Image.asset('assets/images/logo.png', height: 40),
+                  Image.asset('assets/images/logo_icon_only.png', height: 40),
                   const SizedBox(height: AppConstants.spaceL),
                   Text(
                     'Willkommen zurück',

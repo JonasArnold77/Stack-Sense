@@ -131,7 +131,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   opacity: _logoOpacity,
                   child: ScaleTransition(
                     scale: _logoScale,
-                    child: Image.asset('assets/images/logo.png', height: 56),
+                    child: Image.asset('assets/images/logo_icon_only.png', height: 56),
                   ),
                 ),
 
