@@ -10,7 +10,6 @@ import '../../../settings/domain/models/feature_keys.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../checkin/data/checkin_provider.dart';
-import '../../../gamification/data/xp_provider.dart';
 import '../../../insights/data/insights_provider.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
 import '../../../settings/data/developer_mode_provider.dart';
@@ -31,7 +30,6 @@ import '../widgets/insight_snippet_card.dart';
 import '../widgets/level_up_overlay.dart';
 import '../widgets/plan_card.dart';
 import '../widgets/profile_recommendations_banner.dart';
-import '../widgets/progress_card.dart';
 import '../widgets/quick_stat_chip.dart';
 import '../widgets/daily_checkin_panel.dart';
 import '../widgets/section_title.dart';
@@ -68,7 +66,6 @@ class HeuteScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stack        = ref.watch(stackProvider);
-    final xpLevel      = ref.watch(xpLevelProvider);
     final insights     = ref.watch(insightsProvider);
     final checkinNotifier = ref.read(checkinProvider.notifier);
 
@@ -94,7 +91,6 @@ class HeuteScreen extends ConsumerWidget {
               greeting: _greeting(today.hour),
               dateStr: _formatDate(today),
               streak: streak,
-              xpLevelLabel: 'Level ${xpLevel.level} · ${xpLevel.levelName}',
             ),
           ),
 
@@ -171,17 +167,6 @@ class HeuteScreen extends ConsumerWidget {
                   onTap: () => context.go(AppRoutes.checkin),
                 ),
 
-                const SizedBox(height: AppConstants.spaceL),
-
-                // Fortschritt / XP / Level
-                const SectionTitle(title: 'Mein Fortschritt'),
-                const SizedBox(height: AppConstants.spaceS),
-                ProgressCard(
-                  xpLevel: xpLevel,
-                  streak: streak,
-                  onTap: () => context.go(AppRoutes.profile),
-                ),
-
                 // Multi-Insights (ein Eintrag pro aktivem Zielbereich)
                 if (insights.hasCorrelations) ...[
                   const SizedBox(height: AppConstants.spaceL),
@@ -233,13 +218,11 @@ class _GreetingHeader extends ConsumerWidget {
   final String greeting;
   final String dateStr;
   final int streak;
-  final String xpLevelLabel;
 
   const _GreetingHeader({
     required this.greeting,
     required this.dateStr,
     required this.streak,
-    required this.xpLevelLabel,
   });
 
   @override
@@ -322,12 +305,6 @@ class _GreetingHeader extends ConsumerWidget {
                 icon: Icons.local_fire_department,
                 label: '$streak Tage Streak',
                 color: AppColors.xpGold,
-              ),
-              const SizedBox(width: AppConstants.spaceS),
-              QuickStatChip(
-                icon: Icons.star_outline,
-                label: xpLevelLabel,
-                color: Colors.white.withOpacity(0.85),
               ),
             ],
           ),
