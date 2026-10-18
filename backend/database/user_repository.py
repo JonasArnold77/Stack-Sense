@@ -195,3 +195,13 @@ def upsert_profile(
         is_pregnant=row[6],
         updated_at=row[7],
     )
+
+
+def delete_user_data(user_id: str, device_id: Optional[str] = None) -> None:
+    """Löscht Konto (inkl. Profil per CASCADE) und die Check-ins der Geräte-ID."""
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            if device_id:
+                cur.execute("DELETE FROM daily_checkins WHERE device_id = %s", (device_id,))
+                cur.execute("DELETE FROM supplement_checkins WHERE device_id = %s", (device_id,))
+            cur.execute("DELETE FROM users WHERE id = %s", (user_id,))

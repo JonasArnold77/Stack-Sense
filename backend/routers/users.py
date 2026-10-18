@@ -5,6 +5,7 @@ Endpunkte:
   POST /users/login     — Token validieren, User in DB anlegen/updaten
   GET  /users/me        — eigenes Profil lesen
   PUT  /users/me/profile — Profil speichern / aktualisieren
+  DELETE /users/me      — eigenes Konto und Daten löschen
   GET  /users/all       — alle User (nur Admin)
   PUT  /users/{id}/role — Rolle ändern (nur Admin)
 """
@@ -17,6 +18,7 @@ from pydantic import BaseModel, Field
 from database.user_repository import (
     UserProfileRow,
     UserRow,
+    delete_user_data,
     get_profile,
     list_all_users,
     set_user_role,
@@ -217,3 +219,10 @@ async def change_tenant(
             detail=str(e),
         )
     return {"ok": True, "user_id": user_id, "tenant_id": body.tenant_id}
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT, summary="Eigenes Konto und Daten löschen")
+async def delete_me(device_id: Optional[str] = None, user: UserRow = Depends(get_current_user)):
+    """Löscht User, Profil und die Check-ins der übergebenen Geräte-ID (Play-Pflicht)."""
+    delete_user_data(user.id, device_id)
+    logger.info("Konto gelöscht: %s", user.id)

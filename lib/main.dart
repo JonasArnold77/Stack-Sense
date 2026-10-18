@@ -7,6 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'amplifyconfiguration.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
+import 'core/widgets/app_restart.dart';
 import 'core/widgets/xp_reward_overlay.dart';
 import 'features/settings/data/tenant_config_provider.dart';
 
@@ -20,8 +21,10 @@ Future<void> main() async {
   await _configureAmplify();
 
   runApp(
-    const ProviderScope(
-      child: StackSenseApp(),
+    const AppRestart(
+      child: ProviderScope(
+        child: StackSenseApp(),
+      ),
     ),
   );
 }

@@ -696,6 +696,28 @@ class ApiService {
     }
   }
 
+  /// Löscht Konto, Profil und Check-ins der Geräte-ID auf dem Server.
+  /// Wirft [ApiException] bei Fehlern (Aufrufer muss sie dem Nutzer zeigen).
+  Future<void> deleteAccount(String idToken, {String? deviceId}) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/users/me').replace(
+        queryParameters: {if (deviceId != null) 'device_id': deviceId},
+      );
+      final response = await http.delete(uri, headers: {
+        'Authorization': 'Bearer $idToken',
+        'ngrok-skip-browser-warning': 'true',
+      }).timeout(AppConstants.apiTimeout);
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        throw ApiException('Konto konnte nicht gelöscht werden.');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      debugPrint('deleteAccount Fehler: $e');
+      throw ApiException('Keine Verbindung zum Server — Konto nicht gelöscht.');
+    }
+  }
+
   Map<String, dynamic> _stackEntrySummaryJson(StackEntry e) => {
         'id': e.id,
         'name': e.name,

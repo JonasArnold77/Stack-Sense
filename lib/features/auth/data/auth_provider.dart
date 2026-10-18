@@ -1,7 +1,10 @@
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
-import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:amplify_flutter/amplify_flutter.dart' hide ApiException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../core/constants/app_constants.dart';
 import '../../../core/services/api_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -292,6 +295,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     await Amplify.Auth.signOut();
     state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  // --- Konto löschen (Play-Pflicht) ---
+
+  /// Löscht Server-Daten, das Cognito-Konto und alle lokalen Daten.
+  /// Gibt null bei Erfolg zurück, sonst eine Fehlermeldung für den Nutzer.
+  Future<String?> deleteAccount() async {
+    final token = await getIdToken();
+    if (token == null) return 'Bitte melde dich erneut an und versuche es nochmal.';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await ApiService.instance
+          .deleteAccount(token, deviceId: prefs.getString(AppConstants.keyDeviceId));
+      await Amplify.Auth.deleteUser();
+      final backendUrl = prefs.getString('backend_url');
+      await prefs.clear();
+      if (backendUrl != null) await prefs.setString('backend_url', backendUrl);
+      state = const AuthState(status: AuthStatus.unauthenticated);
+      return null;
+    } on ApiException catch (e) {
+      return e.message;
+    } on AuthException catch (e) {
+      return _mapError(e);
+    }
   }
 
   // --- ID-Token für API-Calls holen ---

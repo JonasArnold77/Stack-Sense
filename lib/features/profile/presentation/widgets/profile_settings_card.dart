@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/services/url_config_service.dart';
+import '../../../../core/widgets/app_restart.dart';
+import '../../../auth/data/auth_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../settings/data/developer_mode_provider.dart';
@@ -34,13 +38,22 @@ class ProfileSettingsCard extends ConsumerWidget {
           ProfileSettingsTile(
             icon: Icons.privacy_tip_outlined,
             label: 'Datenschutz',
-            onTap: () {},
+            onTap: _openPrivacyPolicy,
           ),
           const Divider(height: 0, indent: 52),
           ProfileSettingsTile(
             icon: Icons.edit_outlined,
             label: 'Profil bearbeiten',
             onTap: () {},
+          ),
+          const Divider(height: 0, indent: 52),
+          ListTile(
+            leading: const Icon(Icons.delete_forever_outlined,
+                color: AppColors.error, size: 20),
+            title: Text('Konto löschen',
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
+            onTap: () => _confirmDeleteAccount(context, ref),
+            dense: true,
           ),
           const Divider(height: 0, indent: 52),
           SwitchListTile(
@@ -60,6 +73,45 @@ class ProfileSettingsCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _openPrivacyPolicy() {
+  final origin = UrlConfigService.current.replaceFirst(RegExp(r'/api/v1$'), '');
+  return launchUrl(Uri.parse('$origin/datenschutz'),
+      mode: LaunchMode.externalApplication);
+}
+
+Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Konto löschen?'),
+      content: const Text(
+        'Dein Konto, dein Profil und alle gespeicherten Daten (Stack, '
+        'Check-ins, Fortschritt) werden endgültig gelöscht. Das kann nicht '
+        'rückgängig gemacht werden.',
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Abbrechen')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          style: TextButton.styleFrom(foregroundColor: AppColors.error),
+          child: const Text('Endgültig löschen'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+
+  final error = await ref.read(authProvider.notifier).deleteAccount();
+  if (!context.mounted) return;
+  if (error != null) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+    return;
+  }
+  AppRestart.restart(context);
 }
 
 /// Einzelne Einstellungs-Zeile mit Chevron-Pfeil.

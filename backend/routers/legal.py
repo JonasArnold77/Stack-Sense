@@ -66,7 +66,7 @@ Diagnose oder Behandlung.</p>
 <p>Für Hinweise wie „X % der Nutzer berichten Verbesserung“ werden Check-in-Daten nur zusammengefasst und ohne Rückschluss auf einzelne Personen angezeigt.</p>
 
 <h2>7. Speicherdauer und Löschung</h2>
-<p>Wir speichern deine Daten, solange dein Konto besteht. Du kannst die Löschung deines Kontos und aller zugehörigen Daten jederzeit per E-Mail an <a href="mailto:{email}">{email}</a> verlangen.</p>
+<p>Wir speichern deine Daten, solange dein Konto besteht. Du kannst dein Konto und alle zugehörigen Daten jederzeit selbst in der App löschen (Profil → Einstellungen → Konto löschen) oder die Löschung per E-Mail an <a href="mailto:{email}">{email}</a> verlangen. Details: <a href="/konto-loeschen">Konto und Daten löschen</a>.</p>
 
 <h2>8. Deine Rechte</h2>
 <p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch (Art. 15–21 DSGVO) sowie auf Widerruf erteilter Einwilligungen. Außerdem kannst du dich bei einer Datenschutz-Aufsichtsbehörde beschweren.</p>
@@ -79,6 +79,41 @@ Diagnose oder Behandlung.</p>
 </body>
 </html>
 """
+
+
+_DELETE_PAGE = """<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Konto löschen – VitaShift</title>
+<style>
+  body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; color: #1b2a4a; }}
+  a {{ color: #2c5ba2; }}
+  @media (prefers-color-scheme: dark) {{ body {{ background: #10192b; color: #e6ecf7; }} a {{ color: #8fb4ee; }} }}
+</style>
+</head>
+<body>
+<h1>Konto und Daten löschen</h1>
+<h2>In der App</h2>
+<ol>
+  <li>App öffnen und anmelden.</li>
+  <li>Unten auf <strong>Profil</strong> tippen.</li>
+  <li>Unter <strong>Einstellungen</strong> auf <strong>Konto löschen</strong> tippen und bestätigen.</li>
+</ol>
+<h2>Per E-Mail</h2>
+<p>Ohne Zugang zur App schreibe an <a href="mailto:{email}">{email}</a> – mit der E-Mail-Adresse deines Kontos. Wir löschen dein Konto innerhalb von 30 Tagen.</p>
+<h2>Was gelöscht wird</h2>
+<p>Konto (E-Mail, Anmeldedaten), Profil (Alter, Geschlecht, Vorerkrankungen, Medikamente u. a.) sowie deine Check-in-Daten auf dem Server. Daten auf deinem Gerät (z. B. Stack, Fortschritt) werden beim Löschen in der App ebenfalls entfernt. Die Löschung ist endgültig.</p>
+<p><a href="/datenschutz">Zur Datenschutzerklärung</a></p>
+</body>
+</html>
+"""
+
+
+@router.get("/konto-loeschen", response_class=HTMLResponse, include_in_schema=False)
+async def konto_loeschen() -> HTMLResponse:
+    return HTMLResponse(_DELETE_PAGE.format(email=escape(CONTROLLER_EMAIL)))
 
 
 @router.get("/datenschutz", response_class=HTMLResponse, include_in_schema=False)
