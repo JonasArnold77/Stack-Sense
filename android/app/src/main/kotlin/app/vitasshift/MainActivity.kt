@@ -1,4 +1,4 @@
-package com.example.stacksense
+package app.vitasshift
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
