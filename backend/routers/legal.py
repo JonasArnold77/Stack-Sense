@@ -6,10 +6,10 @@ from fastapi.responses import HTMLResponse
 
 router = APIRouter(tags=["Legal"])
 
-# TODO vor dem Deploy ausfüllen — diese Angaben sind Pflicht (Art. 13 DSGVO).
-CONTROLLER_NAME = "[NAME DES VERANTWORTLICHEN]"
-CONTROLLER_ADDRESS = "[STRASSE, PLZ ORT, LAND]"
-CONTROLLER_EMAIL = "[KONTAKT-E-MAIL]"
+# Angaben des Verantwortlichen (Pflicht nach Art. 13 DSGVO).
+CONTROLLER_NAME = "Jonas Arnold"
+CONTROLLER_ADDRESS = "Gehrenweg 1, 79576 Weil am Rhein, Deutschland"
+CONTROLLER_EMAIL = "lynxian.gaming@gmail.com"
 STAND = "18. Oktober 2026"
 
 _PAGE = """<!doctype html>
