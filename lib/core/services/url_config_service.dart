@@ -10,7 +10,7 @@ class UrlConfigService {
   static const String _key = 'backend_url';
 
   static const String _productionUrl =
-      'http://stacksense-production.eba-3kgatrmy.eu-central-1.elasticbeanstalk.com/api/v1';
+      'https://vitashift.manawa-technologies.ch/api/v1';
 
   /// Aktuell gecachte URL — nach init() immer gesetzt.
   static String _current = _productionUrl;

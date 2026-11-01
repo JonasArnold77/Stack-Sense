@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Nur Entwicklung: lokales Backend per http (Emulator/LAN). Release-Builds erlauben kein Klartext. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>
