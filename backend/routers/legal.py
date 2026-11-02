@@ -10,7 +10,7 @@ router = APIRouter(tags=["Legal"])
 CONTROLLER_NAME = "Jonas Arnold"
 CONTROLLER_ADDRESS = "Gehrenweg 1, 79576 Weil am Rhein, Deutschland"
 CONTROLLER_EMAIL = "lynxian.gaming@gmail.com"
-STAND = "18. Oktober 2026"
+STAND = "2. November 2026"
 
 _PAGE = """<!doctype html>
 <html lang="de">
@@ -39,7 +39,7 @@ Diagnose oder Behandlung.</p>
 
 <h2>3. Welche Daten wir verarbeiten</h2>
 <ul>
-  <li><strong>Konto:</strong> E-Mail-Adresse und Anmeldedaten (Registrierung per E-Mail/Passwort oder Google-Anmeldung), Zeitpunkt des letzten Logins.</li>
+  <li><strong>Konto:</strong> Name, E-Mail-Adresse, Wohnort (Stadt) und Zeitzone sowie Anmeldedaten (Registrierung per E-Mail/Passwort oder Google-Anmeldung), Zeitpunkt des letzten Logins. Die Anmeldedaten werden bei Amazon Cognito gespeichert.</li>
   <li><strong>Profil (Gesundheitsdaten):</strong> Alter, Geschlecht, Sportlevel, Vorerkrankungen, eingenommene Medikamente, Schwangerschaft – nur soweit du sie im Onboarding oder Profil angibst.</li>
   <li><strong>Nutzung:</strong> dein Supplement-Stack, Einnahmezeiten und Lagerbestand, Ziele, Check-in-Antworten (z. B. Schlaf, Energie, Fokus, Stimmung) sowie eine zufällige Geräte-Kennung für die Zuordnung der Check-ins.</li>
   <li><strong>Health Connect (optional):</strong> Wenn du es erlaubst, liest die App Schritte, Herzfrequenz, HRV, Schlaf, Training, Kalorien, Sauerstoffsättigung, Atemfrequenz, Körpertemperatur und Gewicht aus Android Health Connect. Diese Daten werden nur auf deinem Gerät ausgewertet und <strong>nicht an unsere Server übertragen</strong>. Du kannst den Zugriff jederzeit in Health Connect widerrufen.</li>
