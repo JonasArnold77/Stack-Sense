@@ -94,17 +94,26 @@ _DELETE_PAGE = """<!doctype html>
 </style>
 </head>
 <body>
-<h1>Konto und Daten löschen</h1>
-<h2>In der App</h2>
+<h1>Konto und Daten löschen – VitaShift</h1>
+<p>Diese Seite beschreibt, wie du die Löschung deines Kontos und deiner Daten in der App <strong>VitaShift</strong> (Entwickler: Jonas Arnold) anforderst.</p>
+<h2>Schritte in der App</h2>
 <ol>
   <li>App öffnen und anmelden.</li>
   <li>Unten auf <strong>Profil</strong> tippen.</li>
   <li>Unter <strong>Einstellungen</strong> auf <strong>Konto löschen</strong> tippen und bestätigen.</li>
 </ol>
-<h2>Per E-Mail</h2>
+<p>Die Löschung erfolgt sofort und ist endgültig.</p>
+<h2>Löschung per E-Mail</h2>
 <p>Ohne Zugang zur App schreibe an <a href="mailto:{email}">{email}</a> – mit der E-Mail-Adresse deines Kontos. Wir löschen dein Konto innerhalb von 30 Tagen.</p>
-<h2>Was gelöscht wird</h2>
-<p>Konto (E-Mail, Anmeldedaten), Profil (Alter, Geschlecht, Vorerkrankungen, Medikamente u. a.) sowie deine Check-in-Daten auf dem Server. Daten auf deinem Gerät (z. B. Stack, Fortschritt) werden beim Löschen in der App ebenfalls entfernt. Die Löschung ist endgültig.</p>
+<h2>Welche Daten gelöscht werden</h2>
+<ul>
+  <li><strong>Konto:</strong> Name, E-Mail-Adresse, Wohnort (Stadt), Zeitzone und Anmeldedaten (Amazon Cognito).</li>
+  <li><strong>Profil:</strong> Alter, Geschlecht, Sportlevel, Vorerkrankungen, Medikamente, Schwangerschaftsangabe.</li>
+  <li><strong>Check-ins:</strong> deine Check-in-Antworten und die zugehörige Geräte-Kennung auf dem Server.</li>
+  <li><strong>Auf deinem Gerät:</strong> Stack, Lagerbestand, Fortschritt und weitere lokale App-Daten werden beim Löschen in der App ebenfalls entfernt.</li>
+</ul>
+<h2>Aufbewahrung nach der Löschung</h2>
+<p>Wir bewahren nach der Löschung keine Daten zu deinem Konto auf. Automatische Sicherungskopien der Datenbank (AWS) können die gelöschten Daten noch bis zu 7 Tage enthalten und werden danach überschrieben. Zusammengefasste Community-Auswertungen enthalten keinen Personenbezug.</p>
 <p><a href="/datenschutz">Zur Datenschutzerklärung</a></p>
 </body>
 </html>
