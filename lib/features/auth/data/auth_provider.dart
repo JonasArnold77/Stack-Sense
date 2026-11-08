@@ -30,7 +30,7 @@ class AuthState {
   final String? errorMessage;
 
   // Multi-Tenancy — aus Backend /users/me, nur befüllt wenn einem AKTIVEN
-  // Tenant zugewiesen. null/leer = Standard-LifeLab-Verhalten.
+  // Tenant zugewiesen. null/leer = Standard-VitaShift-Verhalten.
   final String? tenantId;
   final String? tenantName;
   final Map<String, dynamic> features;
@@ -135,7 +135,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Holt Rolle + Tenant-Konfiguration vom Backend (GET /users/me).
   /// Rein additiv — schlägt der Call fehl, bleibt die App bei den bisherigen
-  /// Defaultwerten (kein Tenant, LifeLab-Standard). Blockiert den Login-Flow
+  /// Defaultwerten (kein Tenant, VitaShift-Standard). Blockiert den Login-Flow
   /// nicht: wird "fire and forget" nach dem eigentlichen Login aufgerufen.
   Future<void> _loadBackendProfile() async {
     final token = await getIdToken();

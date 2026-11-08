@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// Laufzeit-Konfiguration der aktuellen Partei (Multi-Tenancy) — kommt aus
 /// GET /users/me (`AuthState`), niemals lokal gespeichert. [TenantConfig.none]
 /// ist der Default für Nutzer ohne (oder mit inaktivem) Tenant — identisch
-/// zum bisherigen LifeLab-Standardverhalten.
+/// zum bisherigen VitaShift-Standardverhalten.
 class TenantConfig {
   final String? tenantId;
   final String? tenantName;

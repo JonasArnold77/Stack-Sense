@@ -234,13 +234,13 @@ class _GreetingHeader extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Nur das DNA-/Pflanzen-Symbol (ohne Hexagon) + "Life Lab"-Text + Empfehlungs-Modus-Switch
+          // Nur das DNA-/Pflanzen-Symbol (ohne Hexagon) + "VitaShift"-Text + Empfehlungs-Modus-Switch
           Row(
             children: [
               Image.asset('assets/images/logo_icon_only.png', height: 64),
               const SizedBox(width: 10),
               Text(
-                'Life Lab',
+                'VitaShift',
                 style: AppTextStyles.displayMedium.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,

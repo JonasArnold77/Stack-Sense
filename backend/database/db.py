@@ -211,7 +211,7 @@ def init_tenant_tables() -> None:
     """
     Erstellt die tenants-Tabelle (Multi-Tenancy: Parteien mit eigenem
     Feature-/Branding-Konfiguration) und die tenant_id-Spalte auf users.
-    Ein NULL tenant_id bedeutet unverändertes Standardverhalten (LifeLab).
+    Ein NULL tenant_id bedeutet unverändertes Standardverhalten (VitaShift).
     """
     create_sql = """
     CREATE TABLE IF NOT EXISTS tenants (

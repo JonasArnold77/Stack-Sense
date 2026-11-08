@@ -57,7 +57,7 @@ def main() -> None:
 
     repo_root = Path(__file__).resolve().parent.parent.parent
     version = _read_pubspec_version(repo_root)
-    filename = f"LifeLab-{version}-{date.today().isoformat()}.apk"
+    filename = f"VitaShift-{version}-{date.today().isoformat()}.apk"
 
     creds = Credentials(
         token=None,

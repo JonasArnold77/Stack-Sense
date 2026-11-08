@@ -80,7 +80,7 @@ def _user_to_response(user: UserRow) -> UserResponse:
     """Reichert die User-Antwort um die Tenant-Konfiguration an — nur wenn der
     User einem Tenant zugewiesen ist UND dieser aktiv (veröffentlicht) ist.
     Sonst bleiben tenant_id/tenant_name/features/branding leer und die App
-    fällt automatisch auf das LifeLab-Standardverhalten zurück."""
+    fällt automatisch auf das VitaShift-Standardverhalten zurück."""
     resp = UserResponse(id=user.id, email=user.email, role=user.role)
     if user.tenant_id:
         tenant = get_tenant(user.tenant_id)

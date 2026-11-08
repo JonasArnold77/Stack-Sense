@@ -65,7 +65,7 @@ _NUTRIENT_LABELS = {
     "lutein_zeaxanthin": "Lutein/Zeaxanthin", "lycopene": "Lycopin",
 }
 
-SYSTEM_PROMPT_RECIPE = """Du bist ein Koch-Assistent für die App LifeLab. Du erstellst \
+SYSTEM_PROMPT_RECIPE = """Du bist ein Koch-Assistent für die App VitaShift. Du erstellst \
 personalisierte Rezeptvorschläge basierend auf Ernährungspräferenzen.
 
 DEINE AUFGABE:

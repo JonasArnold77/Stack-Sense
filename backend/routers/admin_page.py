@@ -23,7 +23,7 @@ _HTML = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LifeLab Admin — Parteien-Verwaltung</title>
+<title>VitaShift Admin — Parteien-Verwaltung</title>
 <script src="https://unpkg.com/amazon-cognito-identity-js@6/dist/amazon-cognito-identity.min.js"></script>
 <style>
   :root { color-scheme: light dark; }
@@ -53,7 +53,7 @@ _HTML = """<!doctype html>
 <body>
 
 <div id="login-box">
-  <h1>LifeLab Admin</h1>
+  <h1>VitaShift Admin</h1>
   <p>Login mit deinem bestehenden Admin-Account.</p>
   <input id="login-email" type="email" placeholder="E-Mail">
   <input id="login-password" type="password" placeholder="Passwort">
@@ -62,7 +62,7 @@ _HTML = """<!doctype html>
 </div>
 
 <div id="app">
-  <h1>LifeLab Admin — Parteien-Verwaltung</h1>
+  <h1>VitaShift Admin — Parteien-Verwaltung</h1>
 
   <h2>Upgrade</h2>
   <p>Baut eine neue Release-APK, lädt sie nach Google Drive hoch und deployt
@@ -92,7 +92,7 @@ _HTML = """<!doctype html>
   <input id="td-id" placeholder="acme-corp">
   <label>Name der Partei</label>
   <input id="td-name" placeholder="Acme Corp">
-  <label>App-Anzeigename (optional, sonst "LifeLab")</label>
+  <label>App-Anzeigename (optional, sonst "VitaShift")</label>
   <input id="td-appname" placeholder="Acme Health">
   <label>Primärfarbe (optional)</label>
   <input id="td-color" type="color" value="#4f46e5">

@@ -3,6 +3,7 @@ VectorService — RAG-Schicht zwischen dem Nutzeranfrage und Claude.
 Sucht in der pgvector-DB nach relevanten PubMed-Studien und gibt
 diese als Kontext-String für den Claude-Prompt zurück.
 """
+import json
 import logging
 import os
 import re
@@ -222,12 +223,29 @@ def search_studies(query: str, supplement_names: list[str], top_k: int = 8) -> s
         return ""  # Graceful degradation — Claude antwortet ohne DB-Kontext
 
 
+# Problemfeld-Varianten, deren Slug nicht mit dem Slug des Grund-Eintrags beginnt.
+_SEARCH_VARIANT_BASES = {
+    "omega3-schwangerschaft": "omega-3",
+    "arginin-herz": "l-arginin",
+    "theanin-schlaf": "l-theanin",
+    "citrullin-sport": "l-citrullin",
+    "ala-insulin": "alpha-liponsaeure",
+    "hyaluron-haut": "hyaluronsaeure",
+    "vitamind-testosteron": "vitamin-d3",
+}
+
+
 def search_supplements(query: str, limit: int = 10) -> list[dict]:
     """
     Schnelle, tippfehler-/schreibweise-tolerante Suche gegen die `supplements`-
     Tabelle — kein LLM-Aufruf, nur ein SQL-Query. Normalisiert Leerzeichen und
     Bindestriche auf beiden Seiten weg, damit "Vitamin B", "Vitamin-B" und
     "VitaminB" alle z.B. "Vitamin B12" finden.
+
+    Problemfeld-Varianten (z.B. "magnesium-schlaf" in Kategorie "Schlaf" zu
+    "magnesium" in "Mineralstoffe") werden auf ihren Grund-Eintrag abgebildet,
+    damit ein Supplement nur einmal erscheint. Eigene Formen in derselben
+    Kategorie (z.B. "magnesium-bisglycinat") bleiben eigenständige Treffer.
 
     Returns:
         Liste von {id, name, category}, Präfix-Treffer zuerst.
@@ -246,23 +264,35 @@ def search_supplements(query: str, limit: int = 10) -> list[dict]:
         # %s-Platzhaltern.
         like_substr = f"%{normalized}%"
         like_prefix = f"{normalized}%"
+        # '%%' statt '%': in einer Vorlage mit Parametern ist '%' sonst ein Platzhalter.
         cur.execute(
             """
-            SELECT slug, name, category
-            FROM supplements
-            WHERE regexp_replace(lower(name), '[-\\s]+', '', 'g') LIKE %s
+            SELECT COALESCE(b.slug, s.slug), COALESCE(b.name, s.name),
+                   COALESCE(b.category, s.category)
+            FROM supplements s
+            LEFT JOIN supplements b
+                   ON (s.slug LIKE b.slug || '-%%' AND b.category <> s.category)
+                   OR b.slug = (%s::jsonb ->> s.slug)
+            WHERE regexp_replace(lower(s.name), '[-\\s]+', '', 'g') LIKE %s
             ORDER BY
-                CASE WHEN regexp_replace(lower(name), '[-\\s]+', '', 'g') LIKE %s
+                CASE WHEN regexp_replace(lower(s.name), '[-\\s]+', '', 'g') LIKE %s
                      THEN 0 ELSE 1 END,
-                name
+                s.name
             LIMIT %s
             """,
-            (like_substr, like_prefix, limit),
+            (json.dumps(_SEARCH_VARIANT_BASES), like_substr, like_prefix, limit * 4),
         )
         rows = cur.fetchall()
         cur.close()
         conn.close()
-        return [{"id": slug, "name": name, "category": category} for slug, name, category in rows]
+        seen: set[str] = set()
+        results = []
+        for slug, name, category in rows:
+            if slug in seen:
+                continue
+            seen.add(slug)
+            results.append({"id": slug, "name": name, "category": category})
+        return results[:limit]
     except Exception as e:
         logger.warning(f"Supplement-Suche fehlgeschlagen (non-fatal): {e}")
         return []

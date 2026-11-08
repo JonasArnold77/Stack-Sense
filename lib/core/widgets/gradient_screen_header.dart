@@ -13,7 +13,7 @@ import '../../features/settings/data/tenant_config_provider.dart';
 /// Wird als erstes Element in einem [Column] oder [CustomScrollView] eingesetzt.
 /// Setzt automatisch die Statusbar-Icons auf Weiß (hell auf dunkel).
 /// Nutzt die Partei-Primärfarbe (Multi-Tenancy) falls vorhanden, sonst den
-/// LifeLab-Standard-Gradient.
+/// VitaShift-Standard-Gradient.
 class GradientScreenHeader extends ConsumerWidget {
   /// Haupttitel (z.B. "Entdecken")
   final String title;
