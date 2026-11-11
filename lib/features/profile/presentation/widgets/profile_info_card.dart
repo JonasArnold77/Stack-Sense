@@ -39,6 +39,14 @@ class ProfileInfoCard extends StatelessWidget {
             label: 'Aktivität',
             value: _sportLabel(profile.sportLevel),
           ),
+          if (profile.lifestyle.isNotEmpty) ...[
+            const Divider(height: 0),
+            ProfileInfoTile(
+              icon: Icons.restaurant_outlined,
+              label: 'Ernährung & Alltag',
+              value: profile.lifestyle.join(', '),
+            ),
+          ],
           if (profile.conditions.isNotEmpty) ...[
             const Divider(height: 0),
             ProfileInfoTile(

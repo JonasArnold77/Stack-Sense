@@ -203,6 +203,7 @@ class ApiService {
         'gender': profile.gender?.name ?? 'diverse',
         'sport_level': profile.sportLevel?.name ?? 'none',
         'conditions': profile.conditions,
+        'lifestyle': profile.lifestyle,
         'medications': profile.medications,
         'goals': profile.goals,
         'is_pregnant': profile.isPregnant,

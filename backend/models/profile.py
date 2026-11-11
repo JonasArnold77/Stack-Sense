@@ -20,7 +20,8 @@ class UserProfile(BaseModel):
     age: int = Field(..., ge=16, le=100)
     gender: Gender
     sport_level: SportLevel
-    conditions: list[str] = []       # z.B. ["Hashimoto", "Bluthochdruck"]
+    conditions: list[str] = []       # z.B. ["Hashimoto", "Bluthochdruck"] (Altprofile)
+    lifestyle: list[str] = []        # Ernährung & Alltag, z.B. ["Vegan", "Selten Fisch", "Viel Stress"]
     medications: list[str] = []      # z.B. ["Levothyroxin"]
     goals: list[str] = []            # z.B. ["Mehr Energie", "Besserer Schlaf"]
     is_pregnant: bool = False

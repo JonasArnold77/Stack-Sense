@@ -13,7 +13,8 @@ class UserProfile {
   final int? age;
   final Gender? gender;
   final SportLevel? sportLevel;
-  final List<String> conditions; // Erkrankungen: z.B. ['Hashimoto', 'Bluthochdruck']
+  final List<String> conditions; // Erkrankungen (Altprofile — wird im Onboarding nicht mehr abgefragt)
+  final List<String> lifestyle; // Ernährung & Lebensstil: z.B. ['Vegan', 'Selten Fisch', 'Viel Stress']
   final List<String> medications; // Medikamente: z.B. ['Levothyroxin']
   final List<String> goals; // Ziele: z.B. ['Mehr Energie', 'Besserer Schlaf']
   final bool isPregnant;
@@ -24,6 +25,7 @@ class UserProfile {
     this.gender,
     this.sportLevel,
     this.conditions = const [],
+    this.lifestyle = const [],
     this.medications = const [],
     this.goals = const [],
     this.isPregnant = false,
@@ -38,6 +40,7 @@ class UserProfile {
     Gender? gender,
     SportLevel? sportLevel,
     List<String>? conditions,
+    List<String>? lifestyle,
     List<String>? medications,
     List<String>? goals,
     bool? isPregnant,
@@ -48,6 +51,7 @@ class UserProfile {
       gender: gender ?? this.gender,
       sportLevel: sportLevel ?? this.sportLevel,
       conditions: conditions ?? this.conditions,
+      lifestyle: lifestyle ?? this.lifestyle,
       medications: medications ?? this.medications,
       goals: goals ?? this.goals,
       isPregnant: isPregnant ?? this.isPregnant,
@@ -61,6 +65,7 @@ class UserProfile {
         'gender': gender?.name,
         'sportLevel': sportLevel?.name,
         'conditions': conditions,
+        'lifestyle': lifestyle,
         'medications': medications,
         'goals': goals,
         'isPregnant': isPregnant,
@@ -76,6 +81,7 @@ class UserProfile {
             ? SportLevel.values.byName(json['sportLevel'] as String)
             : null,
         conditions: List<String>.from(json['conditions'] ?? []),
+        lifestyle: List<String>.from(json['lifestyle'] ?? []),
         medications: List<String>.from(json['medications'] ?? []),
         goals: List<String>.from(json['goals'] ?? []),
         isPregnant: json['isPregnant'] as bool? ?? false,

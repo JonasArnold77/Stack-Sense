@@ -113,6 +113,27 @@ const Map<String, List<String>> _kConditionTriggers = {
   'Schlafstörungen': ['magnesium'],
 };
 
+/// Ernährung & Alltag (exakte Strings aus lifestyle_options.dart) →
+/// zusätzlich essenzielle Nährstoffe (typische Lücken).
+const Map<String, List<String>> _kLifestyleTriggers = {
+  'Flexitarisch': ['vitamin-b12'],
+  'Pescetarisch': ['eisen', 'vitamin-b12'],
+  'Vegetarisch': ['vitamin-b12', 'eisen', 'zink', 'omega-3'],
+  'Vegan': ['vitamin-b12', 'iodine', 'omega-3', 'eisen', 'zink', 'calcium', 'vitamin-d3'],
+  'Low-Carb / Keto': ['magnesium'],
+  'Wenig Obst & Gemüse': ['vitamin-c', 'folsaeure', 'magnesium'],
+  'Selten Fisch': ['omega-3', 'iodine'],
+  'Kaum Milchprodukte': ['calcium', 'iodine'],
+  'Viel Fertigessen & Zucker': ['magnesium', 'zink'],
+  'Intervallfasten': ['magnesium'],
+  'Viel Kaffee (3+ Tassen)': ['magnesium'],
+  'Regelmäßig Alkohol': ['folsaeure', 'magnesium', 'zink'],
+  'Wenig Sonne / viel drinnen': ['vitamin-d3'],
+  'Viel Stress': ['magnesium', 'vitamin-b6'],
+  'Schichtarbeit': ['vitamin-d3', 'magnesium'],
+  'Rauche': ['vitamin-c'],
+};
+
 /// Ziel (exakte Chip-Strings aus onboarding_step3_screen.dart) → zusätzlich
 /// essenzielle Nährstoffe.
 const Map<String, List<String>> _kGoalTriggers = {
@@ -158,6 +179,10 @@ Set<String> _profileTriggeredSlugs(UserProfile profile) {
 
   for (final condition in profile.conditions) {
     final triggered = _kConditionTriggers[condition];
+    if (triggered != null) slugs.addAll(triggered);
+  }
+  for (final item in profile.lifestyle) {
+    final triggered = _kLifestyleTriggers[item];
     if (triggered != null) slugs.addAll(triggered);
   }
   for (final goal in profile.goals) {

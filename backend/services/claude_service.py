@@ -89,6 +89,7 @@ def _cache_key(
             "age": profile.age,
             "sex": profile.gender,
             "conditions": sorted(profile.conditions or []),
+            "lifestyle": sorted(profile.lifestyle or []),
             "medications": sorted(profile.medications or []),
             "sport": profile.sport_level,
             "limit": limit,
@@ -921,6 +922,8 @@ def _build_user_message(
         lines.append(f"- Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}")
         lines.append(f"- Jahreszeit: {season}")
 
+        if profile.lifestyle:
+            lines.append(f"- Ernährung & Alltag: {', '.join(profile.lifestyle)}")
         if profile.conditions:
             lines.append(f"- Erkrankungen: {', '.join(profile.conditions)}")
         if profile.medications:
@@ -932,12 +935,12 @@ def _build_user_message(
             "\nGEWÜNSCHTES ZIEL: Basis-Supplementierung\n"
             "Empfehle alle Supplements die für dieses Profil grundsätzlich sinnvoll sind — "
             "unabhängig von einem spezifischen Ziel. Berücksichtige Mikronährstoff-Lücken "
-            "die für dieses Alter, Geschlecht, Jahreszeit und die genannten Erkrankungen "
+            "die für dieses Alter, Geschlecht, Jahreszeit, die Ernährung/den Alltag und ggf. genannte Erkrankungen "
             "typisch sind. Beginne mit den wichtigsten Basis-Supplements (Vitamin D, Magnesium, "
             "Omega-3 etc.) und sortiere nach klinischer Relevanz für dieses konkrete Profil.\n"
             "WICHTIG für dieses Ziel:\n"
             "- Schreibe in evidence_reason ALLE relevanten Gründe auf einmal — "
-            "Profil-Erkrankungen, Jahreszeit, Alter, Sport — alles in einem Satz.\n"
+            "Ernährung & Alltag, Jahreszeit, Alter, Sport (ggf. Erkrankungen) — alles in einem Satz.\n"
             "- secondary_benefit = null bei ALLEN Supplements. Es gibt keine zweite Ebene."
         )
     else:
@@ -1103,6 +1106,8 @@ def _build_resort_message(items: list[dict], profile: UserProfile) -> str:
         f"Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}",
         f"Jahreszeit: {_get_season()}",
     ]
+    if profile.lifestyle:
+        profile_lines.append(f"Ernährung & Alltag: {', '.join(profile.lifestyle)}")
     if profile.conditions:
         profile_lines.append(f"Erkrankungen: {', '.join(profile.conditions)}")
     if profile.medications:
@@ -1142,6 +1147,8 @@ def _build_fresh_fields_message(
             f"Aktivität: {sport_map.get(profile.sport_level, profile.sport_level)}, "
             f"Jahreszeit: {_get_season()}"
         )
+        if profile.lifestyle:
+            lines.append(f"Ernährung & Alltag: {', '.join(profile.lifestyle)}")
         if profile.conditions:
             lines.append(f"Erkrankungen: {', '.join(profile.conditions)}")
         if profile.medications:

@@ -7,9 +7,10 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../data/onboarding_provider.dart';
+import '../../domain/models/lifestyle_options.dart';
 import '../widgets/onboarding_progress_header.dart';
 
-/// Onboarding Schritt 2 — Erkrankungen & Medikamente (optional)
+/// Onboarding Schritt 2 — Ernährung, Lebensstil & Medikamente (optional)
 class OnboardingStep2Screen extends ConsumerStatefulWidget {
   const OnboardingStep2Screen({super.key});
 
@@ -66,39 +67,52 @@ class _OnboardingStep2ScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppConstants.spaceL),
-                    Text('Gesundheit & Medikamente',
+                    Text('Ernährung & Alltag',
                         style: AppTextStyles.displayMedium),
                     const SizedBox(height: AppConstants.spaceS),
                     Text(
-                      'Optional — aber wichtig für sichere Empfehlungen. '
-                      'Manche Supplements können Medikamente beeinflussen.',
+                      'Optional — aber so erkennen wir, welche Nährstoffe '
+                      'bei dir am ehesten zu kurz kommen.',
                       style: AppTextStyles.bodyMedium
                           .copyWith(color: AppColors.textSecondary),
                     ),
 
                     const SizedBox(height: AppConstants.spaceXL),
 
-                    // --- Erkrankungen ---
-                    Text('Bestehende Erkrankungen',
-                        style: AppTextStyles.headlineSmall),
-                    const SizedBox(height: AppConstants.spaceS),
-                    Text('Wähle alles aus, was zutrifft.',
-                        style: AppTextStyles.bodySmall),
-                    const SizedBox(height: AppConstants.spaceM),
-                    Wrap(
-                      spacing: AppConstants.spaceS,
-                      runSpacing: AppConstants.spaceS,
-                      children: _conditions.map((condition) {
-                        final selected =
-                            profile.conditions.contains(condition);
-                        return _ConditionChip(
-                          label: condition,
-                          selected: selected,
-                          onTap: () => ref
-                              .read(onboardingProvider.notifier)
-                              .toggleCondition(condition),
-                        );
-                      }).toList(),
+                    // --- Ernährungsform (eine) ---
+                    _ChipSection(
+                      title: 'Wie ernährst du dich?',
+                      subtitle: 'Wähle eine Ernährungsform.',
+                      options: kDietOptions,
+                      selected: profile.lifestyle,
+                      onTap: (o) =>
+                          ref.read(onboardingProvider.notifier).setDiet(o),
+                    ),
+
+                    const SizedBox(height: AppConstants.spaceXL),
+
+                    // --- Essgewohnheiten (mehrere) ---
+                    _ChipSection(
+                      title: 'Essgewohnheiten',
+                      subtitle: 'Wähle alles aus, was zutrifft.',
+                      options: kEatingHabitOptions,
+                      selected: profile.lifestyle,
+                      onTap: (o) => ref
+                          .read(onboardingProvider.notifier)
+                          .toggleLifestyle(o),
+                    ),
+
+                    const SizedBox(height: AppConstants.spaceXL),
+
+                    // --- Alltag (mehrere) ---
+                    _ChipSection(
+                      title: 'Dein Alltag',
+                      subtitle: 'Wähle alles aus, was zutrifft.',
+                      options: kDailyLifeOptions,
+                      selected: profile.lifestyle,
+                      onTap: (o) => ref
+                          .read(onboardingProvider.notifier)
+                          .toggleLifestyle(o),
                     ),
 
                     const SizedBox(height: AppConstants.spaceXL),
@@ -221,6 +235,47 @@ class _OnboardingStep2ScreenState
   }
 }
 
+/// Überschrift + Untertitel + Chip-Wrap für eine Auswahlgruppe.
+class _ChipSection extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final List<String> options;
+  final List<String> selected;
+  final ValueChanged<String> onTap;
+
+  const _ChipSection({
+    required this.title,
+    required this.subtitle,
+    required this.options,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppTextStyles.headlineSmall),
+        const SizedBox(height: AppConstants.spaceS),
+        Text(subtitle, style: AppTextStyles.bodySmall),
+        const SizedBox(height: AppConstants.spaceM),
+        Wrap(
+          spacing: AppConstants.spaceS,
+          runSpacing: AppConstants.spaceS,
+          children: options
+              .map((o) => _ConditionChip(
+                    label: o,
+                    selected: selected.contains(o),
+                    onTap: () => onTap(o),
+                  ))
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
 class _ConditionChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -259,19 +314,3 @@ class _ConditionChip extends StatelessWidget {
     );
   }
 }
-
-const _conditions = [
-  'Hashimoto',
-  'Bluthochdruck',
-  'Diabetes Typ 2',
-  'Schilddrüsenunterfunktion',
-  'Osteoporose',
-  'Anämie (Eisenmangel)',
-  'PCOS',
-  'Reizdarm',
-  'Depressionen / Burnout',
-  'Migräne',
-  'Arthritis',
-  'Schlafstörungen',
-  'Allergien',
-];

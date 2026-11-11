@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../domain/models/lifestyle_options.dart';
 import '../domain/models/user_profile.dart';
 import '../../../core/constants/app_constants.dart';
 
@@ -36,6 +37,28 @@ class OnboardingNotifier extends StateNotifier<UserProfile> {
       updated.add(condition);
     }
     state = state.copyWith(conditions: updated);
+  }
+
+  /// Essgewohnheit / Alltag an- oder abwählen (Mehrfachauswahl).
+  void toggleLifestyle(String item) {
+    final updated = List<String>.from(state.lifestyle);
+    if (updated.contains(item)) {
+      updated.remove(item);
+    } else {
+      updated.add(item);
+    }
+    state = state.copyWith(lifestyle: updated);
+  }
+
+  /// Ernährungsform setzen — ersetzt eine vorher gewählte; nochmal tippen
+  /// auf dieselbe hebt die Auswahl auf.
+  void setDiet(String diet) {
+    final had = state.lifestyle.contains(diet);
+    final updated = state.lifestyle
+        .where((e) => !kDietOptions.contains(e))
+        .toList();
+    if (!had) updated.insert(0, diet);
+    state = state.copyWith(lifestyle: updated);
   }
 
   void updateMedications(List<String> meds) =>

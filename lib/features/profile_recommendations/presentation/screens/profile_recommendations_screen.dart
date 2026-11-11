@@ -10,6 +10,7 @@ import '../../../../core/services/api_service.dart';
 import '../../../../core/services/recommendation_local_cache.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../onboarding/data/onboarding_provider.dart';
+import '../../../onboarding/domain/models/lifestyle_options.dart';
 import '../../../onboarding/domain/models/user_profile.dart';
 import '../../../recommendations/domain/models/supplement.dart';
 import '../../../recommendations/presentation/widgets/evidence_card.dart';
@@ -27,7 +28,7 @@ import '../../../stack/presentation/widgets/stack_add_warnings.dart';
 // Tag-Modell für den Filter
 // ---------------------------------------------------------------------------
 
-enum _TagType { age, gender, sport, condition, medication, pregnant }
+enum _TagType { age, gender, sport, lifestyle, condition, medication, pregnant }
 
 class _FilterTag {
   final String label;
@@ -49,20 +50,11 @@ class _FilterTag {
 }
 
 // Alle Erkrankungen die per "+" hinzugefügt werden können
-const _allConditions = [
-  'Hashimoto',
-  'Bluthochdruck',
-  'Diabetes Typ 2',
-  'Schilddrüsenunterfunktion',
-  'Osteoporose',
-  'Anämie (Eisenmangel)',
-  'PCOS',
-  'Reizdarm',
-  'Depressionen / Burnout',
-  'Migräne',
-  'Arthritis',
-  'Schlafstörungen',
-  'Allergien',
+/// Alles, was über "+" als Filter hinzugefügt werden kann.
+const _allLifestyle = [
+  ...kDietOptions,
+  ...kEatingHabitOptions,
+  ...kDailyLifeOptions,
 ];
 
 // ---------------------------------------------------------------------------
@@ -146,6 +138,9 @@ class _ProfileRecommendationsScreenState
         value: profile.sportLevel,
       ));
     }
+    for (final l in profile.lifestyle) {
+      tags.add(_FilterTag(label: l, type: _TagType.lifestyle, value: l));
+    }
     for (final c in profile.conditions) {
       tags.add(_FilterTag(label: c, type: _TagType.condition, value: c));
     }
@@ -172,6 +167,7 @@ class _ProfileRecommendationsScreenState
     int? age;
     Gender? gender;
     SportLevel? sportLevel;
+    final lifestyle = <String>[];
     final conditions = <String>[];
     final medications = <String>[];
     bool isPregnant = false;
@@ -184,6 +180,8 @@ class _ProfileRecommendationsScreenState
           gender = tag.value as Gender;
         case _TagType.sport:
           sportLevel = tag.value as SportLevel;
+        case _TagType.lifestyle:
+          lifestyle.add(tag.value as String);
         case _TagType.condition:
           conditions.add(tag.value as String);
         case _TagType.medication:
@@ -197,6 +195,7 @@ class _ProfileRecommendationsScreenState
       age: age,
       gender: gender,
       sportLevel: sportLevel,
+      lifestyle: lifestyle,
       conditions: conditions,
       medications: medications,
       isPregnant: isPregnant,
@@ -349,13 +348,14 @@ class _ProfileRecommendationsScreenState
   // --- "+" Bottom Sheet ---
 
   void _openAddTagSheet() {
-    // Alle Erkrankungen die noch NICHT in _allTags sind
-    final activeConditionLabels =
-        _allTags.where((t) => t.type == _TagType.condition).map((t) => t.label).toSet();
+    // Alle Ernährungs-/Alltags-Punkte, die noch NICHT in _allTags sind
+    final activeLabels = _allTags
+        .where((t) => t.type == _TagType.lifestyle)
+        .map((t) => t.label)
+        .toSet();
 
-    final available = _allConditions
-        .where((c) => !activeConditionLabels.contains(c))
-        .toList();
+    final available =
+        _allLifestyle.where((c) => !activeLabels.contains(c)).toList();
 
     showModalBottomSheet(
       context: context,
@@ -366,7 +366,7 @@ class _ProfileRecommendationsScreenState
         onAdd: (condition) {
           final tag = _FilterTag(
             label: condition,
-            type: _TagType.condition,
+            type: _TagType.lifestyle,
             value: condition,
           );
           setState(() {
@@ -756,11 +756,11 @@ class _AddTagSheet extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Erkrankung hinzufügen',
+                Text('Ernährung & Alltag hinzufügen',
                     style: AppTextStyles.headlineSmall),
                 const SizedBox(height: 4),
                 Text(
-                  'Tippe auf eine Erkrankung um sie als Filter hinzuzufügen.',
+                  'Tippe auf einen Punkt, um ihn als Filter hinzuzufügen.',
                   style: AppTextStyles.bodySmall
                       .copyWith(color: AppColors.textTertiary),
                 ),
@@ -772,7 +772,7 @@ class _AddTagSheet extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(AppConstants.spaceXL),
               child: Text(
-                'Alle Erkrankungen sind bereits als Filter aktiv.',
+                'Alle Punkte sind bereits als Filter aktiv.',
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.textTertiary),
                 textAlign: TextAlign.center,
